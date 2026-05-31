@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { CellChar } from "./CellChar";
-import { InvalidCellCharError } from '../errors/InvalidCellCharError';
+import { InvalidCellCharError } from "../errors/InvalidCellCharError";
 
 describe("CellChar", () => {
   test("must return a new instance when create arg is a string with length 1", () => {
@@ -21,5 +21,9 @@ describe("CellChar", () => {
 
   test("must throw when create arg is a string with more than 1 char", () => {
     expect(() => CellChar.create("ab")).toThrow(InvalidCellCharError);
-  })
+  });
+
+  test("two CellChars with the same value must be equal", () => {
+    expect(CellChar.create("a").equals(CellChar.create("a"))).toBe(true);
+  });
 });
