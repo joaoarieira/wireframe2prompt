@@ -1,4 +1,4 @@
-import { InvalidCellCharError } from '../errors/InvalidCellCharError';
+import { InvalidCellCharError } from "../errors/InvalidCellCharError";
 
 export class CellChar {
   public readonly value: string | undefined;
@@ -12,5 +12,9 @@ export class CellChar {
 
   static create(value: string) {
     return new CellChar(value);
+  }
+
+  equals(other: CellChar): boolean {
+    return this.value === other.value;
   }
 }
