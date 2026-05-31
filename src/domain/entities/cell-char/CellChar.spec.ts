@@ -17,4 +17,8 @@ describe("CellChar", () => {
   test("must throw when create arg is a string with a single space", () => {
     expect(() => CellChar.create(" ")).toThrow(INVALID_LENGTH_ERROR_SUBSTRING);
   });
+
+  test("must throw when create arg is a string with more than 1 char", () => {
+    expect(() => CellChar.create("ab")).toThrow(INVALID_LENGTH_ERROR_SUBSTRING);
+  })
 });
