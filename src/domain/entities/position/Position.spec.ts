@@ -18,4 +18,12 @@ describe("Position", () => {
   test("must throw when row is a float number on create", () => {
     expect(() => Position.create(0, 1.5)).toThrow(InvalidPositionError);
   });
+
+  test("must accept negative coordinates (positions outside the grid are valid)", () => {
+    const col = -1;
+    const row = -5;
+    const position = Position.create(col, row);
+    expect(position.col).equals(col);
+    expect(position.row).equals(row);
+  });
 });
