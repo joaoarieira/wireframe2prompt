@@ -2,10 +2,10 @@ import { InvalidGridSizeError } from "../errors/InvalidGridSizeError";
 import type { Position } from "../position/Position";
 
 export class GridSize {
-  public readonly cols: number;
   public readonly rows: number;
+  public readonly cols: number;
 
-  private constructor(cols: number, rows: number) {
+  private constructor(rows: number, cols: number) {
     if (
       cols <= 0 ||
       rows <= 0 ||
@@ -18,8 +18,8 @@ export class GridSize {
     this.rows = rows;
   }
 
-  public static create(width: number, height: number) {
-    return new GridSize(width, height);
+  public static create(rows: number, cols: number) {
+    return new GridSize(rows, cols);
   }
 
   public contains(position: Position): boolean {

@@ -6,8 +6,8 @@ import { InvalidGridSizeError } from "../errors/InvalidGridSizeError";
 describe("GridSize", () => {
   test("must return a new instance when both values are greater than zero", () => {
     const grid = GridSize.create(1, 2);
-    expect(grid.cols).toBe(1);
-    expect(grid.rows).toBe(2);
+    expect(grid.cols).toBe(2);
+    expect(grid.rows).toBe(1);
   });
 
   test("must throw when cols or rows are less than zero", () => {

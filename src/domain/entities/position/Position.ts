@@ -1,18 +1,18 @@
 import { InvalidPositionError } from "../errors/InvalidPositionError";
 
 export class Position {
-  public readonly col: number;
   public readonly row: number;
+  public readonly col: number;
 
-  private constructor(col: number, row: number) {
-    if (!Number.isInteger(col) || !Number.isInteger(row)) {
+  private constructor(row: number, col: number) {
+    if (!Number.isInteger(row) || !Number.isInteger(col)) {
       throw new InvalidPositionError();
     }
-    this.col = col;
     this.row = row;
+    this.col = col;
   }
 
-  public static create(col: number, row: number) {
-    return new Position(col, row);
+  public static create(row: number, col: number) {
+    return new Position(row, col);
   }
 }
