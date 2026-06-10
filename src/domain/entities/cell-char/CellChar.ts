@@ -1,7 +1,7 @@
 import { InvalidCellCharError } from "../errors/InvalidCellCharError";
 
 export class CellChar {
-  public readonly value: string | undefined;
+  public readonly value: string;
 
   private constructor(value: string) {
     if ([...value].length !== 1) {
