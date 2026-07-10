@@ -6,10 +6,10 @@ export class Size {
 
   private constructor(width: number, height: number) {
     if (
-      !Number.isInteger(width) ||
-      !Number.isInteger(height) ||
       width <= 0 ||
-      height <= 0
+      height <= 0 ||
+      !Number.isInteger(width) ||
+      !Number.isInteger(height)
     ) {
       throw new InvalidSizeError();
     }
@@ -17,7 +17,7 @@ export class Size {
     this.height = height;
   }
 
-  static create(width: number, height: number): Size {
+  public static create(width: number, height: number) {
     return new Size(width, height);
   }
 

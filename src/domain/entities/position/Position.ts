@@ -12,15 +12,15 @@ export class Position {
     this.row = row;
   }
 
-  static create(col: number, row: number): Position {
+  public static create(col: number, row: number) {
     return new Position(col, row);
   }
 
-  translate(deltaCol: number, deltaRow: number): Position {
+  public translate(deltaCol: number, deltaRow: number): Position {
     return Position.create(this.col + deltaCol, this.row + deltaRow);
   }
 
-  equals(other: Position): boolean {
+  public equals(other: Position): boolean {
     return this.col === other.col && this.row === other.row;
   }
 }

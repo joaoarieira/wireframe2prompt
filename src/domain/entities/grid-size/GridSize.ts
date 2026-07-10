@@ -1,4 +1,5 @@
 import { InvalidGridSizeError } from "../errors/InvalidGridSizeError";
+import type { Position } from "../position/Position";
 
 export class GridSize {
   public readonly cols: number;
@@ -6,10 +7,10 @@ export class GridSize {
 
   private constructor(cols: number, rows: number) {
     if (
-      !Number.isInteger(cols) ||
-      !Number.isInteger(rows) ||
       cols <= 0 ||
-      rows <= 0
+      rows <= 0 ||
+      !Number.isInteger(cols) ||
+      !Number.isInteger(rows)
     ) {
       throw new InvalidGridSizeError();
     }
@@ -17,11 +18,20 @@ export class GridSize {
     this.rows = rows;
   }
 
-  static create(cols: number, rows: number): GridSize {
+  public static create(cols: number, rows: number) {
     return new GridSize(cols, rows);
   }
 
-  equals(other: GridSize): boolean {
+  public contains(position: Position): boolean {
+    return (
+      position.col >= 0 &&
+      position.row >= 0 &&
+      position.col < this.cols &&
+      position.row < this.rows
+    );
+  }
+
+  public equals(other: GridSize): boolean {
     return this.cols === other.cols && this.rows === other.rows;
   }
 }

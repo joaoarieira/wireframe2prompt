@@ -3,7 +3,7 @@ import { Size } from "./Size";
 import { InvalidSizeError } from "../errors/InvalidSizeError";
 
 describe("Size", () => {
-  test("must create a size with the given width and height", () => {
+  test("must create when width and height are positive integers", () => {
     const size = Size.create(4, 3);
     expect(size.width).toBe(4);
     expect(size.height).toBe(3);
