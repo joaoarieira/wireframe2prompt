@@ -1,0 +1,161 @@
+# wireframe2prompt
+
+Web editor for **ASCII wireframes**. The user drags ready-made components
+(Button, Input, Card, …) onto a character grid, adjusts position/size, and
+exports a **raw ASCII string** to feed as a prompt to an LLM. Output is the
+plain string — no markdown, no description.
+
+**Stack:** React 19 + TypeScript + Vite. Tests: Vitest. See
+`wireframe2prompt-plan.md` for the full design and the closed business
+decisions; this file is the working contract for how to change the code.
+
+---
+
+## Architecture — Clean Architecture
+
+Dependency rule (imports only ever point inward):
+
+```
+Presentation ──► Application ──► Domain ◄── Infrastructure
+```
+
+- **Domain** imports nothing from outside. Pure entities, value objects,
+  aggregates, and the **ports** (interfaces) it needs.
+- **Application** (use cases) depends only on Domain + its ports. No use case
+  knows about React, LocalStorage, or `<canvas>`.
+- **Infrastructure** and **Presentation** implement/consume ports; they are
+  wired together only in the DI composition root (`di/container.ts`).
+
+Layer map (`src/`):
+
+```
+domain/
+  entities/        GridSize, Position, Size, CellChar, Layer, Element(+subtypes)
+  value-objects/   BorderStyle, CharBuffer
+  aggregates/      WireframeDocument   (aggregate root, immutable)
+  entities/errors/ domain error types (InvalidPositionError, …)
+  ports/           IRenderer, IComposer, IDocumentRepository, IHistory,
+                   ICommand, IGlyphMapper
+application/
+  usecases/        AddElement, MoveElement, ResizeElement, RemoveElement,
+                   ReorderLayer, EditElementProps, ComposeAscii, ExportAscii,
+                   SaveDocument, LoadDocument, Undo, Redo
+infrastructure/
+  composer/        ZIndexComposer, GlyphMapperRegistry, mappers/*GlyphMapper
+  rendering/       StringRenderer
+tests/
+  doubles/         SpyComposer, SpyHistory, SpyDocumentRepository
+  fixtures.ts      makeBox / makeText / makeDoc builders
+```
+
+### Core design rules (from the plan — do not violate)
+
+- **Central compositor rasterizes; elements never self-render.** `IComposer`
+  walks elements ordered by ascending z-index and writes each one's cells into
+  a `CharBuffer`. **Higher z-index wins** an overlapping cell (written last).
+- **Per-type glyph mapping is Open/Closed.** Each element kind has an
+  `IGlyphMapper` registered in `GlyphMapperRegistry` — no giant `switch`. Add a
+  new element type = add a mapper + register it.
+- **Clamp on rasterization.** Elements may hold positions outside the grid (so
+  they can be dragged out and back); the buffer silently ignores writes outside
+  `[0, cols) × [0, rows)`. Never clamp in the entity.
+- **`WireframeDocument` is immutable.** `addElement`, `moveElement`,
+  `resizeElement`, `removeElement`, `reorder` return a new document.
+- **Persistence is separate from mutation.** Mutation use cases are pure and
+  depend only on `IHistory` (they push the previous snapshot). There is **no
+  autosave** — persistence goes through `SaveDocumentUseCase` explicitly.
+- **Undo/Redo = snapshots**, not per-command `undo()`: because the document is
+  immutable, history stacks whole previous documents.
+- **`StringRenderer` is the deterministic output path.** It accumulates into a
+  `CharBuffer` and yields the exact raw string — it feeds both the LLM export
+  and the golden tests.
+
+### Current status
+
+Domain, ports, compositor (Box/Line/Text mappers), and the mutation/query use
+cases are implemented with tests. **Not started:** LocalStorage repository,
+InMemoryHistory, DI container, the whole Presentation/React layer, and the
+remaining mappers (Card, Table, Modal, Tabs, Arrow, FreeDraw/pencil).
+
+---
+
+## Critical conventions
+
+- **Argument order is always X-then-Y.** `Position.create(col, row)`,
+  `GridSize.create(cols, rows)`, `Size.create(width, height)` — column/width
+  (X axis) first, then row/height (Y axis). All production code assumes this;
+  inverting only the factories silently corrupts everything. Keep it consistent.
+- **`CharBuffer` lives in `domain/value-objects/char-buffer/`** and is the
+  canonical one (`create(gridSize)`, `set`/`charAt`, `width`/`height`,
+  `toString()` = full rectangular grid, rows joined by `\n`, **no trailing
+  newline**).
+- **Value objects:** `private` constructor + `static create(...)` factory +
+  `equals(other)`. Domain errors live in `src/domain/entities/errors/` and are
+  thrown by the factories on invalid input.
+- **Element ids are caller-provided** — the domain is pure, no `randomUUID`.
+- **TypeScript flags:** `erasableSyntaxOnly` (no enums, no constructor
+  parameter properties — assign fields in the body) and `verbatimModuleSyntax`
+  (use `import type` for type-only imports). `noUnusedLocals`/`Parameters` are on.
+- **Specs are co-located** with the code as `*.spec.ts`.
+
+---
+
+## Code style
+
+- Functions: 4-20 lines. Split if longer.
+- Files: under 500 lines. Split by responsibility.
+- One thing per function, one responsibility per module (SRP).
+- Names: specific and unique. Avoid `data`, `handler`, `Manager`.
+  Prefer names that return <5 grep hits in the codebase.
+- Types: explicit. No `any`, no `Dict`, no untyped functions.
+- No code duplication. Extract shared logic into a function/module.
+- Early returns over nested ifs. Max 2 levels of indentation.
+- Exception messages must include the offending value and expected shape.
+
+## Comments
+
+- Keep your own comments. Don't strip them on refactor — they carry
+  intent and provenance.
+- Write WHY, not WHAT. Skip `// increment counter` above `i++`.
+- Docstrings on public functions: intent + one usage example.
+- Reference issue numbers / commit SHAs when a line exists because
+  of a specific bug or upstream constraint.
+
+## Tests
+
+- Tests run with a single command: `npm test` (Vitest watch mode; use
+  `npx vitest run` for a single non-watch run). Type-check with `npx tsc -b`.
+- Every new function gets a test. Bug fixes get a regression test.
+- Mock external I/O (API, DB, filesystem) with named fake classes,
+  not inline stubs. Reuse the `Spy*` doubles in `src/tests/doubles/`.
+- Tests must be F.I.R.S.T: fast, independent, repeatable,
+  self-validating, timely.
+- The compositor is tested with **golden tests**: compose against the
+  `StringRenderer`/`CharBuffer.toString()` and assert the exact ASCII string
+  (e.g. a 4×3 box is exactly `+--+` / `|  |` / `+--+`).
+
+## Dependencies
+
+- Inject dependencies through constructor/parameter, not global/import.
+- Wrap third-party libs behind a thin interface owned by this project.
+- New capabilities that touch the outside world (storage, rendering, history)
+  go behind a Domain **port**; implementations live in Infrastructure and are
+  wired only in the DI composition root.
+
+## Structure
+
+- Follow the Clean Architecture layering above — the dependency rule is the
+  framework convention here. Domain never imports outward.
+- Prefer small focused modules over god files.
+- Predictable paths: each unit in its own folder with its co-located spec
+  (`entities/position/Position.ts` + `Position.spec.ts`).
+
+## Formatting
+
+- Use the language default formatter (Prettier — `npx prettier`). ESLint via
+  `npm run lint`. Don't discuss style beyond that.
+
+## Logging
+
+- Structured JSON when logging for debugging / observability.
+- Plain text only for user-facing CLI output.
