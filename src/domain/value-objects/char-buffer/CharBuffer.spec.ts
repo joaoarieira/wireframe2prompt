@@ -38,4 +38,12 @@ describe("CharBuffer", () => {
     buffer.set(Position.create(0, 0), CellChar.create("B"));
     expect(buffer.charAt(Position.create(0, 0))).toBe("B");
   });
+
+  test("charAt must return a space for positions outside the grid", () => {
+    const buffer = CharBuffer.create(GridSize.create(2, 2));
+    expect(buffer.charAt(Position.create(-1, 0))).toBe(" ");
+    expect(buffer.charAt(Position.create(0, -1))).toBe(" ");
+    expect(buffer.charAt(Position.create(2, 0))).toBe(" ");
+    expect(buffer.charAt(Position.create(0, 2))).toBe(" ");
+  });
 });

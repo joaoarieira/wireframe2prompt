@@ -85,6 +85,15 @@ describe("WireframeDocument", () => {
     expect(() => doc.reorderElement("nope", 1)).toThrow(ElementNotFoundError);
   });
 
+  test("replace mutators must leave the untargeted elements untouched (same ref)", () => {
+    const doc = emptyDoc().addElement(box("a")).addElement(box("b"));
+    const next = doc.moveElement("b", Position.create(3, 3));
+    expect(next.getElement("b")!.position.equals(Position.create(3, 3))).toBe(
+      true,
+    );
+    expect(next.getElement("a")).toBe(doc.getElement("a"));
+  });
+
   test("elementsByZIndex must sort ascending and keep insertion order for ties", () => {
     const doc = emptyDoc()
       .addElement(box("a", 2))

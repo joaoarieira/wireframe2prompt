@@ -39,4 +39,11 @@ describe("GridSize", () => {
     expect(grid.contains(Position.create(-1, 0))).toBe(false);
     expect(grid.contains(Position.create(0, -1))).toBe(false);
   });
+
+  test("equals must compare cols and rows", () => {
+    const grid = GridSize.create(4, 3);
+    expect(grid.equals(GridSize.create(4, 3))).toBe(true);
+    expect(grid.equals(GridSize.create(4, 2))).toBe(false);
+    expect(grid.equals(GridSize.create(2, 3))).toBe(false);
+  });
 });

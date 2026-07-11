@@ -15,6 +15,15 @@ const base = {
   layerId: null,
 };
 
+const heavy = BorderStyle.create({
+  topLeft: "#",
+  topRight: "#",
+  bottomLeft: "#",
+  bottomRight: "#",
+  horizontal: "=",
+  vertical: "#",
+});
+
 describe("Element", () => {
   test("BoxElement defaults to the ASCII border style", () => {
     const box = BoxElement.create(base);
@@ -77,5 +86,43 @@ describe("Element", () => {
     const text = TextElement.create({ ...base, text: "OK" });
     expect(text.withProps({ text: 123 }).text).toBe("OK");
     expect(text.withProps({ unrelated: "x" }).text).toBe("OK");
+  });
+
+  test("withLayer must return a new element assigned to the given layer", () => {
+    const box = BoxElement.create(base);
+    const assigned = box.withLayer("layer-1");
+    expect(assigned.layerId).toBe("layer-1");
+    expect(assigned).not.toBe(box);
+    expect(box.layerId).toBeNull();
+  });
+
+  test("BoxElement withBorderStyle must return a new box with the new style", () => {
+    const box = BoxElement.create(base);
+    const styled = box.withBorderStyle(heavy);
+    expect(styled.borderStyle.equals(heavy)).toBe(true);
+    expect(styled).not.toBe(box);
+    expect(box.borderStyle.equals(BorderStyle.ascii())).toBe(true);
+  });
+
+  test("BoxElement withProps updates the border style and ignores other keys", () => {
+    const box = BoxElement.create(base);
+    expect(box.withProps({ borderStyle: heavy }).borderStyle.equals(heavy)).toBe(
+      true,
+    );
+    expect(box.withProps({ text: "x" })).toBe(box);
+  });
+
+  test("LineElement mutators preserve orientation (cloneWith)", () => {
+    const line = LineElement.create({ ...base, orientation: "v" });
+    const moved = line.moveTo(Position.create(6, 6));
+    expect(moved).toBeInstanceOf(LineElement);
+    expect((moved as LineElement).orientation).toBe("v");
+    expect(moved.position.equals(Position.create(6, 6))).toBe(true);
+  });
+
+  test("LineElement withProps ignores an invalid orientation", () => {
+    const line = LineElement.create({ ...base, orientation: "h" });
+    expect(line.withProps({ orientation: "diagonal" })).toBe(line);
+    expect(line.withProps({ text: "x" })).toBe(line);
   });
 });

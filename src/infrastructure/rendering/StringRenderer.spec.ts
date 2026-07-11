@@ -34,4 +34,19 @@ describe("StringRenderer", () => {
     renderer.clear();
     expect(renderer.toString()).toBe("  ");
   });
+
+  test("getBuffer exposes the underlying CharBuffer", () => {
+    const renderer = new StringRenderer(GridSize.create(2, 1));
+    renderer.drawChar(Position.create(0, 0), CellChar.create("A"));
+    const buffer = renderer.getBuffer();
+    expect(buffer.charAt(Position.create(0, 0))).toBe("A");
+    expect(buffer.toString()).toBe(renderer.toString());
+  });
+
+  test("present is a no-op that leaves the output unchanged", () => {
+    const renderer = new StringRenderer(GridSize.create(2, 1));
+    renderer.drawText(Position.create(0, 0), "Hi");
+    renderer.present();
+    expect(renderer.toString()).toBe("Hi");
+  });
 });
