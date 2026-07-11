@@ -134,6 +134,23 @@ remaining mappers (Card, Table, Modal, Tabs, Arrow, FreeDraw/pencil).
   `StringRenderer`/`CharBuffer.toString()` and assert the exact ASCII string
   (e.g. a 4×3 box is exactly `+--+` / `|  |` / `+--+`).
 
+### Coverage of changed files
+
+On every change, each changed source file must reach **100%** coverage
+(statements/branches/functions/lines). Run the full suite but narrow the
+*report* to the files you touched — add **one `--coverage.include` for every
+changed file** so the report covers all of them, not just one:
+
+```
+npx vitest run --coverage --coverage.include='src/di/container.ts' --coverage.include='src/infrastructure/persistence/documentSerialization.ts'
+```
+
+Clean = `100%` summary, empty "Uncovered Line #s". Don't narrow by running one
+spec file — that hides cross-file tests and flags the rest as uncovered.
+`throw` branches are the usual misses; drive each one (e.g.
+`vi.stubGlobal("localStorage", undefined)`). If a line truly can't be hit, say
+why in the commit.
+
 ## Dependencies
 
 - Inject dependencies through constructor/parameter, not global/import.
