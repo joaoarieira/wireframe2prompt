@@ -29,7 +29,7 @@ class UnmappedElement extends Element {
     return this;
   }
 
-  withProps(): Element {
+  protected withKindProps(): Element {
     return this;
   }
 }
@@ -55,6 +55,7 @@ function richDocument(): WireframeDocument {
         size: Size.create(10, 4),
         zIndex: 0,
         layerId: "layer-1",
+        name: "Frame",
         borderStyle: unicodeBorder,
       }),
       LineElement.create({
@@ -124,6 +125,17 @@ describe("documentSerialization", () => {
     expect(box.borderStyle.equals(unicodeBorder)).toBe(true);
     expect(line.orientation).toBe("h");
     expect(text.text).toBe("Hello");
+  });
+
+  test("round-trips the element name and defaults it on legacy payloads", () => {
+    const restored = roundTrip(richDocument());
+    expect(restored.getElement("box")?.name).toBe("Frame");
+    expect(restored.getElement("line")?.name).toBeNull();
+
+    // Version-1 payloads written before `name` existed have no such key.
+    const legacy = serializeDocument(richDocument());
+    delete legacy.elements[0].name;
+    expect(deserializeDocument(legacy).getElement("box")?.name).toBeNull();
   });
 
   test("round-trips layers with their flags", () => {

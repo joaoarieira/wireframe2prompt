@@ -57,6 +57,8 @@ interface SerializedElementBase {
   size: SerializedSize;
   zIndex: number;
   layerId: string | null;
+  /** Optional: absent in payloads written before the field existed. */
+  name?: string | null;
 }
 
 interface SerializedBoxElement extends SerializedElementBase {
@@ -107,6 +109,7 @@ function serializeBase(element: Element): SerializedElementBase {
     size: { width: element.size.width, height: element.size.height },
     zIndex: element.zIndex,
     layerId: element.layerId,
+    name: element.name,
   };
 }
 
@@ -157,6 +160,8 @@ function deserializeBase(data: SerializedElementBase): ElementBaseProps {
     size: Size.create(data.size.width, data.size.height),
     zIndex: data.zIndex,
     layerId: data.layerId,
+    // ?? null keeps version-1 payloads written before `name` existed loadable.
+    name: data.name ?? null,
   };
 }
 

@@ -32,7 +32,9 @@ export class LineElement extends Element {
     return new LineElement(this.baseProps(), orientation);
   }
 
-  withProps(patch: Readonly<Record<string, unknown>>): LineElement {
+  protected withKindProps(
+    patch: Readonly<Record<string, unknown>>,
+  ): LineElement {
     if (patch.orientation === "h" || patch.orientation === "v") {
       return this.withOrientation(patch.orientation);
     }

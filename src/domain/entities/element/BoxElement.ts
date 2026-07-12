@@ -31,7 +31,9 @@ export class BoxElement extends Element {
     return new BoxElement(this.baseProps(), borderStyle);
   }
 
-  withProps(patch: Readonly<Record<string, unknown>>): BoxElement {
+  protected withKindProps(
+    patch: Readonly<Record<string, unknown>>,
+  ): BoxElement {
     if (patch.borderStyle instanceof BorderStyle) {
       return this.withBorderStyle(patch.borderStyle);
     }

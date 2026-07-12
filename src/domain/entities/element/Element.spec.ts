@@ -70,22 +70,63 @@ describe("Element", () => {
   test("LineElement keeps orientation; withProps updates it", () => {
     const line = LineElement.create({ ...base, orientation: "h" });
     expect(line.orientation).toBe("h");
-    const vertical = line.withProps({ orientation: "v" });
+    const vertical = line.withProps({ orientation: "v" }) as LineElement;
     expect(vertical.orientation).toBe("v");
     expect(line.orientation).toBe("h");
   });
 
   test("TextElement withProps updates the text immutably", () => {
     const text = TextElement.create({ ...base, text: "OK" });
-    const edited = text.withProps({ text: "Cancel" });
+    const edited = text.withProps({ text: "Cancel" }) as TextElement;
     expect(edited.text).toBe("Cancel");
     expect(text.text).toBe("OK");
   });
 
   test("withProps ignores unknown / mistyped keys", () => {
     const text = TextElement.create({ ...base, text: "OK" });
-    expect(text.withProps({ text: 123 }).text).toBe("OK");
-    expect(text.withProps({ unrelated: "x" }).text).toBe("OK");
+    expect((text.withProps({ text: 123 }) as TextElement).text).toBe("OK");
+    expect((text.withProps({ unrelated: "x" }) as TextElement).text).toBe("OK");
+  });
+
+  test("name defaults to null and withName renames immutably", () => {
+    const box = BoxElement.create(base);
+    expect(box.name).toBeNull();
+
+    const named = box.withName("Header");
+    expect(named.name).toBe("Header");
+    expect(named).not.toBe(box);
+    expect(box.name).toBeNull();
+  });
+
+  test("mutators preserve the name (cloneWith)", () => {
+    const named = BoxElement.create({ ...base, name: "Header" });
+    expect(named.moveTo(Position.create(9, 9)).name).toBe("Header");
+    expect(named.resize(Size.create(2, 2)).name).toBe("Header");
+  });
+
+  test("withProps handles name for every kind, alone or with kind props", () => {
+    const box = BoxElement.create(base);
+    expect(box.withProps({ name: "B" }).name).toBe("B");
+
+    const text = TextElement.create({ ...base, text: "OK" });
+    const edited = text.withProps({ name: "T", text: "Hi" }) as TextElement;
+    expect(edited.name).toBe("T");
+    expect(edited.text).toBe("Hi");
+
+    expect(
+      box.withProps({ name: "B" }).withProps({ name: null }).name,
+    ).toBeNull();
+    expect(box.withProps({ name: 123 }).name).toBeNull(); // mistyped → ignored
+  });
+
+  test("TextElement size always fits its content, including line breaks", () => {
+    const text = TextElement.create({ ...base, text: "OK" });
+
+    const multiline = text.withText("ab\ncdef");
+    expect(multiline.size.equals(Size.create(4, 2))).toBe(true);
+
+    const emptied = text.withProps({ text: "" });
+    expect(emptied.size.equals(Size.create(1, 1))).toBe(true);
   });
 
   test("withLayer must return a new element assigned to the given layer", () => {
@@ -106,9 +147,11 @@ describe("Element", () => {
 
   test("BoxElement withProps updates the border style and ignores other keys", () => {
     const box = BoxElement.create(base);
-    expect(box.withProps({ borderStyle: heavy }).borderStyle.equals(heavy)).toBe(
-      true,
-    );
+    expect(
+      (box.withProps({ borderStyle: heavy }) as BoxElement).borderStyle.equals(
+        heavy,
+      ),
+    ).toBe(true);
     expect(box.withProps({ text: "x" })).toBe(box);
   });
 

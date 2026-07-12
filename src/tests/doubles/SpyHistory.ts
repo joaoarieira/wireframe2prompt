@@ -8,6 +8,7 @@ import type { WireframeDocument } from "../../domain/aggregates/wireframe-docume
  */
 export class SpyHistory implements IHistory {
   readonly pushCalls: WireframeDocument[] = [];
+  clearCalls = 0;
   private undoStack: WireframeDocument[] = [];
   private redoStack: WireframeDocument[] = [];
 
@@ -33,6 +34,12 @@ export class SpyHistory implements IHistory {
     }
     this.undoStack.push(current);
     return next;
+  }
+
+  clear(): void {
+    this.clearCalls += 1;
+    this.undoStack = [];
+    this.redoStack = [];
   }
 
   get canUndo(): boolean {

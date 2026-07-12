@@ -15,12 +15,16 @@ export class TextGlyphMapper implements IGlyphMapper {
     const { col: x, row: y } = text.position;
     const cells: GlyphCell[] = [];
 
-    const chars = [...text.text];
-    for (let i = 0; i < chars.length; i++) {
-      cells.push({
-        position: Position.create(x + i, y),
-        char: CellChar.create(chars[i]),
-      });
+    // Each \n-separated line lands one row below the previous one.
+    const lines = text.text.split("\n");
+    for (let row = 0; row < lines.length; row++) {
+      const chars = [...lines[row]];
+      for (let i = 0; i < chars.length; i++) {
+        cells.push({
+          position: Position.create(x + i, y + row),
+          char: CellChar.create(chars[i]),
+        });
+      }
     }
 
     return cells;

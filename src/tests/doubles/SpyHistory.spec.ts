@@ -51,4 +51,15 @@ describe("SpyHistory", () => {
     const history = new SpyHistory();
     expect(history.redo(doc("v1"))).toBeNull();
   });
+
+  test("clear drops both stacks and records the call", () => {
+    const history = new SpyHistory();
+    history.push(doc("v1"));
+    history.undo(doc("v2"));
+    history.clear();
+
+    expect(history.clearCalls).toBe(1);
+    expect(history.canUndo).toBe(false);
+    expect(history.canRedo).toBe(false);
+  });
 });

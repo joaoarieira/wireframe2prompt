@@ -1,9 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
-import App from "../App";
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "../presentation/router";
 
-test("loads and displays greeting", async () => {
-  render(<App />);
+test("boots the app on the document list page", async () => {
+  render(<RouterProvider router={router} />);
 
-  expect(screen.getByRole("heading")).toHaveTextContent("wireframe");
+  expect(await screen.findByRole("heading")).toHaveTextContent(
+    "wireframe2prompt",
+  );
 });

@@ -7,6 +7,8 @@ export interface ElementBaseProps {
   size: Size;
   zIndex: number;
   layerId: string | null;
+  /** User-given nickname shown in the layers panel; null = unnamed. */
+  name?: string | null;
 }
 
 /**
@@ -25,6 +27,7 @@ export abstract class Element {
   public readonly size: Size;
   public readonly zIndex: number;
   public readonly layerId: string | null;
+  public readonly name: string | null;
 
   protected constructor(props: ElementBaseProps) {
     this.id = props.id;
@@ -32,6 +35,7 @@ export abstract class Element {
     this.size = props.size;
     this.zIndex = props.zIndex;
     this.layerId = props.layerId;
+    this.name = props.name ?? null;
   }
 
   protected baseProps(): ElementBaseProps {
@@ -41,6 +45,7 @@ export abstract class Element {
       size: this.size,
       zIndex: this.zIndex,
       layerId: this.layerId,
+      name: this.name,
     };
   }
 
@@ -48,10 +53,27 @@ export abstract class Element {
   protected abstract cloneWith(overrides: Partial<ElementBaseProps>): Element;
 
   /**
-   * Applies a partial patch of type-specific props (e.g. `text`, `orientation`).
-   * Each concrete element knows which keys it accepts and ignores the rest.
+   * Applies the kind-specific keys of a patch (e.g. `text`, `orientation`)
+   * and ignores the rest. Base-level keys are handled by {@link withProps}.
    */
-  abstract withProps(patch: Readonly<Record<string, unknown>>): Element;
+  protected abstract withKindProps(
+    patch: Readonly<Record<string, unknown>>,
+  ): Element;
+
+  /**
+   * Applies a partial patch: base props shared by every kind (currently
+   * `name`) plus whatever kind-specific keys the concrete element accepts.
+   *
+   * @example
+   * const renamed = element.withProps({ name: "Header", text: "Hello" });
+   */
+  withProps(patch: Readonly<Record<string, unknown>>): Element {
+    const renamed =
+      typeof patch.name === "string" || patch.name === null
+        ? this.withName(patch.name)
+        : this;
+    return renamed.withKindProps(patch);
+  }
 
   moveTo(position: Position): Element {
     return this.cloneWith({ position });
@@ -73,5 +95,9 @@ export abstract class Element {
 
   withLayer(layerId: string | null): Element {
     return this.cloneWith({ layerId });
+  }
+
+  withName(name: string | null): Element {
+    return this.cloneWith({ name });
   }
 }

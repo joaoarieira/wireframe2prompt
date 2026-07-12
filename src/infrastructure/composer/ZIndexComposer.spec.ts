@@ -85,6 +85,19 @@ describe("ZIndexComposer (golden tests)", () => {
     expect(result.toString()).toBe(["     ", " OK  ", "     "].join("\n"));
   });
 
+  test("draws multi-line text one row per \\n-separated line", () => {
+    const text = TextElement.create({
+      id: "t",
+      position: Position.create(1, 0),
+      size: Size.create(3, 3),
+      zIndex: 0,
+      layerId: null,
+      text: "ab\n\ncde",
+    });
+    const result = composer.compose(doc(GridSize.create(5, 3), text));
+    expect(result.toString()).toBe([" ab  ", "     ", " cde "].join("\n"));
+  });
+
   test("clamps cells drawn outside the grid", () => {
     const box = BoxElement.create({
       id: "b",

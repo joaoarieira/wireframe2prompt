@@ -36,6 +36,11 @@ export class InMemoryHistory implements IHistory {
     return next;
   }
 
+  clear(): void {
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
   get canUndo(): boolean {
     return this.undoStack.length > 0;
   }

@@ -10,6 +10,8 @@ export interface IHistory {
   push(snapshot: WireframeDocument): void;
   undo(current: WireframeDocument): WireframeDocument | null;
   redo(current: WireframeDocument): WireframeDocument | null;
+  /** Drops both stacks — e.g. when the editor switches to another document. */
+  clear(): void;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
 }

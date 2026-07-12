@@ -55,6 +55,17 @@ describe("InMemoryHistory", () => {
     expect(history.redo(doc("v1"))).toBeNull();
   });
 
+  test("clear drops both stacks", () => {
+    const history = new InMemoryHistory();
+    history.push(doc("v1"));
+    history.push(doc("v2"));
+    history.undo(doc("v3"));
+    history.clear();
+
+    expect(history.canUndo).toBe(false);
+    expect(history.canRedo).toBe(false);
+  });
+
   test("undo/redo walk a multi-step stack in order", () => {
     const history = new InMemoryHistory();
     const v1 = doc("v1");
