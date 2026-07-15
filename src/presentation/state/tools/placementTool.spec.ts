@@ -6,15 +6,15 @@ import { Position } from "../../../domain/entities/position/Position";
 const cell = Position.create(2, 3);
 
 describe("createPlacementTool", () => {
-  test("carries the kind and label it was created with", () => {
-    const tool = createPlacementTool("line", "Line");
+  test("carries the kind and label key it was created with", () => {
+    const tool = createPlacementTool("line", "tools.line");
 
     expect(tool.id).toBe("line");
-    expect(tool.label).toBe("Line");
+    expect(tool.labelKey).toBe("tools.line");
   });
 
   test("pointer down places an element of its kind at the cell", () => {
-    const tool = createPlacementTool("box", "Box");
+    const tool = createPlacementTool("box", "tools.box");
     const context = new FakeToolContext();
 
     tool.onCellPointerDown(context, cell);
@@ -23,7 +23,7 @@ describe("createPlacementTool", () => {
   });
 
   test("pointer move and up are no-ops", () => {
-    const tool = createPlacementTool("text", "Text");
+    const tool = createPlacementTool("text", "tools.text");
     const context = new FakeToolContext();
 
     tool.onCellPointerMove(context, cell);

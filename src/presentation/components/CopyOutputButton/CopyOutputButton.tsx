@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 
 /**
@@ -6,6 +7,7 @@ import { useEditorStore } from "../../state/app-store/appStore";
  * LLM — no markdown, no decoration) to the clipboard.
  */
 export function CopyOutputButton() {
+  const { t } = useTranslation();
   const document = useEditorStore((state) => state.document);
   const exportAscii = useEditorStore((state) => state.exportAscii);
   const [copied, setCopied] = useState(false);
@@ -25,7 +27,7 @@ export function CopyOutputButton() {
       className="btn btn-primary"
       onClick={() => void copyToClipboard()}
     >
-      {copied ? "COPIED!" : "COPY OUTPUT"}
+      {copied ? t("copyOutput.copied") : t("copyOutput.idle")}
     </button>
   );
 }

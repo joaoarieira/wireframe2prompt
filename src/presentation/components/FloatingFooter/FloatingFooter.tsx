@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { CopyOutputButton } from "../CopyOutputButton/CopyOutputButton";
 
@@ -9,6 +10,7 @@ import { CopyOutputButton } from "../CopyOutputButton/CopyOutputButton";
  * automatically.
  */
 export function FloatingFooter() {
+  const { t } = useTranslation();
   const listTools = useEditorStore((state) => state.listTools);
   const activeToolId = useEditorStore((state) => state.activeToolId);
   const setActiveTool = useEditorStore((state) => state.setActiveTool);
@@ -26,7 +28,7 @@ export function FloatingFooter() {
             aria-pressed={tool.id === activeToolId}
             onClick={() => setActiveTool(tool.id)}
           >
-            {tool.label}
+            {t(tool.labelKey)}
           </button>
         ))}
       </div>

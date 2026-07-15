@@ -8,7 +8,7 @@ import type { CanvasTool } from "./CanvasTool";
  */
 export const selectTool: CanvasTool = {
   id: "select",
-  label: "Select",
+  labelKey: "tools.select",
   onCellPointerDown(context, cell) {
     const hit = context.elementAt(cell);
     if (hit === null) {

@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { PointerEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { Element } from "../../../domain/entities/element/Element";
 import type { PointLike } from "./cellGeometry";
 import type { Position } from "../../../domain/entities/position/Position";
@@ -18,6 +19,7 @@ interface SelectionOverlayProps {
  * handle grabs the pointer, driving the store's resize-drag lifecycle.
  */
 export function SelectionOverlay({ element, getCell }: SelectionOverlayProps) {
+  const { t } = useTranslation();
   const beginResize = useEditorStore((state) => state.beginResize);
   const updateDrag = useEditorStore((state) => state.updateDrag);
   const commitDrag = useEditorStore((state) => state.commitDrag);
@@ -62,7 +64,7 @@ export function SelectionOverlay({ element, getCell }: SelectionOverlayProps) {
     >
       <span
         role="button"
-        aria-label="Resize element"
+        aria-label={t("canvas.resize")}
         className="pointer-events-auto absolute -right-1 -bottom-1 size-2 cursor-se-resize bg-primary"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

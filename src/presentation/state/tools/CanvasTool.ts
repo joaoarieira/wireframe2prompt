@@ -23,7 +23,12 @@ export interface ToolContext {
  */
 export interface CanvasTool {
   readonly id: string;
-  readonly label: string;
+  /**
+   * i18n key for the tool's palette label (e.g. `"tools.box"`). This state
+   * layer must not import i18next — the FloatingFooter resolves it with
+   * `t(tool.labelKey)`.
+   */
+  readonly labelKey: string;
   onCellPointerDown(context: ToolContext, cell: Position): void;
   onCellPointerMove(context: ToolContext, cell: Position): void;
   onCellPointerUp(context: ToolContext, cell: Position): void;

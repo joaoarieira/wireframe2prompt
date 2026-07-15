@@ -38,8 +38,8 @@ export class ToolRegistry {
 export function createDefaultToolRegistry(): ToolRegistry {
   const registry = new ToolRegistry();
   registry.register(selectTool);
-  registry.register(createPlacementTool("box", "Box"));
-  registry.register(createPlacementTool("line", "Line"));
-  registry.register(createPlacementTool("text", "Text"));
+  registry.register(createPlacementTool("box", "tools.box"));
+  registry.register(createPlacementTool("line", "tools.line"));
+  registry.register(createPlacementTool("text", "tools.text"));
   return registry;
 }

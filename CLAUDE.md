@@ -100,6 +100,34 @@ remaining mappers (Card, Table, Modal, Tabs, Arrow, FreeDraw/pencil).
 
 ---
 
+## Internationalization (i18n)
+
+The app ships **English (default) and Portuguese** via `react-i18next`. i18n is a
+Presentation concern only.
+
+- **Every user-facing string** in Presentation — including `aria-label`,
+  `placeholder`, `title`, and `<option>` text — goes through `t("key")` from
+  `useTranslation()`. **Never** a string literal.
+- **Dictionaries** live in `src/presentation/i18n/locales/{en,pt}.ts`. `en` is
+  the source of truth; `pt` is typed as `LocaleDictionary` (derived from `en`),
+  so `tsc` breaks if a key is missing or extra. **Every new key goes in both.**
+- **Key convention:** `area.item` (e.g. `inspector.delete`, `toolbar.undo`).
+  Interpolation uses `{{name}}` — pass `t("layers.bringForward", { name })`.
+- **Domain / Application / Infrastructure never import i18n.** Neither does the
+  `presentation/state` layer: it exposes i18n **keys** (e.g.
+  `CanvasTool.labelKey`) and the component translates them with `t(...)`.
+- **Exception / developer messages are not translated** — they stay English and
+  must still include the offending value.
+- **Never translate user data** (document/element names, ids) or the exported
+  **ASCII output**. The product name `wireframe2prompt` is also not translated.
+- **Tests** run with the language pinned to `"en"` in `src/tests/setup.ts`; spec
+  queries (`getByText`/`getByLabelText`) use the `en.ts` strings. A test that
+  calls `i18n.changeLanguage("pt")` must restore `"en"` in `afterEach`.
+- `detectLocale(language)` (pure) maps a `pt*` tag to Portuguese, else English;
+  `i18n.ts` wires the instance and is imported by `main.tsx` before render.
+
+---
+
 ## Code style
 
 - Functions: 4-20 lines. Split if longer.
@@ -138,7 +166,7 @@ remaining mappers (Card, Table, Modal, Tabs, Arrow, FreeDraw/pencil).
 
 On every change, each changed source file must reach **100%** coverage
 (statements/branches/functions/lines). Run the full suite but narrow the
-*report* to the files you touched — add **one `--coverage.include` for every
+_report_ to the files you touched — add **one `--coverage.include` for every
 changed file** so the report covers all of them, not just one:
 
 ```

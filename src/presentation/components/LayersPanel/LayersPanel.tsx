@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 
 /**
@@ -5,6 +6,7 @@ import { useEditorStore } from "../../state/app-store/appStore";
  * element; the arrows nudge its z-index (higher z wins overlapping cells).
  */
 export function LayersPanel() {
+  const { t } = useTranslation();
   const document = useEditorStore((state) => state.document);
   const selectedElementId = useEditorStore((state) => state.selectedElementId);
   const selectElement = useEditorStore((state) => state.selectElement);
@@ -19,56 +21,60 @@ export function LayersPanel() {
   const topmostFirst = [...document.elementsByZIndex()].reverse();
 
   if (topmostFirst.length === 0) {
-    return <p className="p-4 text-sm opacity-60">No elements yet.</p>;
+    return <p className="p-4 text-sm opacity-60">{t("layers.empty")}</p>;
   }
 
   return (
     <ul className="list p-2">
-      {topmostFirst.map((element) => (
-        <li
-          key={element.id}
-          className={`list-row cursor-pointer items-center p-2 ${
-            element.id === selectedElementId ? "bg-base-300" : ""
-          }`}
-          onClick={() => {
-            // click = press already released, so opening here is fine
-            selectElement(element.id);
-            openInspector();
-          }}
-        >
-          <span
-            className="list-col-grow min-w-0 truncate text-sm"
-            title={element.name ?? element.kind}
+      {topmostFirst.map((element) => {
+        // Custom name if the user gave one, else the translated element kind.
+        const displayName = element.name ?? t(`elementKind.${element.kind}`);
+        return (
+          <li
+            key={element.id}
+            className={`list-row cursor-pointer items-center p-2 ${
+              element.id === selectedElementId ? "bg-base-300" : ""
+            }`}
+            onClick={() => {
+              // click = press already released, so opening here is fine
+              selectElement(element.id);
+              openInspector();
+            }}
           >
-            {element.name ?? element.kind}
-          </span>
-          <span className="text-xs opacity-50">z{element.zIndex}</span>
-          <span className="join">
-            <button
-              type="button"
-              className="btn join-item btn-ghost btn-xs"
-              aria-label={`Bring ${element.kind} forward`}
-              onClick={(event) => {
-                event.stopPropagation();
-                changeElementZIndex(element.id, element.zIndex + 1);
-              }}
+            <span
+              className="list-col-grow min-w-0 truncate text-sm"
+              title={displayName}
             >
-              ▲
-            </button>
-            <button
-              type="button"
-              className="btn join-item btn-ghost btn-xs"
-              aria-label={`Send ${element.kind} backward`}
-              onClick={(event) => {
-                event.stopPropagation();
-                changeElementZIndex(element.id, element.zIndex - 1);
-              }}
-            >
-              ▼
-            </button>
-          </span>
-        </li>
-      ))}
+              {displayName}
+            </span>
+            <span className="text-xs opacity-50">z{element.zIndex}</span>
+            <span className="join">
+              <button
+                type="button"
+                className="btn join-item btn-ghost btn-xs"
+                aria-label={t("layers.bringForward", { name: displayName })}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  changeElementZIndex(element.id, element.zIndex + 1);
+                }}
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                className="btn join-item btn-ghost btn-xs"
+                aria-label={t("layers.sendBackward", { name: displayName })}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  changeElementZIndex(element.id, element.zIndex - 1);
+                }}
+              >
+                ▼
+              </button>
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

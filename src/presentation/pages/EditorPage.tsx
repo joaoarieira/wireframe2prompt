@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
 import { Toolbar } from "../components/Toolbar/Toolbar";
 import { Canvas } from "../components/Canvas/Canvas";
@@ -8,6 +9,7 @@ import { FloatingFooter } from "../components/FloatingFooter/FloatingFooter";
 
 /** The editor screen: toolbar on top, layers | canvas | inspector+output. */
 export function EditorPage() {
+  const { t } = useTranslation();
   const documentStatus = useEditorStore((state) => state.documentStatus);
   const documentName = useEditorStore((state) => state.document?.name ?? "");
   const inspectorVisible = useEditorStore(
@@ -18,9 +20,9 @@ export function EditorPage() {
     return (
       <div className="grid h-screen place-items-center">
         <div className="alert alert-warning">
-          <span>Document not found.</span>
+          <span>{t("editor.notFound")}</span>
           <Link to="/" className="btn btn-sm">
-            Back to documents
+            {t("editor.backToDocuments")}
           </Link>
         </div>
       </div>
@@ -39,7 +41,7 @@ export function EditorPage() {
     <div className="flex h-screen flex-col">
       <header className="navbar min-h-0 gap-2 bg-base-200 py-1">
         <Link to="/" className="btn btn-ghost btn-sm">
-          ← Documents
+          {t("editor.documentsShort")}
         </Link>
         <span className="text-sm font-bold">{documentName}</span>
       </header>

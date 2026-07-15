@@ -1,4 +1,5 @@
 import type { ChangeEvent, KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { selectedElementOf } from "../../state/editor-store/editorStore";
 import type { Element } from "../../../domain/entities/element/Element";
@@ -14,6 +15,7 @@ function integerFrom(event: ChangeEvent<HTMLInputElement>): number | null {
 
 /** Edits the selected element; closeable, only rendered while one exists. */
 export function InspectorPanel() {
+  const { t } = useTranslation();
   const document = useEditorStore((state) => state.document);
   const selectedElementId = useEditorStore((state) => state.selectedElementId);
   const closeInspector = useEditorStore((state) => state.closeInspector);
@@ -30,13 +32,13 @@ export function InspectorPanel() {
     <div className="flex flex-col gap-2 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold">
-          {element.kind}{" "}
+          {t(`elementKind.${element.kind}`)}{" "}
           <span className="opacity-50">#{element.id.slice(0, 8)}</span>
         </h2>
         <button
           type="button"
           className="btn btn-ghost btn-xs"
-          aria-label="Close inspector"
+          aria-label={t("inspector.close")}
           onClick={closeInspector}
         >
           ✕
@@ -48,13 +50,14 @@ export function InspectorPanel() {
         className="btn btn-outline btn-error btn-sm mt-2"
         onClick={removeSelectedElement}
       >
-        Delete
+        {t("inspector.delete")}
       </button>
     </div>
   );
 }
 
 function SelectedElementFields({ element }: { element: Element }) {
+  const { t } = useTranslation();
   const moveElementTo = useEditorStore((state) => state.moveElementTo);
   const resizeElementTo = useEditorStore((state) => state.resizeElementTo);
   const editElementProps = useEditorStore((state) => state.editElementProps);
@@ -72,10 +75,10 @@ function SelectedElementFields({ element }: { element: Element }) {
   return (
     <>
       <fieldset className="fieldset">
-        <legend className="fieldset-legend">Name</legend>
+        <legend className="fieldset-legend">{t("inspector.name")}</legend>
         <input
           type="text"
-          aria-label="Element name"
+          aria-label={t("inspector.nameField")}
           className="input input-sm w-full"
           value={element.name ?? ""}
           onChange={(event) =>
@@ -88,10 +91,10 @@ function SelectedElementFields({ element }: { element: Element }) {
         />
       </fieldset>
       <fieldset className="fieldset">
-        <legend className="fieldset-legend">Position</legend>
+        <legend className="fieldset-legend">{t("inspector.position")}</legend>
         <div className="flex items-center gap-2">
           <label className="label" htmlFor="inspector-col">
-            col
+            {t("inspector.col")}
           </label>
           <input
             id="inspector-col"
@@ -104,7 +107,7 @@ function SelectedElementFields({ element }: { element: Element }) {
             }}
           />
           <label className="label" htmlFor="inspector-row">
-            row
+            {t("inspector.row")}
           </label>
           <input
             id="inspector-row"
@@ -119,10 +122,10 @@ function SelectedElementFields({ element }: { element: Element }) {
         </div>
       </fieldset>
       <fieldset className="fieldset">
-        <legend className="fieldset-legend">Size</legend>
+        <legend className="fieldset-legend">{t("inspector.size")}</legend>
         <div className="flex items-center gap-2">
           <label className="label" htmlFor="inspector-width">
-            w
+            {t("inspector.width")}
           </label>
           <input
             id="inspector-width"
@@ -136,7 +139,7 @@ function SelectedElementFields({ element }: { element: Element }) {
             }}
           />
           <label className="label" htmlFor="inspector-height">
-            h
+            {t("inspector.height")}
           </label>
           <input
             id="inspector-height"
@@ -154,17 +157,19 @@ function SelectedElementFields({ element }: { element: Element }) {
       {element instanceof TextElement && <TextContentField element={element} />}
       {element instanceof LineElement && (
         <fieldset className="fieldset">
-          <legend className="fieldset-legend">Orientation</legend>
+          <legend className="fieldset-legend">
+            {t("inspector.orientation")}
+          </legend>
           <select
-            aria-label="Line orientation"
+            aria-label={t("inspector.orientationField")}
             className="select select-sm w-full"
             value={element.orientation}
             onChange={(event) =>
               editElementProps(element.id, { orientation: event.target.value })
             }
           >
-            <option value="h">horizontal</option>
-            <option value="v">vertical</option>
+            <option value="h">{t("inspector.horizontal")}</option>
+            <option value="v">{t("inspector.vertical")}</option>
           </select>
         </fieldset>
       )}
@@ -178,6 +183,7 @@ function SelectedElementFields({ element }: { element: Element }) {
  * session, Shift+Enter inserts a line break (the element auto-fits).
  */
 function TextContentField({ element }: { element: TextElement }) {
+  const { t } = useTranslation();
   const editElementProps = useEditorStore((state) => state.editElementProps);
   const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
   const endTextEditing = useEditorStore((state) => state.endTextEditing);
@@ -192,9 +198,9 @@ function TextContentField({ element }: { element: TextElement }) {
 
   return (
     <fieldset className="fieldset">
-      <legend className="fieldset-legend">Text</legend>
+      <legend className="fieldset-legend">{t("inspector.text")}</legend>
       <textarea
-        aria-label="Text content"
+        aria-label={t("inspector.textContent")}
         className="textarea textarea-sm w-full"
         rows={3}
         value={element.text}

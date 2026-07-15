@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
 
 /** Home screen: create a wireframe document or open/delete an existing one. */
 export function DocumentListPage() {
+  const { t } = useTranslation();
   const summaries = useEditorStore((state) => state.summaries);
   const refreshDocuments = useEditorStore((state) => state.refreshDocuments);
   const createDocument = useEditorStore((state) => state.createDocument);
@@ -31,7 +33,7 @@ export function DocumentListPage() {
         <input
           type="text"
           className="input join-item flex-1"
-          placeholder="New wireframe name"
+          placeholder={t("documentList.namePlaceholder")}
           value={name}
           onChange={(event) => setName(event.target.value)}
           onKeyDown={(event) => {
@@ -43,11 +45,11 @@ export function DocumentListPage() {
           className="btn join-item btn-primary"
           onClick={() => void handleCreate()}
         >
-          Create
+          {t("documentList.create")}
         </button>
       </div>
       {summaries.length === 0 ? (
-        <p className="text-sm opacity-60">No documents yet — create one.</p>
+        <p className="text-sm opacity-60">{t("documentList.empty")}</p>
       ) : (
         <ul className="list rounded-box bg-base-200">
           {summaries.map((summary) => (
@@ -62,7 +64,7 @@ export function DocumentListPage() {
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"
-                aria-label={`Delete ${summary.name}`}
+                aria-label={t("documentList.delete", { name: summary.name })}
                 onClick={() => void deleteDocument(summary.id)}
               >
                 ✕

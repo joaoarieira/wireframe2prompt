@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./presentation/router";
+import "./presentation/i18n/i18n";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(

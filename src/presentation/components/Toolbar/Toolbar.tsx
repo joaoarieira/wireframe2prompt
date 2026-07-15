@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 
 /**
@@ -5,6 +6,7 @@ import { useEditorStore } from "../../state/app-store/appStore";
  * FloatingFooter over the canvas.
  */
 export function Toolbar() {
+  const { t } = useTranslation();
   const canUndo = useEditorStore((state) => state.canUndo);
   const canRedo = useEditorStore((state) => state.canRedo);
   const undo = useEditorStore((state) => state.undo);
@@ -22,7 +24,7 @@ export function Toolbar() {
           disabled={!canUndo}
           onClick={undo}
         >
-          Undo
+          {t("toolbar.undo")}
         </button>
         <button
           type="button"
@@ -30,7 +32,7 @@ export function Toolbar() {
           disabled={!canRedo}
           onClick={redo}
         >
-          Redo
+          {t("toolbar.redo")}
         </button>
       </div>
       <button
@@ -38,7 +40,7 @@ export function Toolbar() {
         className="btn btn-neutral btn-sm"
         onClick={() => void saveCurrentDocument()}
       >
-        Save
+        {t("toolbar.save")}
       </button>
     </div>
   );
