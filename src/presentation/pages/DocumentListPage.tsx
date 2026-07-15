@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
+import { ButtonGroup } from "../ui/button-group/ButtonGroup";
+import { Button } from "../ui/button/Button";
+import { TextInput } from "../ui/text-input/TextInput";
+import { List, ListRow } from "../ui/list/List";
+import { TextLink } from "../ui/text-link/TextLink";
 
 /** Home screen: create a wireframe document or open/delete an existing one. */
 export function DocumentListPage() {
@@ -29,10 +34,10 @@ export function DocumentListPage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 p-8">
       <h1 className="text-2xl font-bold">wireframe2prompt</h1>
-      <div className="join">
-        <input
+      <ButtonGroup>
+        <TextInput
           type="text"
-          className="input join-item flex-1"
+          className="flex-1"
           placeholder={t("documentList.namePlaceholder")}
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -40,38 +45,34 @@ export function DocumentListPage() {
             if (event.key === "Enter") void handleCreate();
           }}
         />
-        <button
-          type="button"
-          className="btn join-item btn-primary"
-          onClick={() => void handleCreate()}
-        >
+        <Button variant="primary" size="sm" onClick={() => void handleCreate()}>
           {t("documentList.create")}
-        </button>
-      </div>
+        </Button>
+      </ButtonGroup>
       {summaries.length === 0 ? (
         <p className="text-sm opacity-60">{t("documentList.empty")}</p>
       ) : (
-        <ul className="list rounded-box bg-base-200">
+        <List rounded className="bg-base-200">
           {summaries.map((summary) => (
-            <li key={summary.id} className="list-row items-center">
-              <Link
+            <ListRow key={summary.id} className="items-center">
+              <TextLink
                 to="/editor/$documentId"
                 params={{ documentId: summary.id }}
-                className="link list-col-grow link-hover"
+                grow
               >
                 {summary.name}
-              </Link>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
+              </TextLink>
+              <Button
+                variant="ghost"
+                size="sm"
                 aria-label={t("documentList.delete", { name: summary.name })}
                 onClick={() => void deleteDocument(summary.id)}
               >
                 ✕
-              </button>
-            </li>
+              </Button>
+            </ListRow>
           ))}
-        </ul>
+        </List>
       )}
     </div>
   );

@@ -7,6 +7,11 @@ import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { TextElement } from "../../../domain/entities/element/TextElement";
+import { Button } from "../../ui/button/Button";
+import { Field, FieldLabel } from "../../ui/field/Field";
+import { TextInput } from "../../ui/text-input/TextInput";
+import { TextArea } from "../../ui/text-area/TextArea";
+import { Select } from "../../ui/select/Select";
 
 function integerFrom(event: ChangeEvent<HTMLInputElement>): number | null {
   const value = Number(event.target.value);
@@ -35,23 +40,24 @@ export function InspectorPanel() {
           {t(`elementKind.${element.kind}`)}{" "}
           <span className="opacity-50">#{element.id.slice(0, 8)}</span>
         </h2>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
+        <Button
+          variant="ghost"
+          size="xs"
           aria-label={t("inspector.close")}
           onClick={closeInspector}
         >
           ✕
-        </button>
+        </Button>
       </div>
       <SelectedElementFields element={element} />
-      <button
-        type="button"
-        className="btn btn-outline btn-error btn-sm mt-2"
+      <Button
+        variant="danger"
+        size="sm"
+        className="mt-2"
         onClick={removeSelectedElement}
       >
         {t("inspector.delete")}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -74,12 +80,11 @@ function SelectedElementFields({ element }: { element: Element }) {
 
   return (
     <>
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">{t("inspector.name")}</legend>
-        <input
+      <Field legend={t("inspector.name")}>
+        <TextInput
           type="text"
           aria-label={t("inspector.nameField")}
-          className="input input-sm w-full"
+          className="w-full"
           value={element.name ?? ""}
           onChange={(event) =>
             editElementProps(element.id, {
@@ -89,30 +94,25 @@ function SelectedElementFields({ element }: { element: Element }) {
           onFocus={() => beginTextEditing(element.id)}
           onBlur={endTextEditing}
         />
-      </fieldset>
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">{t("inspector.position")}</legend>
+      </Field>
+      <Field legend={t("inspector.position")}>
         <div className="flex items-center gap-2">
-          <label className="label" htmlFor="inspector-col">
-            {t("inspector.col")}
-          </label>
-          <input
+          <FieldLabel htmlFor="inspector-col">{t("inspector.col")}</FieldLabel>
+          <TextInput
             id="inspector-col"
             type="number"
-            className="input input-sm w-16"
+            className="w-16"
             value={element.position.col}
             onChange={(event) => {
               const col = integerFrom(event);
               if (col !== null) moveTo(col, element.position.row);
             }}
           />
-          <label className="label" htmlFor="inspector-row">
-            {t("inspector.row")}
-          </label>
-          <input
+          <FieldLabel htmlFor="inspector-row">{t("inspector.row")}</FieldLabel>
+          <TextInput
             id="inspector-row"
             type="number"
-            className="input input-sm w-16"
+            className="w-16"
             value={element.position.row}
             onChange={(event) => {
               const row = integerFrom(event);
@@ -120,32 +120,31 @@ function SelectedElementFields({ element }: { element: Element }) {
             }}
           />
         </div>
-      </fieldset>
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">{t("inspector.size")}</legend>
+      </Field>
+      <Field legend={t("inspector.size")}>
         <div className="flex items-center gap-2">
-          <label className="label" htmlFor="inspector-width">
+          <FieldLabel htmlFor="inspector-width">
             {t("inspector.width")}
-          </label>
-          <input
+          </FieldLabel>
+          <TextInput
             id="inspector-width"
             type="number"
             min={1}
-            className="input input-sm w-16"
+            className="w-16"
             value={element.size.width}
             onChange={(event) => {
               const width = integerFrom(event);
               if (width !== null) resizeTo(width, element.size.height);
             }}
           />
-          <label className="label" htmlFor="inspector-height">
+          <FieldLabel htmlFor="inspector-height">
             {t("inspector.height")}
-          </label>
-          <input
+          </FieldLabel>
+          <TextInput
             id="inspector-height"
             type="number"
             min={1}
-            className="input input-sm w-16"
+            className="w-16"
             value={element.size.height}
             onChange={(event) => {
               const height = integerFrom(event);
@@ -153,16 +152,13 @@ function SelectedElementFields({ element }: { element: Element }) {
             }}
           />
         </div>
-      </fieldset>
+      </Field>
       {element instanceof TextElement && <TextContentField element={element} />}
       {element instanceof LineElement && (
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">
-            {t("inspector.orientation")}
-          </legend>
-          <select
+        <Field legend={t("inspector.orientation")}>
+          <Select
             aria-label={t("inspector.orientationField")}
-            className="select select-sm w-full"
+            className="w-full"
             value={element.orientation}
             onChange={(event) =>
               editElementProps(element.id, { orientation: event.target.value })
@@ -170,8 +166,8 @@ function SelectedElementFields({ element }: { element: Element }) {
           >
             <option value="h">{t("inspector.horizontal")}</option>
             <option value="v">{t("inspector.vertical")}</option>
-          </select>
-        </fieldset>
+          </Select>
+        </Field>
       )}
     </>
   );
@@ -197,11 +193,10 @@ function TextContentField({ element }: { element: TextElement }) {
   };
 
   return (
-    <fieldset className="fieldset">
-      <legend className="fieldset-legend">{t("inspector.text")}</legend>
-      <textarea
+    <Field legend={t("inspector.text")}>
+      <TextArea
         aria-label={t("inspector.textContent")}
-        className="textarea textarea-sm w-full"
+        className="w-full"
         rows={3}
         value={element.text}
         onChange={(event) =>
@@ -211,6 +206,6 @@ function TextContentField({ element }: { element: TextElement }) {
         onBlur={endTextEditing}
         onKeyDown={handleKeyDown}
       />
-    </fieldset>
+    </Field>
   );
 }

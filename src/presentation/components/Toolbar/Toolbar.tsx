@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
+import { Button } from "../../ui/button/Button";
+import { ButtonGroup } from "../../ui/button-group/ButtonGroup";
 
 /**
  * History and persistence actions. The tool palette lives in the
@@ -17,31 +19,21 @@ export function Toolbar() {
 
   return (
     <div className="flex items-center gap-4 border-b border-base-300 bg-base-200 px-4 py-2">
-      <div className="join">
-        <button
-          type="button"
-          className="btn join-item btn-sm"
-          disabled={!canUndo}
-          onClick={undo}
-        >
+      <ButtonGroup>
+        <Button size="sm" disabled={!canUndo} onClick={undo}>
           {t("toolbar.undo")}
-        </button>
-        <button
-          type="button"
-          className="btn join-item btn-sm"
-          disabled={!canRedo}
-          onClick={redo}
-        >
+        </Button>
+        <Button size="sm" disabled={!canRedo} onClick={redo}>
           {t("toolbar.redo")}
-        </button>
-      </div>
-      <button
-        type="button"
-        className="btn btn-neutral btn-sm"
+        </Button>
+      </ButtonGroup>
+      <Button
+        variant="neutral"
+        size="sm"
         onClick={() => void saveCurrentDocument()}
       >
         {t("toolbar.save")}
-      </button>
+      </Button>
     </div>
   );
 }

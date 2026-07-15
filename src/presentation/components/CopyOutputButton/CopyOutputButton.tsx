@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
+import { Button } from "../../ui/button/Button";
 
 /**
  * The product's endgame: copies the raw ASCII export (exactly what feeds the
@@ -22,12 +23,8 @@ export function CopyOutputButton() {
   };
 
   return (
-    <button
-      type="button"
-      className="btn btn-primary"
-      onClick={() => void copyToClipboard()}
-    >
+    <Button variant="primary" onClick={() => void copyToClipboard()}>
       {copied ? t("copyOutput.copied") : t("copyOutput.idle")}
-    </button>
+    </Button>
   );
 }

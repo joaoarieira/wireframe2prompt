@@ -128,6 +128,34 @@ Presentation concern only.
 
 ---
 
+## UI & styling
+
+The design system is quarantined so it can be swapped without touching features.
+
+- **daisyUI component classes** (`btn`, `join`, `input`, `textarea`, `select`,
+  `fieldset`, `list`, `list-row`, `link`, `alert`, `loading`, `navbar`,
+  `rounded-box`, …) are **forbidden outside `src/presentation/ui/`**. Features
+  compose the primitives there (`Button`, `ButtonLink`, `ButtonGroup`,
+  `TextInput`, `TextArea`, `Select`, `Field`/`FieldLabel`, `List`/`ListRow`/
+  `ListCell`, `TextLink`, `Alert`, `Spinner`, `FloatingBar`).
+- **Need a new control?** Create or extend a primitive in
+  `src/presentation/ui/` (with a co-located spec that asserts its class
+  contract) — never reach for the raw daisyUI class in a feature.
+- **Colors:** only semantic theme tokens (`base-100/200/300`, `base-content`,
+  `primary`, `neutral`, `error`, …). Never raw Tailwind colors (`red-500`) and
+  never `dark:` — the active theme resolves light/dark automatically.
+- **Tailwind in features:** layout / spacing / typography utilities only
+  (`flex`, `gap-2`, `p-4`, `w-16`, `truncate`, `text-sm`).
+- **Themes** live in `src/index.css` (`wireframe-light` default,
+  `wireframe-dark` via `prefersdark`). A global visual change = edit the theme,
+  not the components. All daisyUI theme variables are required.
+- **`primary` appears once per screen** — the single most important action.
+- Primitives forward native props via `...rest` and accept `className` for
+  **layout only**; the design-system classes are computed inside the primitive
+  (see `ui/button/buttonClasses.ts`). The `ui/` folder is the only swap surface.
+
+---
+
 ## Code style
 
 - Functions: 4-20 lines. Split if longer.

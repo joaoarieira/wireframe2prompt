@@ -1,5 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
+import { List, ListCell, ListRow } from "../../ui/list/List";
+import { ButtonGroup } from "../../ui/button-group/ButtonGroup";
+import { Button } from "../../ui/button/Button";
 
 /**
  * Stacking order of the document, topmost first. Clicking a row selects the
@@ -25,14 +28,14 @@ export function LayersPanel() {
   }
 
   return (
-    <ul className="list p-2">
+    <List className="p-2">
       {topmostFirst.map((element) => {
         // Custom name if the user gave one, else the translated element kind.
         const displayName = element.name ?? t(`elementKind.${element.kind}`);
         return (
-          <li
+          <ListRow
             key={element.id}
-            className={`list-row cursor-pointer items-center p-2 ${
+            className={`cursor-pointer items-center p-2 ${
               element.id === selectedElementId ? "bg-base-300" : ""
             }`}
             onClick={() => {
@@ -41,17 +44,18 @@ export function LayersPanel() {
               openInspector();
             }}
           >
-            <span
-              className="list-col-grow min-w-0 truncate text-sm"
+            <ListCell
+              grow
+              className="min-w-0 truncate text-sm"
               title={displayName}
             >
               {displayName}
-            </span>
+            </ListCell>
             <span className="text-xs opacity-50">z{element.zIndex}</span>
-            <span className="join">
-              <button
-                type="button"
-                className="btn join-item btn-ghost btn-xs"
+            <ButtonGroup>
+              <Button
+                variant="ghost"
+                size="xs"
                 aria-label={t("layers.bringForward", { name: displayName })}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -59,10 +63,10 @@ export function LayersPanel() {
                 }}
               >
                 ▲
-              </button>
-              <button
-                type="button"
-                className="btn join-item btn-ghost btn-xs"
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
                 aria-label={t("layers.sendBackward", { name: displayName })}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -70,11 +74,11 @@ export function LayersPanel() {
                 }}
               >
                 ▼
-              </button>
-            </span>
-          </li>
+              </Button>
+            </ButtonGroup>
+          </ListRow>
         );
       })}
-    </ul>
+    </List>
   );
 }

@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
 import { Toolbar } from "../components/Toolbar/Toolbar";
@@ -6,6 +5,9 @@ import { Canvas } from "../components/Canvas/Canvas";
 import { LayersPanel } from "../components/LayersPanel/LayersPanel";
 import { InspectorPanel } from "../components/InspectorPanel/InspectorPanel";
 import { FloatingFooter } from "../components/FloatingFooter/FloatingFooter";
+import { Alert } from "../ui/alert/Alert";
+import { Spinner } from "../ui/spinner/Spinner";
+import { ButtonLink } from "../ui/button-link/ButtonLink";
 
 /** The editor screen: toolbar on top, layers | canvas | inspector+output. */
 export function EditorPage() {
@@ -19,12 +21,12 @@ export function EditorPage() {
   if (documentStatus === "missing") {
     return (
       <div className="grid h-screen place-items-center">
-        <div className="alert alert-warning">
+        <Alert variant="warning">
           <span>{t("editor.notFound")}</span>
-          <Link to="/" className="btn btn-sm">
+          <ButtonLink to="/" size="sm">
             {t("editor.backToDocuments")}
-          </Link>
-        </div>
+          </ButtonLink>
+        </Alert>
       </div>
     );
   }
@@ -32,17 +34,17 @@ export function EditorPage() {
   if (documentStatus !== "ready") {
     return (
       <div className="grid h-screen place-items-center">
-        <span className="loading loading-spinner loading-lg" />
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="navbar min-h-0 gap-2 bg-base-200 py-1">
-        <Link to="/" className="btn btn-ghost btn-sm">
+      <header className="flex items-center gap-2 bg-base-200 px-2 py-1">
+        <ButtonLink to="/" variant="ghost" size="sm">
           {t("editor.documentsShort")}
-        </Link>
+        </ButtonLink>
         <span className="text-sm font-bold">{documentName}</span>
       </header>
       <Toolbar />
