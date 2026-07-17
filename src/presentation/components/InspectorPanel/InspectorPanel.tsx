@@ -7,6 +7,12 @@ import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { TextElement } from "../../../domain/entities/element/TextElement";
+import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
+import { CardElement } from "../../../domain/entities/element/CardElement";
+import { ModalElement } from "../../../domain/entities/element/ModalElement";
+import { TableElement } from "../../../domain/entities/element/TableElement";
+import { TabsElement } from "../../../domain/entities/element/TabsElement";
+import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
 import { Button } from "../../ui/button/Button";
 import { Field, FieldLabel } from "../../ui/field/Field";
 import { TextInput } from "../../ui/text-input/TextInput";
@@ -121,38 +127,40 @@ function SelectedElementFields({ element }: { element: Element }) {
           />
         </div>
       </Field>
-      <Field legend={t("inspector.size")}>
-        <div className="flex items-center gap-2">
-          <FieldLabel htmlFor="inspector-width">
-            {t("inspector.width")}
-          </FieldLabel>
-          <TextInput
-            id="inspector-width"
-            type="number"
-            min={1}
-            className="w-16"
-            value={element.size.width}
-            onChange={(event) => {
-              const width = integerFrom(event);
-              if (width !== null) resizeTo(width, element.size.height);
-            }}
-          />
-          <FieldLabel htmlFor="inspector-height">
-            {t("inspector.height")}
-          </FieldLabel>
-          <TextInput
-            id="inspector-height"
-            type="number"
-            min={1}
-            className="w-16"
-            value={element.size.height}
-            onChange={(event) => {
-              const height = integerFrom(event);
-              if (height !== null) resizeTo(element.size.width, height);
-            }}
-          />
-        </div>
-      </Field>
+      {!(element instanceof FreeDrawElement) && (
+        <Field legend={t("inspector.size")}>
+          <div className="flex items-center gap-2">
+            <FieldLabel htmlFor="inspector-width">
+              {t("inspector.width")}
+            </FieldLabel>
+            <TextInput
+              id="inspector-width"
+              type="number"
+              min={1}
+              className="w-16"
+              value={element.size.width}
+              onChange={(event) => {
+                const width = integerFrom(event);
+                if (width !== null) resizeTo(width, element.size.height);
+              }}
+            />
+            <FieldLabel htmlFor="inspector-height">
+              {t("inspector.height")}
+            </FieldLabel>
+            <TextInput
+              id="inspector-height"
+              type="number"
+              min={1}
+              className="w-16"
+              value={element.size.height}
+              onChange={(event) => {
+                const height = integerFrom(event);
+                if (height !== null) resizeTo(element.size.width, height);
+              }}
+            />
+          </div>
+        </Field>
+      )}
       {element instanceof TextElement && <TextContentField element={element} />}
       {element instanceof LineElement && (
         <Field legend={t("inspector.orientation")}>
@@ -168,6 +176,35 @@ function SelectedElementFields({ element }: { element: Element }) {
             <option value="v">{t("inspector.vertical")}</option>
           </Select>
         </Field>
+      )}
+      {element instanceof ArrowElement && (
+        <Field legend={t("inspector.direction")}>
+          <Select
+            aria-label={t("inspector.directionField")}
+            className="w-full"
+            value={element.direction}
+            onChange={(event) =>
+              editElementProps(element.id, { direction: event.target.value })
+            }
+          >
+            <option value="right">{t("inspector.right")}</option>
+            <option value="left">{t("inspector.left")}</option>
+            <option value="up">{t("inspector.up")}</option>
+            <option value="down">{t("inspector.down")}</option>
+          </Select>
+        </Field>
+      )}
+      {element instanceof CardElement && (
+        <CardTitleField element={element} />
+      )}
+      {element instanceof ModalElement && (
+        <ModalTitleField element={element} />
+      )}
+      {element instanceof TableElement && (
+        <TableShapeFields element={element} />
+      )}
+      {element instanceof TabsElement && (
+        <TabsFields element={element} />
       )}
     </>
   );
@@ -207,5 +244,142 @@ function TextContentField({ element }: { element: TextElement }) {
         onKeyDown={handleKeyDown}
       />
     </Field>
+  );
+}
+
+function CardTitleField({ element }: { element: CardElement }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
+
+  return (
+    <Field legend={t("inspector.title")}>
+      <TextInput
+        type="text"
+        aria-label={t("inspector.titleField")}
+        className="w-full"
+        value={element.title ?? ""}
+        onChange={(event) =>
+          editElementProps(element.id, {
+            title: event.target.value === "" ? null : event.target.value,
+          })
+        }
+        onFocus={() => beginTextEditing(element.id)}
+        onBlur={endTextEditing}
+      />
+    </Field>
+  );
+}
+
+function ModalTitleField({ element }: { element: ModalElement }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
+
+  return (
+    <Field legend={t("inspector.title")}>
+      <TextInput
+        type="text"
+        aria-label={t("inspector.titleField")}
+        className="w-full"
+        value={element.title ?? ""}
+        onChange={(event) =>
+          editElementProps(element.id, {
+            title: event.target.value === "" ? null : event.target.value,
+          })
+        }
+        onFocus={() => beginTextEditing(element.id)}
+        onBlur={endTextEditing}
+      />
+    </Field>
+  );
+}
+
+function TableShapeFields({ element }: { element: TableElement }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+
+  return (
+    <>
+      <Field legend={t("inspector.tableColumns")}>
+        <TextInput
+          type="number"
+          min={1}
+          className="w-16"
+          value={element.columns}
+          onChange={(event) => {
+            const columns = integerFrom(event);
+            if (columns !== null && columns >= 1) {
+              editElementProps(element.id, { columns });
+            }
+          }}
+        />
+      </Field>
+      <Field legend={t("inspector.tableRows")}>
+        <TextInput
+          type="number"
+          min={1}
+          className="w-16"
+          value={element.rows}
+          onChange={(event) => {
+            const rows = integerFrom(event);
+            if (rows !== null && rows >= 1) {
+              editElementProps(element.id, { rows });
+            }
+          }}
+        />
+      </Field>
+    </>
+  );
+}
+
+function TabsFields({ element }: { element: TabsElement }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
+
+  return (
+    <>
+      <Field legend={t("inspector.tabs")}>
+        <TextArea
+          aria-label={t("inspector.tabsField")}
+          className="w-full"
+          rows={3}
+          value={element.tabs.join("\n")}
+          onChange={(event) => {
+            const tabs = event.target.value
+              .split("\n")
+              .filter((s) => s.length > 0);
+            if (tabs.length > 0) {
+              editElementProps(element.id, { tabs });
+            }
+          }}
+          onFocus={() => beginTextEditing(element.id)}
+          onBlur={endTextEditing}
+        />
+      </Field>
+      <Field legend={t("inspector.activeTab")}>
+        <Select
+          aria-label={t("inspector.activeTabField")}
+          className="w-full"
+          value={element.active}
+          onChange={(event) => {
+            editElementProps(element.id, {
+              active: parseInt(event.target.value, 10),
+            });
+          }}
+        >
+          {element.tabs.map((tab, i) => (
+            // eslint-disable-next-line react-x/no-array-index-key -- tab index IS the value here
+            <option key={i} value={i}>
+              {tab}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </>
   );
 }

@@ -4,14 +4,19 @@ import { Position } from "../../domain/entities/position/Position";
 import { Size } from "../../domain/entities/size/Size";
 import { Layer } from "../../domain/entities/layer/Layer";
 import { BorderStyle } from "../../domain/value-objects/border-style/BorderStyle";
+import { CellChar } from "../../domain/entities/cell-char/CellChar";
 import { BoxElement } from "../../domain/entities/element/BoxElement";
 import { LineElement } from "../../domain/entities/element/LineElement";
 import { TextElement } from "../../domain/entities/element/TextElement";
-import type {
-  Element,
-  ElementBaseProps,
-} from "../../domain/entities/element/Element";
+import { ArrowElement } from "../../domain/entities/element/ArrowElement";
+import { CardElement } from "../../domain/entities/element/CardElement";
+import { ModalElement } from "../../domain/entities/element/ModalElement";
+import { TableElement } from "../../domain/entities/element/TableElement";
+import { TabsElement } from "../../domain/entities/element/TabsElement";
+import { FreeDrawElement } from "../../domain/entities/element/FreeDrawElement";
+import type { Element, ElementBaseProps } from "../../domain/entities/element/Element";
 import type { LineOrientation } from "../../domain/entities/element/LineElement";
+import type { ArrowDirection } from "../../domain/entities/element/ArrowElement";
 
 /**
  * Persistence format version. Bumped when the on-disk shape changes so old
@@ -76,10 +81,49 @@ interface SerializedTextElement extends SerializedElementBase {
   text: string;
 }
 
+interface SerializedArrowElement extends SerializedElementBase {
+  kind: "arrow";
+  direction: ArrowDirection;
+}
+
+interface SerializedCardElement extends SerializedElementBase {
+  kind: "card";
+  title: string | null;
+}
+
+interface SerializedModalElement extends SerializedElementBase {
+  kind: "modal";
+  title: string | null;
+}
+
+interface SerializedTableElement extends SerializedElementBase {
+  kind: "table";
+  columns: number;
+  rows: number;
+}
+
+interface SerializedTabsElement extends SerializedElementBase {
+  kind: "tabs";
+  tabs: string[];
+  active: number;
+}
+
+interface SerializedFreeDrawElement extends SerializedElementBase {
+  kind: "freedraw";
+  /** JSON cannot represent Map; cells are stored as a plain object. */
+  cells: Record<string, string>;
+}
+
 type SerializedElement =
   | SerializedBoxElement
   | SerializedLineElement
-  | SerializedTextElement;
+  | SerializedTextElement
+  | SerializedArrowElement
+  | SerializedCardElement
+  | SerializedModalElement
+  | SerializedTableElement
+  | SerializedTabsElement
+  | SerializedFreeDrawElement;
 
 export interface SerializedDocument {
   version: number;
@@ -128,8 +172,30 @@ function serializeElement(element: Element): SerializedElement {
   if (element instanceof TextElement) {
     return { ...base, kind: "text", text: element.text };
   }
+  if (element instanceof ArrowElement) {
+    return { ...base, kind: "arrow", direction: element.direction };
+  }
+  if (element instanceof CardElement) {
+    return { ...base, kind: "card", title: element.title };
+  }
+  if (element instanceof ModalElement) {
+    return { ...base, kind: "modal", title: element.title };
+  }
+  if (element instanceof TableElement) {
+    return { ...base, kind: "table", columns: element.columns, rows: element.rows };
+  }
+  if (element instanceof TabsElement) {
+    return { ...base, kind: "tabs", tabs: [...element.tabs], active: element.active };
+  }
+  if (element instanceof FreeDrawElement) {
+    const cells: Record<string, string> = {};
+    for (const [key, char] of element.cells) {
+      cells[key] = char.value;
+    }
+    return { ...base, kind: "freedraw", cells };
+  }
   throw new Error(
-    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text`,
+    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | freedraw`,
   );
 }
 
@@ -177,9 +243,34 @@ function deserializeElement(data: SerializedElement): Element {
       return LineElement.create({ ...base, orientation: data.orientation });
     case "text":
       return TextElement.create({ ...base, text: data.text });
+    case "arrow":
+      return ArrowElement.create({ ...base, direction: data.direction });
+    case "card":
+      return CardElement.create({ ...base, title: data.title });
+    case "modal":
+      return ModalElement.create({ ...base, title: data.title });
+    case "table":
+      return TableElement.create({ ...base, columns: data.columns, rows: data.rows });
+    case "tabs":
+      return TabsElement.create({ ...base, tabs: data.tabs, active: data.active });
+    case "freedraw": {
+      const cells = new Map<string, CellChar>();
+      for (const [key, value] of Object.entries(data.cells)) {
+        cells.set(key, CellChar.create(value));
+      }
+      // FreeDrawElement.create recomputes size from cells; base.size is ignored.
+      return FreeDrawElement.create({
+        id: base.id,
+        position: base.position,
+        zIndex: base.zIndex,
+        layerId: base.layerId,
+        name: base.name,
+        cells,
+      });
+    }
     default:
       throw new Error(
-        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text`,
+        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | freedraw`,
       );
   }
 }

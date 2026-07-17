@@ -19,6 +19,8 @@ import { SaveDocumentUseCase } from "../application/usecases/SaveDocumentUseCase
 import { LoadDocumentUseCase } from "../application/usecases/LoadDocumentUseCase";
 import { UndoUseCase } from "../application/usecases/UndoUseCase";
 import { RedoUseCase } from "../application/usecases/RedoUseCase";
+import { DrawFreeCharUseCase } from "../application/usecases/DrawFreeCharUseCase";
+import { EraseCellUseCase } from "../application/usecases/EraseCellUseCase";
 
 /**
  * Composition root output: the fully-wired use cases the Presentation layer
@@ -38,6 +40,8 @@ export interface AppContainer {
   loadDocument: LoadDocumentUseCase;
   undo: UndoUseCase;
   redo: RedoUseCase;
+  drawFreeChar: DrawFreeCharUseCase;
+  eraseCell: EraseCellUseCase;
   readonly history: IHistory;
   readonly repository: IDocumentRepository;
   readonly composer: IComposer;
@@ -46,7 +50,7 @@ export interface AppContainer {
 export interface ContainerOptions {
   /** Persistence adapter; defaults to the browser `localStorage`. */
   storage?: WebStorage;
-  /** Glyph mapper registry; defaults to the Box/Line/Text mappers. */
+  /** Glyph mapper registry; defaults to all implemented mappers. */
   registry?: GlyphMapperRegistry;
 }
 
@@ -80,6 +84,8 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     loadDocument: new LoadDocumentUseCase(repository),
     undo: new UndoUseCase(history),
     redo: new RedoUseCase(history),
+    drawFreeChar: new DrawFreeCharUseCase(history),
+    eraseCell: new EraseCellUseCase(history),
     history,
     repository,
     composer,

@@ -4,6 +4,7 @@ import { FakeToolContext } from "../../../tests/doubles/FakeToolContext";
 import { Position } from "../../../domain/entities/position/Position";
 
 const cell = Position.create(2, 3);
+const noPoint = { clientX: 0, clientY: 0 };
 
 describe("createPlacementTool", () => {
   test("carries the kind and label key it was created with", () => {
@@ -17,7 +18,7 @@ describe("createPlacementTool", () => {
     const tool = createPlacementTool("box", "tools.box");
     const context = new FakeToolContext();
 
-    tool.onCellPointerDown(context, cell);
+    tool.onCellPointerDown(context, cell, noPoint);
 
     expect(context.placeCalls).toEqual([{ kind: "box", cell }]);
   });
@@ -26,8 +27,8 @@ describe("createPlacementTool", () => {
     const tool = createPlacementTool("text", "tools.text");
     const context = new FakeToolContext();
 
-    tool.onCellPointerMove(context, cell);
-    tool.onCellPointerUp(context, cell);
+    tool.onCellPointerMove(context, cell, noPoint);
+    tool.onCellPointerUp(context, cell, noPoint);
 
     expect(context.placeCalls).toEqual([]);
     expect(context.updateDragCalls).toEqual([]);

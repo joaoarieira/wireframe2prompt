@@ -2,11 +2,16 @@ import type { Element } from "../../../domain/entities/element/Element";
 import type { Position } from "../../../domain/entities/position/Position";
 import type { PlaceableKind } from "../element-factory/elementFactory";
 
+/** Raw pointer coordinates in CSS pixels, as-received from DOM events. */
+export interface SurfacePoint {
+  clientX: number;
+  clientY: number;
+}
+
 /**
  * The narrow slice of editor behaviour a canvas tool is allowed to drive.
  * Tools never touch the store or use cases directly — the store hands them
- * this context, which keeps tools trivial to test and to add (hand/pan and
- * zoom tools will only need extra hooks here, not store rewrites).
+ * this context, which keeps tools trivial to test and to add.
  */
 export interface ToolContext {
   elementAt(cell: Position): Element | null;
@@ -15,6 +20,13 @@ export interface ToolContext {
   beginMove(elementId: string, cell: Position): void;
   updateDrag(cell: Position): void;
   commitDrag(): void;
+  beginDrawStroke(cell: Position): void;
+  beginEraseStroke(cell: Position): void;
+  extendStroke(cell: Position): void;
+  commitStroke(): void;
+  beginPan(point: SurfacePoint): void;
+  updatePan(point: SurfacePoint): void;
+  endPan(): void;
 }
 
 /**
@@ -29,7 +41,7 @@ export interface CanvasTool {
    * `t(tool.labelKey)`.
    */
   readonly labelKey: string;
-  onCellPointerDown(context: ToolContext, cell: Position): void;
-  onCellPointerMove(context: ToolContext, cell: Position): void;
-  onCellPointerUp(context: ToolContext, cell: Position): void;
+  onCellPointerDown(context: ToolContext, cell: Position, point: SurfacePoint): void;
+  onCellPointerMove(context: ToolContext, cell: Position, point: SurfacePoint): void;
+  onCellPointerUp(context: ToolContext, cell: Position, point: SurfacePoint): void;
 }

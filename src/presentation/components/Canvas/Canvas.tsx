@@ -1,5 +1,5 @@
-import { useMemo, useRef } from "react";
-import type { CSSProperties, KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import type { GridSurfaceComponent } from "./GridSurface";
 import { DomGridSurface } from "./DomGridSurface";
 import { SelectionOverlay } from "./SelectionOverlay";
@@ -14,30 +14,88 @@ import { editorActionForKey } from "../../state/keyboard/editorKeyAction";
 
 const CELL_SIZE_VARS = { "--cell-w": "10px", "--cell-h": "18px" };
 
+/** `PointerEvent.button` for the mouse wheel/middle button. */
+const MIDDLE_MOUSE_BUTTON = 1;
+
+/** `PointerEvent.button` for the left/primary button. */
+const PRIMARY_MOUSE_BUTTON = 0;
+
+/** Wheel pan travels a third of the raw scroll delta — it was moving too far. */
+const WHEEL_PAN_FRACTION = 1 / 3;
+
+/** Eases the visual transform so wheel scrolling glides instead of jumping. */
+const SMOOTH_PAN_TRANSITION = "transform 150ms ease-out";
+
 export interface CanvasProps {
   /** Rendering strategy; defaults to the DOM grid (CanvasRenderer later). */
   surface?: GridSurfaceComponent;
 }
 
 /**
- * The interactive drawing area: rasterizes the (drag-previewed) document
+ * The interactive drawing area: rasterizes the (drag/stroke-previewed) document
  * through the store, delegates painting to the pluggable surface, and overlays
  * selection + resize handle. Also the keyboard target for editor shortcuts.
  */
 export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const panning = useRef(false);
+  // Enables the eased transform, but only for wheel scrolling: zoom and pointer
+  // drags below turn it off so they stay pixel-exact and lag-free.
+  const [smoothScroll, setSmoothScroll] = useState(false);
   const document = useEditorStore((state) => state.document);
   const drag = useEditorStore((state) => state.drag);
+  const stroke = useEditorStore((state) => state.stroke);
   const selectedElementId = useEditorStore((state) => state.selectedElementId);
+  const activeToolId = useEditorStore((state) => state.activeToolId);
+  const panDrag = useEditorStore((state) => state.panDrag);
   const viewport = useEditorStore((state) => state.viewport);
   const composeBuffer = useEditorStore((state) => state.composeBuffer);
   const pointerDownOnCell = useEditorStore((state) => state.pointerDownOnCell);
   const pointerMoveOnCell = useEditorStore((state) => state.pointerMoveOnCell);
   const pointerUpOnCell = useEditorStore((state) => state.pointerUpOnCell);
   const applyKeyAction = useEditorStore((state) => state.applyKeyAction);
+  const zoomAtPoint = useEditorStore((state) => state.zoomAtPoint);
+  const beginPan = useEditorStore((state) => state.beginPan);
+  const updatePan = useEditorStore((state) => state.updatePan);
+  const endPan = useEditorStore((state) => state.endPan);
+  const panViewportBy = useEditorStore((state) => state.panViewportBy);
+  const currentZoom = useEditorStore((state) => state.viewport.zoom);
+
+  // Wheel handling via a native (non-passive) listener so we can
+  // preventDefault() and pre-empt the browser's page zoom/scroll:
+  //   - Ctrl+wheel  → zoom, anchored under the cursor (unchanged);
+  //   - Shift+wheel → pan horizontally;
+  //   - wheel       → pan vertically.
+  // `deltaY || deltaX` reads the scroll amount on either axis, since browsers
+  // report Shift+wheel as horizontal delta on some platforms.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (el === null) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.ctrlKey) {
+        setSmoothScroll(false);
+        const rect = el.getBoundingClientRect();
+        const anchorX = (event.clientX - rect.left) / currentZoom;
+        const anchorY = (event.clientY - rect.top) / currentZoom;
+        const step = event.deltaY > 0 ? -0.1 : 0.1;
+        zoomAtPoint(currentZoom + step, anchorX, anchorY);
+        return;
+      }
+      setSmoothScroll(true);
+      const amount = (event.deltaY || event.deltaX) * WHEEL_PAN_FRACTION;
+      if (event.shiftKey) {
+        panViewportBy(-amount, 0);
+      } else {
+        panViewportBy(0, -amount);
+      }
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [currentZoom, zoomAtPoint, panViewportBy]);
 
   const visibleDocument =
-    document === null ? null : previewedDocument(document, drag);
+    document === null ? null : previewedDocument(document, drag, stroke);
   const buffer = useMemo(
     () => (visibleDocument === null ? null : composeBuffer(visibleDocument)),
     [visibleDocument, composeBuffer],
@@ -74,17 +132,85 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     applyKeyAction(action);
   };
 
+  // Two gestures pan from this outer element:
+  //   - the mouse wheel (middle button) with ANY tool — it borrows the hand
+  //     tool without touching the active one (we never call setActiveTool);
+  //   - the hand tool's primary button on the canvas backdrop (the padding, or
+  //     wherever the paper was panned off to) — `event.target === currentTarget`
+  //     means the press missed the paper. Over the paper the grid surface's tool
+  //     routing already drives the hand pan, so we must not double-start it here.
+  // Panning from the backdrop is what lets the user recover a canvas dragged
+  // fully out of view.
+  const shouldStartPan = (event: PointerEvent<HTMLDivElement>): boolean => {
+    if (event.button === MIDDLE_MOUSE_BUTTON) {
+      return true;
+    }
+    return (
+      event.button === PRIMARY_MOUSE_BUTTON &&
+      activeToolId === "hand" &&
+      event.target === event.currentTarget
+    );
+  };
+
+  const handlePanStart = (event: PointerEvent<HTMLDivElement>) => {
+    if (!shouldStartPan(event)) {
+      return;
+    }
+    event.preventDefault(); // stops the browser's middle-button autoscroll
+    panning.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    beginPan({ clientX: event.clientX, clientY: event.clientY });
+  };
+
+  const handlePanMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!panning.current) {
+      return;
+    }
+    updatePan({ clientX: event.clientX, clientY: event.clientY });
+  };
+
+  const handlePanEnd = (event: PointerEvent<HTMLDivElement>) => {
+    if (!panning.current) {
+      return;
+    }
+    panning.current = false;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    endPan();
+  };
+
+  // Hand cursor feedback on the whole canvas (backdrop included), since the hand
+  // tool and middle-button pan work everywhere now — not just over the paper.
+  // It must live on this outer element because the pan gesture captures the
+  // pointer here, and a captured pointer shows the CAPTURING element's cursor;
+  // putting it deeper let the grab flip back to default mid-drag. `panDrag` is
+  // set while dragging with the hand tool or middle-button panning → "grabbing";
+  // an idle hand tool → an open "grab". The `[&_*]` variant forces it onto the
+  // grid too, which otherwise sets its own `cursor-crosshair`.
+  const cursorClass =
+    panDrag !== null
+      ? "cursor-grabbing [&_*]:cursor-grabbing"
+      : activeToolId === "hand"
+        ? "cursor-grab [&_*]:cursor-grab"
+        : "";
+
   return (
     <div
-      className="grid h-full place-items-center overflow-auto bg-base-300 p-8 outline-none"
+      className={`grid h-full place-items-center overflow-hidden bg-base-300 p-8 outline-none ${cursorClass}`}
       tabIndex={0}
       data-testid="canvas"
       onKeyDown={handleKeyDown}
+      onPointerDown={handlePanStart}
+      onPointerMove={handlePanMove}
+      onPointerUp={handlePanEnd}
     >
       <div
+        data-testid="canvas-transform"
         style={{
           transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.zoom})`,
           transformOrigin: "top left",
+          // Smooth only wheel scrolling; an active drag (panDrag) stays instant.
+          transition:
+            smoothScroll && panDrag === null ? SMOOTH_PAN_TRANSITION : "none",
         }}
       >
         <div

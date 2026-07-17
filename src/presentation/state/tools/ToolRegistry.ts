@@ -1,11 +1,13 @@
 import type { CanvasTool } from "./CanvasTool";
 import { selectTool } from "./selectTool";
 import { createPlacementTool } from "./placementTool";
+import { pencilTool } from "./pencilTool";
+import { eraserTool } from "./eraserTool";
+import { handTool } from "./handTool";
 
 /**
  * Open/closed registry of canvas tools, mirroring the GlyphMapperRegistry:
- * future tools (hand/pan, zoom, pencil, eraser) are added by registering a
- * strategy — no switch statements to grow.
+ * future tools are added by registering a strategy — no switch statements.
  */
 export class ToolRegistry {
   private readonly tools = new Map<string, CanvasTool>();
@@ -34,12 +36,20 @@ export class ToolRegistry {
   }
 }
 
-/** The MVP tool set: select plus one placement tool per implemented mapper. */
+/** The full default tool set. */
 export function createDefaultToolRegistry(): ToolRegistry {
   const registry = new ToolRegistry();
   registry.register(selectTool);
   registry.register(createPlacementTool("box", "tools.box"));
   registry.register(createPlacementTool("line", "tools.line"));
   registry.register(createPlacementTool("text", "tools.text"));
+  registry.register(createPlacementTool("arrow", "tools.arrow"));
+  registry.register(createPlacementTool("card", "tools.card"));
+  registry.register(createPlacementTool("modal", "tools.modal"));
+  registry.register(createPlacementTool("table", "tools.table"));
+  registry.register(createPlacementTool("tabs", "tools.tabs"));
+  registry.register(pencilTool);
+  registry.register(eraserTool);
+  registry.register(handTool);
   return registry;
 }

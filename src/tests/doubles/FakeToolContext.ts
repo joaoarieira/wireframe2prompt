@@ -1,7 +1,7 @@
 import type { Element } from "../../domain/entities/element/Element";
 import type { Position } from "../../domain/entities/position/Position";
 import type { PlaceableKind } from "../../presentation/state/element-factory/elementFactory";
-import type { ToolContext } from "../../presentation/state/tools/CanvasTool";
+import type { SurfacePoint, ToolContext } from "../../presentation/state/tools/CanvasTool";
 
 /**
  * Call-recording {@link ToolContext} fake for tool specs. `hit` controls what
@@ -14,6 +14,13 @@ export class FakeToolContext implements ToolContext {
   beginMoveCalls: Array<{ elementId: string; cell: Position }> = [];
   updateDragCalls: Position[] = [];
   commitDragCalls = 0;
+  beginDrawStrokeCalls: Position[] = [];
+  beginEraseStrokeCalls: Position[] = [];
+  extendStrokeCalls: Position[] = [];
+  commitStrokeCalls = 0;
+  beginPanCalls: SurfacePoint[] = [];
+  updatePanCalls: SurfacePoint[] = [];
+  endPanCalls = 0;
 
   elementAt(): Element | null {
     return this.hit;
@@ -37,5 +44,33 @@ export class FakeToolContext implements ToolContext {
 
   commitDrag(): void {
     this.commitDragCalls += 1;
+  }
+
+  beginDrawStroke(cell: Position): void {
+    this.beginDrawStrokeCalls.push(cell);
+  }
+
+  beginEraseStroke(cell: Position): void {
+    this.beginEraseStrokeCalls.push(cell);
+  }
+
+  extendStroke(cell: Position): void {
+    this.extendStrokeCalls.push(cell);
+  }
+
+  commitStroke(): void {
+    this.commitStrokeCalls += 1;
+  }
+
+  beginPan(point: SurfacePoint): void {
+    this.beginPanCalls.push(point);
+  }
+
+  updatePan(point: SurfacePoint): void {
+    this.updatePanCalls.push(point);
+  }
+
+  endPan(): void {
+    this.endPanCalls += 1;
   }
 }

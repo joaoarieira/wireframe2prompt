@@ -3,6 +3,7 @@ import type { PointerEvent } from "react";
 import type { GridSurfaceProps } from "./GridSurface";
 import { cellAtPoint, isWithinGrid } from "./cellGeometry";
 import type { Position } from "../../../domain/entities/position/Position";
+import type { SurfacePoint } from "../../state/tools/CanvasTool";
 
 /**
  * DOM implementation of the grid surface: one `<span>` per cell laid out with
@@ -26,14 +27,24 @@ export function DomGridSurface({
       event,
     );
 
+  const pointFrom = (event: PointerEvent<HTMLDivElement>): SurfacePoint => ({
+    clientX: event.clientX,
+    clientY: event.clientY,
+  });
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    // Only the primary button drives tools; middle/right are left for the
+    // Canvas's middle-button pan and the browser context menu.
+    if (event.button !== 0) {
+      return;
+    }
     const cell = cellFrom(event);
     if (cell === null || !isWithinGrid(cell, buffer.width, buffer.height)) {
       return;
     }
     dragging.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
-    onCellPointerDown(cell);
+    onCellPointerDown(cell, pointFrom(event));
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -41,7 +52,7 @@ export function DomGridSurface({
     if (!dragging.current || cell === null) {
       return;
     }
-    onCellPointerMove(cell);
+    onCellPointerMove(cell, pointFrom(event));
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -50,7 +61,7 @@ export function DomGridSurface({
       return;
     }
     dragging.current = false;
-    onCellPointerUp(cell);
+    onCellPointerUp(cell, pointFrom(event));
   };
 
   const rows = buffer.toString().split("\n");

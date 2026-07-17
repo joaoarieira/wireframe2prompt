@@ -37,7 +37,7 @@ describe("ToolRegistry", () => {
     expect(registry.list().map((tool) => tool.id)).toEqual(["box", "line"]);
   });
 
-  test("default registry ships select + box/line/text", () => {
+  test("default registry ships all palette tools", () => {
     const registry = createDefaultToolRegistry();
 
     expect(registry.list().map((tool) => tool.id)).toEqual([
@@ -45,6 +45,14 @@ describe("ToolRegistry", () => {
       "box",
       "line",
       "text",
+      "arrow",
+      "card",
+      "modal",
+      "table",
+      "tabs",
+      "pencil",
+      "eraser",
+      "hand",
     ]);
   });
 });

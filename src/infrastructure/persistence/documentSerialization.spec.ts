@@ -11,9 +11,16 @@ import { Position } from "../../domain/entities/position/Position";
 import { Size } from "../../domain/entities/size/Size";
 import { Layer } from "../../domain/entities/layer/Layer";
 import { BorderStyle } from "../../domain/value-objects/border-style/BorderStyle";
+import { CellChar } from "../../domain/entities/cell-char/CellChar";
 import { BoxElement } from "../../domain/entities/element/BoxElement";
 import { LineElement } from "../../domain/entities/element/LineElement";
 import { TextElement } from "../../domain/entities/element/TextElement";
+import { ArrowElement } from "../../domain/entities/element/ArrowElement";
+import { CardElement } from "../../domain/entities/element/CardElement";
+import { ModalElement } from "../../domain/entities/element/ModalElement";
+import { TableElement } from "../../domain/entities/element/TableElement";
+import { TabsElement } from "../../domain/entities/element/TabsElement";
+import { FreeDrawElement, freeDrawCellKey } from "../../domain/entities/element/FreeDrawElement";
 import { Element } from "../../domain/entities/element/Element";
 import type { ElementBaseProps } from "../../domain/entities/element/Element";
 
@@ -158,6 +165,133 @@ describe("documentSerialization", () => {
     const payload = serializeDocument(richDocument());
     (payload.elements[0] as { kind: string }).kind = "carousel";
     expect(() => deserializeDocument(payload)).toThrow(/carousel/);
+  });
+
+  test("round-trips ArrowElement", () => {
+    const arrow = ArrowElement.create({
+      id: "arr",
+      position: Position.create(1, 2),
+      size: Size.create(6, 1),
+      zIndex: 0,
+      layerId: null,
+      direction: "left",
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(10, 5),
+      elements: [arrow],
+    });
+    const restored = roundTrip(doc).getElement("arr") as ArrowElement;
+    expect(restored.kind).toBe("arrow");
+    expect(restored.direction).toBe("left");
+  });
+
+  test("round-trips CardElement", () => {
+    const card = CardElement.create({
+      id: "crd",
+      position: Position.create(0, 0),
+      size: Size.create(12, 6),
+      zIndex: 0,
+      layerId: null,
+      title: "Card",
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(15, 8),
+      elements: [card],
+    });
+    const restored = roundTrip(doc).getElement("crd") as CardElement;
+    expect(restored.kind).toBe("card");
+    expect(restored.title).toBe("Card");
+  });
+
+  test("round-trips ModalElement with null title", () => {
+    const modal = ModalElement.create({
+      id: "mod",
+      position: Position.create(0, 0),
+      size: Size.create(14, 7),
+      zIndex: 0,
+      layerId: null,
+      title: null,
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(16, 9),
+      elements: [modal],
+    });
+    const restored = roundTrip(doc).getElement("mod") as ModalElement;
+    expect(restored.kind).toBe("modal");
+    expect(restored.title).toBeNull();
+  });
+
+  test("round-trips TableElement", () => {
+    const table = TableElement.create({
+      id: "tbl",
+      position: Position.create(0, 0),
+      size: Size.create(13, 7),
+      zIndex: 0,
+      layerId: null,
+      columns: 3,
+      rows: 2,
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(15, 9),
+      elements: [table],
+    });
+    const restored = roundTrip(doc).getElement("tbl") as TableElement;
+    expect(restored.kind).toBe("table");
+    expect(restored.columns).toBe(3);
+    expect(restored.rows).toBe(2);
+  });
+
+  test("round-trips TabsElement", () => {
+    const tabs = TabsElement.create({
+      id: "tab",
+      position: Position.create(0, 0),
+      size: Size.create(15, 2),
+      zIndex: 0,
+      layerId: null,
+      tabs: ["Tab 1", "Tab 2"],
+      active: 1,
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(20, 5),
+      elements: [tabs],
+    });
+    const restored = roundTrip(doc).getElement("tab") as TabsElement;
+    expect(restored.kind).toBe("tabs");
+    expect([...restored.tabs]).toEqual(["Tab 1", "Tab 2"]);
+    expect(restored.active).toBe(1);
+  });
+
+  test("round-trips FreeDrawElement", () => {
+    const fd = FreeDrawElement.create({
+      id: "fd",
+      position: Position.create(2, 3),
+      zIndex: 0,
+      layerId: null,
+      cells: new Map([
+        [freeDrawCellKey(0, 0), CellChar.create("a")],
+        [freeDrawCellKey(1, 1), CellChar.create("b")],
+      ]),
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(10, 8),
+      elements: [fd],
+    });
+    const restored = roundTrip(doc).getElement("fd") as FreeDrawElement;
+    expect(restored.kind).toBe("freedraw");
+    expect(restored.charAt(Position.create(2, 3))?.value).toBe("a");
+    expect(restored.charAt(Position.create(3, 4))?.value).toBe("b");
   });
 
   test("serializeDocument rejects an element with no registered serializer", () => {

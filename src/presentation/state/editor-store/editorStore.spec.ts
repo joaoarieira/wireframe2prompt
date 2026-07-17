@@ -5,7 +5,7 @@ import {
   selectedElementOf,
   NoOpenDocumentError,
 } from "./editorStore";
-import type { EditorStore } from "./editorStore";
+import type { EditorStore, StrokeState } from "./editorStore";
 import { createContainer } from "../../../di/container";
 import type { AppContainer } from "../../../di/container";
 import { InMemoryWebStorage } from "../../../tests/doubles/InMemoryWebStorage";
@@ -15,6 +15,11 @@ import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import type { LineElement } from "../../../domain/entities/element/LineElement";
 import type { TextElement } from "../../../domain/entities/element/TextElement";
+import {
+  FreeDrawElement,
+  freeDrawCellKey,
+} from "../../../domain/entities/element/FreeDrawElement";
+import { CellChar } from "../../../domain/entities/cell-char/CellChar";
 
 const cell = (col: number, row: number) => Position.create(col, row);
 
@@ -523,8 +528,8 @@ describe("pointer routing and tools", () => {
     await openFixtureDoc(makeBox("b1"));
     store.getState().beginMove("b1", cell(0, 0));
 
-    expect(() => store.getState().setActiveTool("pencil")).toThrow(
-      'unknown tool "pencil"',
+    expect(() => store.getState().setActiveTool("zoom")).toThrow(
+      'unknown tool "zoom"',
     );
     store.getState().setActiveTool("line");
     expect(store.getState().activeToolId).toBe("line");
@@ -537,7 +542,20 @@ describe("pointer routing and tools", () => {
         .getState()
         .listTools()
         .map((tool) => tool.id),
-    ).toEqual(["select", "box", "line", "text"]);
+    ).toEqual([
+      "select",
+      "box",
+      "line",
+      "text",
+      "arrow",
+      "card",
+      "modal",
+      "table",
+      "tabs",
+      "pencil",
+      "eraser",
+      "hand",
+    ]);
   });
 });
 
@@ -583,14 +601,352 @@ describe("viewport", () => {
     expect(store.getState().viewport.offsetX).toBe(8);
     expect(store.getState().viewport.offsetY).toBe(-2);
   });
+
+  test("zoomAtPoint keeps the anchor pinned under the cursor", () => {
+    // Anchor at content-local (100, 50). Screen position before zoom is
+    // offset + anchor * zoom = 100 / 50; it must be identical after zooming.
+    const anchorX = 100;
+    const anchorY = 50;
+    const screenBefore = {
+      x: 0 + anchorX * 1,
+      y: 0 + anchorY * 1,
+    };
+
+    store.getState().zoomAtPoint(2, anchorX, anchorY);
+
+    const { zoom, offsetX, offsetY } = store.getState().viewport;
+    expect(zoom).toBe(2);
+    expect(offsetX + anchorX * zoom).toBe(screenBefore.x);
+    expect(offsetY + anchorY * zoom).toBe(screenBefore.y);
+  });
+
+  test("zoomAtPoint clamps zoom and anchors against the clamped value", () => {
+    store.getState().zoomAtPoint(99, 10, 20);
+
+    const { zoom, offsetX, offsetY } = store.getState().viewport;
+    expect(zoom).toBe(4);
+    // dz is the clamped delta (4 - 1 = 3), not the requested 98.
+    expect(offsetX).toBe(-10 * 3);
+    expect(offsetY).toBe(-20 * 3);
+  });
+});
+
+/** FreeDrawElement with a single char at its origin. */
+function makeFD(id: string, col = 0, row = 0): FreeDrawElement {
+  return FreeDrawElement.create({
+    id,
+    position: Position.create(col, row),
+    layerId: null,
+    zIndex: 0,
+    cells: new Map([[freeDrawCellKey(0, 0), CellChar.create("*")]]),
+  });
+}
+
+describe("pencil/eraser stroke", () => {
+  test("setPencilChar updates the pencil character", async () => {
+    await openFixtureDoc();
+    store.getState().setPencilChar("#");
+    expect(store.getState().pencilChar.value).toBe("#");
+  });
+
+  test("beginDrawStroke with no freedraw selected sets targetElementId to null", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1"); // box, not freedraw
+
+    store.getState().beginDrawStroke(cell(2, 3));
+
+    const { stroke } = store.getState();
+    expect(stroke?.mode).toBe("draw");
+    if (stroke?.mode === "draw") {
+      expect(stroke.targetElementId).toBeNull();
+      expect(stroke.cells.size).toBe(1);
+    }
+  });
+
+  test("beginDrawStroke with a selected freedraw sets targetElementId", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    store.getState().selectElement("fd1");
+
+    store.getState().beginDrawStroke(cell(0, 0));
+
+    const { stroke } = store.getState();
+    if (stroke?.mode === "draw") {
+      expect(stroke.targetElementId).toBe("fd1");
+    }
+  });
+
+  test("extendStroke appends cells in draw mode", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+    store.getState().extendStroke(cell(2, 1));
+
+    const { stroke } = store.getState();
+    expect(stroke?.mode).toBe("draw");
+    if (stroke?.mode === "draw") expect(stroke.cells.size).toBe(2);
+  });
+
+  test("extendStroke appends keys in erase mode", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    store.getState().beginEraseStroke(cell(0, 0));
+    store.getState().extendStroke(cell(1, 0));
+
+    const { stroke } = store.getState();
+    expect(stroke?.mode).toBe("erase");
+    if (stroke?.mode === "erase") expect(stroke.cells.size).toBe(2);
+  });
+
+  test("extendStroke with no active stroke is a no-op", async () => {
+    await openFixtureDoc();
+    store.getState().extendStroke(cell(0, 0)); // no active stroke
+    expect(store.getState().stroke).toBeNull();
+  });
+
+  test("commitStroke with no active stroke is a no-op", async () => {
+    await openFixtureDoc();
+    store.getState().commitStroke(); // stroke is null
+    expect(store.getState().document?.elements).toHaveLength(0);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("commitStroke (draw, null target) creates a new freedraw element", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(2, 3));
+    store.getState().extendStroke(cell(3, 3));
+    store.getState().commitStroke();
+
+    expect(store.getState().stroke).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(1);
+    expect(store.getState().canUndo).toBe(true);
+    const el = store.getState().document?.elements[0];
+    expect(el).toBeInstanceOf(FreeDrawElement);
+  });
+
+  test("commitStroke (draw, existing target) extends the freedraw element", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    store.getState().selectElement("fd1");
+    store.getState().beginDrawStroke(cell(5, 5));
+    store.getState().commitStroke();
+
+    const el = store.getState().document?.getElement("fd1") as FreeDrawElement;
+    expect(el.charAt(cell(5, 5))?.value).toBe("*");
+    expect(store.getState().canUndo).toBe(true);
+  });
+
+  test("commitStroke (draw) with empty cells is a no-op", async () => {
+    await openFixtureDoc();
+    // Directly set a draw stroke with an empty cells map to exercise the guard at line 519.
+    store.setState({
+      stroke: {
+        mode: "draw",
+        targetElementId: null,
+        startCell: cell(0, 0),
+        cells: new Map(),
+      },
+    });
+    store.getState().commitStroke();
+    expect(store.getState().document?.elements).toHaveLength(0);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("commitStroke (erase) removes chars from freedraw elements", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    store.getState().beginEraseStroke(cell(0, 0));
+    store.getState().commitStroke();
+
+    // The element had only one char at (0,0); after erasing it becomes empty and is removed.
+    expect(store.getState().document?.getElement("fd1")).toBeUndefined();
+    expect(store.getState().canUndo).toBe(true);
+  });
+
+  test("commitStroke (erase) with empty cells is a no-op", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    // Directly set an erase stroke with an empty cells set to exercise the guard at line 555.
+    store.setState({ stroke: { mode: "erase", cells: new Set() } });
+    store.getState().commitStroke();
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("cancelStroke clears stroke without committing", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+    store.getState().cancelStroke();
+
+    expect(store.getState().stroke).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(0);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("setActiveTool clears stroke and panDrag", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+    store.getState().beginPan({ clientX: 0, clientY: 0 });
+
+    store.getState().setActiveTool("select");
+
+    expect(store.getState().stroke).toBeNull();
+    expect(store.getState().panDrag).toBeNull();
+  });
+
+  test("pencil tool routes through toolContext to beginDrawStroke/extendStroke/commitStroke", async () => {
+    await openFixtureDoc();
+    store.getState().setActiveTool("pencil");
+
+    store.getState().pointerDownOnCell(cell(1, 1));
+    store.getState().pointerMoveOnCell(cell(2, 1));
+    store.getState().pointerUpOnCell(cell(2, 1));
+
+    // One freedraw element created by the commit
+    expect(store.getState().document?.elements).toHaveLength(1);
+    expect(store.getState().canUndo).toBe(true);
+  });
+
+  test("eraser tool routes through toolContext to beginEraseStroke/extendStroke/commitStroke", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    store.getState().setActiveTool("eraser");
+
+    store.getState().pointerDownOnCell(cell(0, 0));
+    store.getState().pointerUpOnCell(cell(0, 0));
+
+    // The single-char element is erased and removed
+    expect(store.getState().document?.getElement("fd1")).toBeUndefined();
+  });
+
+  test("hand tool routes through toolContext to beginPan/updatePan/endPan", () => {
+    store.getState().setActiveTool("hand");
+
+    store
+      .getState()
+      .pointerDownOnCell(cell(0, 0), { clientX: 100, clientY: 200 });
+    store
+      .getState()
+      .pointerMoveOnCell(cell(0, 0), { clientX: 110, clientY: 210 });
+    store
+      .getState()
+      .pointerUpOnCell(cell(0, 0), { clientX: 110, clientY: 210 });
+
+    expect(store.getState().viewport.offsetX).toBe(10);
+    expect(store.getState().viewport.offsetY).toBe(10);
+    expect(store.getState().panDrag).toBeNull();
+  });
+});
+
+describe("hand/pan", () => {
+  test("beginPan/updatePan/endPan moves the viewport", () => {
+    store.getState().beginPan({ clientX: 100, clientY: 200 });
+    expect(store.getState().panDrag).not.toBeNull();
+
+    store.getState().updatePan({ clientX: 110, clientY: 205 });
+    expect(store.getState().viewport.offsetX).toBe(10);
+    expect(store.getState().viewport.offsetY).toBe(5);
+
+    store.getState().endPan();
+    expect(store.getState().panDrag).toBeNull();
+  });
+
+  test("updatePan without an active panDrag is a no-op", () => {
+    store.getState().updatePan({ clientX: 100, clientY: 200 });
+    expect(store.getState().viewport.offsetX).toBe(0);
+  });
 });
 
 describe("pure helpers", () => {
-  test("previewedDocument returns the document untouched without a drag", async () => {
+  test("previewedDocument returns the document untouched without drag or stroke", async () => {
     await openFixtureDoc(makeBox("b1"));
     const document = store.getState().document;
 
-    expect(previewedDocument(document!, null)).toBe(document);
+    expect(previewedDocument(document!, null, null)).toBe(document);
+  });
+
+  test("previewedDocument draw stroke (null target) inserts a temp element", async () => {
+    await openFixtureDoc();
+    const document = store.getState().document!;
+    const stroke: StrokeState = {
+      mode: "draw",
+      targetElementId: null,
+      startCell: cell(1, 1),
+      cells: new Map([["1,1", CellChar.create("x")]]),
+    };
+
+    const preview = previewedDocument(document, null, stroke);
+
+    expect(preview.elements).toHaveLength(1);
+    expect(preview.elements[0].id).toBe("__preview__");
+  });
+
+  test("previewedDocument draw stroke (existing target) applies cells", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    const document = store.getState().document!;
+    const stroke: StrokeState = {
+      mode: "draw",
+      targetElementId: "fd1",
+      startCell: cell(5, 5),
+      cells: new Map([["5,5", CellChar.create("z")]]),
+    };
+
+    const preview = previewedDocument(document, null, stroke);
+    const el = preview.getElement("fd1") as FreeDrawElement;
+
+    expect(el.charAt(cell(5, 5))?.value).toBe("z");
+  });
+
+  test("previewedDocument draw stroke (bad target) returns original", async () => {
+    await openFixtureDoc();
+    const document = store.getState().document!;
+    const stroke: StrokeState = {
+      mode: "draw",
+      targetElementId: "nonexistent",
+      startCell: cell(0, 0),
+      cells: new Map([["0,0", CellChar.create("a")]]),
+    };
+
+    const preview = previewedDocument(document, null, stroke);
+
+    expect(preview).toBe(document);
+  });
+
+  test("previewedDocument erase stroke removes chars", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    const document = store.getState().document!;
+    const stroke: StrokeState = {
+      mode: "erase",
+      cells: new Set(["0,0"]),
+    };
+
+    const preview = previewedDocument(document, null, stroke);
+
+    // Element had one char; after erasing it becomes empty and is removed.
+    expect(preview.elements).toHaveLength(0);
+  });
+
+  test("previewedDocument with empty stroke cells returns document unchanged", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    const document = store.getState().document!;
+    const stroke: StrokeState = { mode: "erase", cells: new Set() };
+
+    expect(previewedDocument(document, null, stroke)).toBe(document);
+  });
+
+  test("previewedDocument draw stroke (null target) with __preview__ id conflict falls back to original", async () => {
+    // Edge case: an element with id "__preview__" already exists → addElement throws → catch returns original doc.
+    const previewEl = FreeDrawElement.create({
+      id: "__preview__",
+      position: cell(0, 0),
+      layerId: null,
+      zIndex: 0,
+      cells: new Map([[freeDrawCellKey(0, 0), CellChar.create("p")]]),
+    });
+    await openFixtureDoc(previewEl);
+    const document = store.getState().document!;
+    const stroke: StrokeState = {
+      mode: "draw",
+      targetElementId: null,
+      startCell: cell(1, 1),
+      cells: new Map([["1,1", CellChar.create("x")]]),
+    };
+
+    // Should not throw; falls back to original document
+    const preview = previewedDocument(document, null, stroke);
+    expect(preview).toBe(document);
   });
 
   test("selectedElementOf guards every miss case", async () => {

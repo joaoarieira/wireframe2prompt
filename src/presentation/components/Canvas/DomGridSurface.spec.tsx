@@ -45,9 +45,31 @@ describe("DomGridSurface", () => {
     fireEvent.pointerMove(grid, { pointerId: 1, clientX: 35, clientY: 50 });
     fireEvent.pointerUp(grid, { pointerId: 1, clientX: 35, clientY: 50 });
 
-    expect(onDown).toHaveBeenCalledWith(Position.create(1, 1));
-    expect(onMove).toHaveBeenCalledWith(Position.create(3, 2));
-    expect(onUp).toHaveBeenCalledWith(Position.create(3, 2));
+    expect(onDown).toHaveBeenCalledWith(Position.create(1, 1), {
+      clientX: 15,
+      clientY: 20,
+    });
+    expect(onMove).toHaveBeenCalledWith(Position.create(3, 2), {
+      clientX: 35,
+      clientY: 50,
+    });
+    expect(onUp).toHaveBeenCalledWith(Position.create(3, 2), {
+      clientX: 35,
+      clientY: 50,
+    });
+  });
+
+  test("ignores non-primary buttons so the middle button can pan", () => {
+    const { grid, onDown } = renderSurface();
+
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 1,
+      clientX: 15,
+      clientY: 20,
+    });
+
+    expect(onDown).not.toHaveBeenCalled();
   });
 
   test("ignores pointer down outside the grid and moves without a drag", () => {
@@ -58,5 +80,13 @@ describe("DomGridSurface", () => {
 
     expect(onDown).not.toHaveBeenCalled();
     expect(onMove).not.toHaveBeenCalled();
+  });
+
+  test("ignores a pointer up that has no active drag", () => {
+    const { grid, onUp } = renderSurface();
+
+    fireEvent.pointerUp(grid, { pointerId: 1, clientX: 15, clientY: 20 });
+
+    expect(onUp).not.toHaveBeenCalled();
   });
 });

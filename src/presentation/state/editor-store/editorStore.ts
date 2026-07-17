@@ -4,22 +4,33 @@ import type { AppContainer } from "../../../di/container";
 import { WireframeDocument } from "../../../domain/aggregates/wireframe-document/WireframeDocument";
 import type { Element } from "../../../domain/entities/element/Element";
 import { GridSize } from "../../../domain/entities/grid-size/GridSize";
-import type { Position } from "../../../domain/entities/position/Position";
+import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
+import { CellChar } from "../../../domain/entities/cell-char/CellChar";
+import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
 import type { CharBuffer } from "../../../domain/value-objects/char-buffer/CharBuffer";
 import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
 import { buildElement } from "../element-factory/elementFactory";
 import type { PlaceableKind } from "../element-factory/elementFactory";
 import { elementAtCell, zIndexForPlacement } from "../hit-test/hitTest";
-import type { CanvasTool, ToolContext } from "../tools/CanvasTool";
+import type {
+  CanvasTool,
+  SurfacePoint,
+  ToolContext,
+} from "../tools/CanvasTool";
 import { ToolRegistry, createDefaultToolRegistry } from "../tools/ToolRegistry";
 import type { EditorKeyAction } from "../keyboard/editorKeyAction";
+import { drawCellsOnDocument } from "../../../application/usecases/DrawFreeCharUseCase";
+import { eraseCellsOnDocument } from "../../../application/usecases/EraseCellUseCase";
 
 const DEFAULT_GRID_COLS = 80;
 const DEFAULT_GRID_ROWS = 24;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
+
+const clampZoom = (zoom: number) =>
+  Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
 export class NoOpenDocumentError extends Error {
   constructor(operation: string) {
@@ -47,6 +58,20 @@ export interface DragState {
   originSize: Size;
 }
 
+export type StrokeState =
+  | {
+      mode: "draw";
+      targetElementId: string | null;
+      startCell: Position;
+      cells: Map<string, CellChar>;
+    }
+  | { mode: "erase"; cells: Set<string> };
+
+export interface PanDragState {
+  lastClientX: number;
+  lastClientY: number;
+}
+
 export type DocumentStatus = "idle" | "loading" | "ready" | "missing";
 
 export interface EditorState {
@@ -56,6 +81,9 @@ export interface EditorState {
   selectedElementId: string | null;
   activeToolId: string;
   drag: DragState | null;
+  stroke: StrokeState | null;
+  pencilChar: CellChar;
+  panDrag: PanDragState | null;
   viewport: Viewport;
   canUndo: boolean;
   canRedo: boolean;
@@ -104,12 +132,22 @@ export interface EditorActions {
   updateDrag(cell: Position): void;
   commitDrag(): void;
   cancelDrag(): void;
-  pointerDownOnCell(cell: Position): void;
-  pointerMoveOnCell(cell: Position): void;
-  pointerUpOnCell(cell: Position): void;
+  beginDrawStroke(cell: Position): void;
+  beginEraseStroke(cell: Position): void;
+  extendStroke(cell: Position): void;
+  commitStroke(): void;
+  cancelStroke(): void;
+  setPencilChar(char: string): void;
+  beginPan(point: SurfacePoint): void;
+  updatePan(point: SurfacePoint): void;
+  endPan(): void;
+  pointerDownOnCell(cell: Position, point?: SurfacePoint): void;
+  pointerMoveOnCell(cell: Position, point?: SurfacePoint): void;
+  pointerUpOnCell(cell: Position, point?: SurfacePoint): void;
   composeBuffer(document: WireframeDocument): CharBuffer;
   exportAscii(): string;
   setZoom(zoom: number): void;
+  zoomAtPoint(zoom: number, anchorX: number, anchorY: number): void;
   panViewportBy(deltaX: number, deltaY: number): void;
 }
 
@@ -123,6 +161,8 @@ export interface EditorStoreOptions {
   toolRegistry?: ToolRegistry;
 }
 
+const NO_POINT: SurfacePoint = { clientX: 0, clientY: 0 };
+
 const initialState: EditorState = {
   document: null,
   documentStatus: "idle",
@@ -130,6 +170,9 @@ const initialState: EditorState = {
   selectedElementId: null,
   activeToolId: "select",
   drag: null,
+  stroke: null,
+  pencilChar: CellChar.create("*"),
+  panDrag: null,
   viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
   canUndo: false,
   canRedo: false,
@@ -180,6 +223,13 @@ export function createEditorStore(
       beginMove: (elementId, cell) => get().beginMove(elementId, cell),
       updateDrag: (cell) => get().updateDrag(cell),
       commitDrag: () => get().commitDrag(),
+      beginDrawStroke: (cell) => get().beginDrawStroke(cell),
+      beginEraseStroke: (cell) => get().beginEraseStroke(cell),
+      extendStroke: (cell) => get().extendStroke(cell),
+      commitStroke: () => get().commitStroke(),
+      beginPan: (point) => get().beginPan(point),
+      updatePan: (point) => get().updatePan(point),
+      endPan: () => get().endPan(),
     });
 
     const beginDrag = (
@@ -232,6 +282,8 @@ export function createEditorStore(
           document: null,
           selectedElementId: null,
           drag: null,
+          stroke: null,
+          panDrag: null,
           textEditingElementId: null,
           inspectorOpen: false,
         });
@@ -286,7 +338,7 @@ export function createEditorStore(
 
       setActiveTool: (toolId) => {
         toolRegistry.get(toolId); // fail fast on unknown ids
-        set({ activeToolId: toolId, drag: null });
+        set({ activeToolId: toolId, drag: null, stroke: null, panDrag: null });
       },
 
       listTools: () => toolRegistry.list(),
@@ -425,16 +477,148 @@ export function createEditorStore(
         set({ drag: null });
       },
 
-      pointerDownOnCell: (cell) => {
-        activeTool(toolRegistry, get()).onCellPointerDown(toolContext(), cell);
+      beginDrawStroke: (cell) => {
+        const document = requireDocument("begin draw stroke");
+        const { selectedElementId, pencilChar } = get();
+        let targetElementId: string | null = null;
+        if (selectedElementId !== null) {
+          const el = document.getElement(selectedElementId);
+          if (el instanceof FreeDrawElement) {
+            targetElementId = selectedElementId;
+          }
+        }
+        const key = `${cell.col},${cell.row}`;
+        set({
+          stroke: {
+            mode: "draw",
+            targetElementId,
+            startCell: cell,
+            cells: new Map([[key, pencilChar]]),
+          },
+        });
       },
 
-      pointerMoveOnCell: (cell) => {
-        activeTool(toolRegistry, get()).onCellPointerMove(toolContext(), cell);
+      beginEraseStroke: (cell) => {
+        requireDocument("begin erase stroke");
+        const key = `${cell.col},${cell.row}`;
+        set({ stroke: { mode: "erase", cells: new Set([key]) } });
       },
 
-      pointerUpOnCell: (cell) => {
-        activeTool(toolRegistry, get()).onCellPointerUp(toolContext(), cell);
+      extendStroke: (cell) => {
+        const { stroke, pencilChar } = get();
+        if (stroke === null) return;
+        const key = `${cell.col},${cell.row}`;
+        if (stroke.mode === "draw") {
+          const newCells = new Map(stroke.cells);
+          newCells.set(key, pencilChar);
+          set({ stroke: { ...stroke, cells: newCells } });
+        } else {
+          const newCells = new Set(stroke.cells);
+          newCells.add(key);
+          set({ stroke: { ...stroke, cells: newCells } });
+        }
+      },
+
+      commitStroke: () => {
+        const { stroke } = get();
+        if (stroke === null) return;
+        set({ stroke: null });
+        if (stroke.mode === "draw") {
+          if (stroke.cells.size === 0) return;
+          const document = requireDocument("commit draw stroke");
+          if (stroke.targetElementId === null) {
+            const id = generateId();
+            let el = FreeDrawElement.create({
+              id,
+              position: stroke.startCell,
+              layerId: null,
+              zIndex: zIndexForPlacement(
+                document,
+                stroke.startCell,
+                Size.create(1, 1),
+              ),
+              cells: new Map(),
+            });
+            for (const [key, char] of stroke.cells) {
+              el = el.withCharAt(parseCellKeyToPosition(key), char);
+            }
+            commitDocument(
+              container.addElement.execute({ document, element: el }),
+            );
+            set({ selectedElementId: el.id, inspectorOpen: true });
+          } else {
+            const cells = [...stroke.cells.entries()].map(([key, char]) => ({
+              position: parseCellKeyToPosition(key),
+              char,
+            }));
+            commitDocument(
+              container.drawFreeChar.execute({
+                document,
+                elementId: stroke.targetElementId,
+                cells,
+              }),
+            );
+          }
+        } else {
+          if (stroke.cells.size === 0) return;
+          const document = requireDocument("commit erase stroke");
+          const cells = [...stroke.cells].map(parseCellKeyToPosition);
+          commitDocument(container.eraseCell.execute({ document, cells }));
+        }
+      },
+
+      cancelStroke: () => {
+        set({ stroke: null });
+      },
+
+      setPencilChar: (char) => {
+        set({ pencilChar: CellChar.create(char) });
+      },
+
+      beginPan: (point) => {
+        set({
+          panDrag: { lastClientX: point.clientX, lastClientY: point.clientY },
+        });
+      },
+
+      updatePan: (point) => {
+        const { panDrag } = get();
+        if (panDrag === null) return;
+        get().panViewportBy(
+          point.clientX - panDrag.lastClientX,
+          point.clientY - panDrag.lastClientY,
+        );
+        set({
+          panDrag: { lastClientX: point.clientX, lastClientY: point.clientY },
+        });
+      },
+
+      endPan: () => {
+        set({ panDrag: null });
+      },
+
+      pointerDownOnCell: (cell, point = NO_POINT) => {
+        activeTool(toolRegistry, get()).onCellPointerDown(
+          toolContext(),
+          cell,
+          point,
+        );
+      },
+
+      pointerMoveOnCell: (cell, point = NO_POINT) => {
+        activeTool(toolRegistry, get()).onCellPointerMove(
+          toolContext(),
+          cell,
+          point,
+        );
+      },
+
+      pointerUpOnCell: (cell, point = NO_POINT) => {
+        activeTool(toolRegistry, get()).onCellPointerUp(
+          toolContext(),
+          cell,
+          point,
+        );
       },
 
       // Takes the document as a parameter (usually a drag preview built with
@@ -451,8 +635,25 @@ export function createEditorStore(
       },
 
       setZoom: (zoom) => {
-        const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
-        set({ viewport: { ...get().viewport, zoom: clamped } });
+        set({ viewport: { ...get().viewport, zoom: clampZoom(zoom) } });
+      },
+
+      // Zoom while keeping the content-local anchor (px from the content's
+      // top-left, unscaled) pinned under the same screen point. With the
+      // transform `translate(offset) scale(zoom)`, a point maps to
+      // `offset + anchor * zoom`; holding the screen point fixed across a
+      // zoom change of `dz` requires shifting the offset by `-anchor * dz`.
+      zoomAtPoint: (zoom, anchorX, anchorY) => {
+        const viewport = get().viewport;
+        const nextZoom = clampZoom(zoom);
+        const dz = nextZoom - viewport.zoom;
+        set({
+          viewport: {
+            zoom: nextZoom,
+            offsetX: viewport.offsetX - anchorX * dz,
+            offsetY: viewport.offsetY - anchorY * dz,
+          },
+        });
       },
 
       panViewportBy: (deltaX, deltaY) => {
@@ -474,18 +675,17 @@ export function createEditorStore(
  * directly (not use cases) on purpose: the preview is ephemeral render state;
  * the gesture is committed once via a use case on pointer up, keeping the
  * history at exactly one snapshot per gesture.
+ *
+ * @example
+ * const preview = previewedDocument(document, drag, stroke);
  */
 export function previewedDocument(
   document: WireframeDocument,
   drag: DragState | null,
+  stroke: StrokeState | null = null,
 ): WireframeDocument {
-  if (drag === null) {
-    return document;
-  }
-  if (drag.mode === "move") {
-    return document.moveElement(drag.elementId, dragTargetPosition(drag));
-  }
-  return document.resizeElement(drag.elementId, dragTargetSize(drag));
+  const withDrag = applyDragPreview(document, drag);
+  return applyStrokePreview(withDrag, stroke);
 }
 
 /** Selected element instance, or null when nothing valid is selected. */
@@ -496,6 +696,55 @@ export function selectedElementOf(
     return null;
   }
   return state.document.getElement(state.selectedElementId) ?? null;
+}
+
+function applyDragPreview(
+  document: WireframeDocument,
+  drag: DragState | null,
+): WireframeDocument {
+  if (drag === null) return document;
+  if (drag.mode === "move") {
+    return document.moveElement(drag.elementId, dragTargetPosition(drag));
+  }
+  return document.resizeElement(drag.elementId, dragTargetSize(drag));
+}
+
+function applyStrokePreview(
+  document: WireframeDocument,
+  stroke: StrokeState | null,
+): WireframeDocument {
+  if (stroke === null || stroke.cells.size === 0) return document;
+  if (stroke.mode === "draw") {
+    const cells = [...stroke.cells.entries()].map(([key, char]) => ({
+      position: parseCellKeyToPosition(key),
+      char,
+    }));
+    if (stroke.targetElementId !== null) {
+      try {
+        return drawCellsOnDocument(document, stroke.targetElementId, cells);
+      } catch {
+        return document;
+      }
+    }
+    // No target yet: show a temporary preview element.
+    let el = FreeDrawElement.create({
+      id: "__preview__",
+      position: stroke.startCell,
+      layerId: null,
+      zIndex: 0,
+      cells: new Map(),
+    });
+    for (const { position, char } of cells) {
+      el = el.withCharAt(position, char);
+    }
+    try {
+      return document.addElement(el);
+    } catch {
+      return document;
+    }
+  }
+  const cells = [...stroke.cells].map(parseCellKeyToPosition);
+  return eraseCellsOnDocument(document, cells);
 }
 
 function activeTool(registry: ToolRegistry, state: EditorState): CanvasTool {
@@ -553,4 +802,12 @@ function executeDrag(
     elementId: drag.elementId,
     size: dragTargetSize(drag),
   });
+}
+
+function parseCellKeyToPosition(key: string): Position {
+  const comma = key.indexOf(",");
+  return Position.create(
+    Number(key.slice(0, comma)),
+    Number(key.slice(comma + 1)),
+  );
 }

@@ -2,6 +2,7 @@ import { WireframeDocument } from "../domain/aggregates/wireframe-document/Wiref
 import { GridSize } from "../domain/entities/grid-size/GridSize";
 import { Position } from "../domain/entities/position/Position";
 import { Size } from "../domain/entities/size/Size";
+import type { Element } from "../domain/entities/element/Element";
 import { BoxElement } from "../domain/entities/element/BoxElement";
 import { TextElement } from "../domain/entities/element/TextElement";
 
@@ -27,7 +28,7 @@ export function makeText(id: string, text: string): TextElement {
 }
 
 export function makeDoc(
-  ...elements: Array<BoxElement | TextElement>
+  ...elements: Element[]
 ): WireframeDocument {
   return WireframeDocument.create({
     id: "doc1",
