@@ -16,7 +16,10 @@ export function freeDrawCellKey(col: number, row: number): string {
 
 function parseCellKey(key: string): { col: number; row: number } {
   const comma = key.indexOf(",");
-  return { col: Number(key.slice(0, comma)), row: Number(key.slice(comma + 1)) };
+  return {
+    col: Number(key.slice(0, comma)),
+    row: Number(key.slice(comma + 1)),
+  };
 }
 
 function isValidCellKey(key: string): boolean {

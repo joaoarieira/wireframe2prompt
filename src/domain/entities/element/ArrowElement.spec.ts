@@ -28,10 +28,18 @@ describe("ArrowElement", () => {
 
   test("withKindProps accepts all valid directions", () => {
     const arrow = ArrowElement.create({ ...base, direction: "right" });
-    expect((arrow.withProps({ direction: "left" }) as ArrowElement).direction).toBe("left");
-    expect((arrow.withProps({ direction: "up" }) as ArrowElement).direction).toBe("up");
-    expect((arrow.withProps({ direction: "down" }) as ArrowElement).direction).toBe("down");
-    expect((arrow.withProps({ direction: "right" }) as ArrowElement).direction).toBe("right");
+    expect(
+      (arrow.withProps({ direction: "left" }) as ArrowElement).direction,
+    ).toBe("left");
+    expect(
+      (arrow.withProps({ direction: "up" }) as ArrowElement).direction,
+    ).toBe("up");
+    expect(
+      (arrow.withProps({ direction: "down" }) as ArrowElement).direction,
+    ).toBe("down");
+    expect(
+      (arrow.withProps({ direction: "right" }) as ArrowElement).direction,
+    ).toBe("right");
   });
 
   test("withKindProps ignores invalid direction", () => {

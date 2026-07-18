@@ -94,6 +94,13 @@ export interface EditorState {
    */
   textEditingElementId: string | null;
   /**
+   * Set only when text editing is happening inline on the canvas (not in the
+   * inspector). Drives `TextEditOverlay`; kept separate from
+   * `textEditingElementId` so inspector fields can call `beginTextEditing`
+   * without causing the canvas overlay to appear.
+   */
+  canvasEditingElementId: string | null;
+  /**
    * Whether the inspector panel is shown. Selecting or placing an element
    * opens it; the panel's ✕ closes it. The page only renders the panel when
    * this is true AND something is selected.
@@ -111,6 +118,7 @@ export interface EditorActions {
   openInspector(): void;
   closeInspector(): void;
   beginTextEditing(elementId: string): void;
+  beginCanvasInlineEditing(elementId: string): void;
   endTextEditing(): void;
   setActiveTool(toolId: string): void;
   listTools(): readonly CanvasTool[];
@@ -144,6 +152,7 @@ export interface EditorActions {
   pointerDownOnCell(cell: Position, point?: SurfacePoint): void;
   pointerMoveOnCell(cell: Position, point?: SurfacePoint): void;
   pointerUpOnCell(cell: Position, point?: SurfacePoint): void;
+  doubleClickOnCell(cell: Position): void;
   composeBuffer(document: WireframeDocument): CharBuffer;
   exportAscii(): string;
   setZoom(zoom: number): void;
@@ -177,6 +186,7 @@ const initialState: EditorState = {
   canUndo: false,
   canRedo: false,
   textEditingElementId: null,
+  canvasEditingElementId: null,
   inspectorOpen: false,
 };
 
@@ -230,6 +240,8 @@ export function createEditorStore(
       beginPan: (point) => get().beginPan(point),
       updatePan: (point) => get().updatePan(point),
       endPan: () => get().endPan(),
+      beginCanvasInlineEditing: (elementId) =>
+        get().beginCanvasInlineEditing(elementId),
     });
 
     const beginDrag = (
@@ -285,6 +297,7 @@ export function createEditorStore(
           stroke: null,
           panDrag: null,
           textEditingElementId: null,
+          canvasEditingElementId: null,
           inspectorOpen: false,
         });
         const document = await container.loadDocument.execute({
@@ -309,11 +322,14 @@ export function createEditorStore(
       // pointer down, but the panel only opens when the gesture ends
       // (commitDrag) or via an explicit openInspector call.
       selectElement: (elementId) => {
+        const { textEditingElementId, canvasEditingElementId } = get();
         set({
           selectedElementId: elementId,
           // selecting something else ends any text-editing session
           textEditingElementId:
-            get().textEditingElementId === elementId ? elementId : null,
+            textEditingElementId === elementId ? elementId : null,
+          canvasEditingElementId:
+            canvasEditingElementId === elementId ? elementId : null,
           // clicking empty space truly closes the panel (flag included) —
           // otherwise the next pointer down would re-show it before release
           inspectorOpen: elementId === null ? false : get().inspectorOpen,
@@ -329,11 +345,19 @@ export function createEditorStore(
       },
 
       beginTextEditing: (elementId) => {
-        set({ textEditingElementId: elementId });
+        // Inspector-driven editing: clear canvas overlay so they don't coexist.
+        set({ textEditingElementId: elementId, canvasEditingElementId: null });
+      },
+
+      beginCanvasInlineEditing: (elementId) => {
+        set({
+          textEditingElementId: elementId,
+          canvasEditingElementId: elementId,
+        });
       },
 
       endTextEditing: () => {
-        set({ textEditingElementId: null });
+        set({ textEditingElementId: null, canvasEditingElementId: null });
       },
 
       setActiveTool: (toolId) => {
@@ -356,7 +380,8 @@ export function createEditorStore(
         commitDocument(container.addElement.execute({ document, element }));
         set({
           selectedElementId: element.id,
-          textEditingElementId: null,
+          textEditingElementId: kind === "text" ? element.id : null,
+          canvasEditingElementId: kind === "text" ? element.id : null,
           inspectorOpen: true,
         });
       },
@@ -618,6 +643,13 @@ export function createEditorStore(
           toolContext(),
           cell,
           point,
+        );
+      },
+
+      doubleClickOnCell: (cell) => {
+        activeTool(toolRegistry, get()).onCellDoubleClick?.(
+          toolContext(),
+          cell,
         );
       },
 

@@ -66,8 +66,6 @@ describe("ModalGlyphMapper (golden tests)", () => {
 
   test("width < 5 → no close button", () => {
     const result = composer.compose(doc(4, 4, modal(4, 4, "Hi")));
-    expect(result.toString()).toBe(
-      ["+--+", "|  |", "+--+", "+--+"].join("\n"),
-    );
+    expect(result.toString()).toBe(["+--+", "|  |", "+--+", "+--+"].join("\n"));
   });
 });

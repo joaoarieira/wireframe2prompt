@@ -28,7 +28,9 @@ export function eraseCellsOnDocument(
       if (!(el instanceof FreeDrawElement)) continue;
       if (el.charAt(cell) === null) continue;
       const updated = el.withoutCharAt(cell);
-      doc = updated.isEmpty ? doc.removeElement(el.id) : doc.replaceElement(updated);
+      doc = updated.isEmpty
+        ? doc.removeElement(el.id)
+        : doc.replaceElement(updated);
       break;
     }
   }

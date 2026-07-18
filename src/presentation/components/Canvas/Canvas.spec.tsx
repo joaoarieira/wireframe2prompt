@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   act,
   cleanup,
@@ -9,7 +9,7 @@ import {
 import { Canvas } from "./Canvas";
 import { editorStore } from "../../state/app-store/appStore";
 import { selectedElementOf } from "../../state/editor-store/editorStore";
-import { makeBox, makeDoc } from "../../../tests/fixtures";
+import { makeBox, makeDoc, makeText } from "../../../tests/fixtures";
 
 /** The rootRef div (wheel-zoom target) is the grid surface's parent. */
 function rootDiv() {
@@ -37,6 +37,8 @@ afterEach(() => {
     drag: null,
     stroke: null,
     panDrag: null,
+    textEditingElementId: null,
+    canvasEditingElementId: null,
     viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
   });
 });
@@ -329,5 +331,86 @@ describe("Canvas", () => {
     render(<Canvas />);
 
     expect(screen.getByTestId("canvas").className).not.toContain("cursor-grab");
+  });
+
+  test("TextEditOverlay appears when canvasEditingElementId is set to a TextElement", () => {
+    const textEl = makeText("t1", "hello");
+    editorStore.setState({
+      document: makeDoc(textEl),
+      documentStatus: "ready",
+      canvasEditingElementId: "t1",
+      textEditingElementId: "t1",
+      selectedElementId: "t1",
+    });
+    render(<Canvas />);
+
+    expect(screen.getByTestId("text-edit-overlay")).toBeInTheDocument();
+  });
+
+  test("TextEditOverlay does not appear when only textEditingElementId is set (inspector editing)", () => {
+    const textEl = makeText("t1", "hello");
+    editorStore.setState({
+      document: makeDoc(textEl),
+      documentStatus: "ready",
+      textEditingElementId: "t1",
+      canvasEditingElementId: null,
+      selectedElementId: "t1",
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
+  });
+
+  test("TextEditOverlay does not appear when canvasEditingElementId points to a non-TextElement", () => {
+    editorStore.setState({
+      document: makeDoc(makeBox("b1")),
+      documentStatus: "ready",
+      canvasEditingElementId: "b1",
+      textEditingElementId: "b1",
+      selectedElementId: "b1",
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
+  });
+
+  test("primary-button click on canvas backdrop ends canvas text editing", () => {
+    const textEl = makeText("t1", "hello");
+    editorStore.setState({
+      document: makeDoc(textEl),
+      documentStatus: "ready",
+      canvasEditingElementId: "t1",
+      textEditingElementId: "t1",
+      selectedElementId: "t1",
+    });
+    render(<Canvas />);
+    const canvas = screen.getByTestId("canvas");
+
+    fireEvent.pointerDown(canvas, {
+      button: 0,
+      // target === currentTarget when clicking the canvas div itself (backdrop)
+    });
+
+    expect(editorStore.getState().canvasEditingElementId).toBeNull();
+  });
+
+  test("double click on grid fires doubleClickOnCell on the store", () => {
+    openDoc();
+    render(<Canvas />);
+    const grid = screen.getByTestId("grid-surface");
+    rootDiv().getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 200, height: 180 }) as DOMRect;
+    vi.spyOn(grid, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 200,
+      height: 180,
+    } as DOMRect);
+
+    fireEvent.dblClick(grid, { clientX: 5, clientY: 5 });
+
+    // With select tool active and a box at (0,0), doubleClickOnCell on a
+    // non-text element does nothing — but the action runs without throwing.
+    expect(editorStore.getState().textEditingElementId).toBeNull();
   });
 });

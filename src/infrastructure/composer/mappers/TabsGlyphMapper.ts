@@ -1,4 +1,7 @@
-import type { IGlyphMapper, GlyphCell } from "../../../domain/ports/IGlyphMapper";
+import type {
+  IGlyphMapper,
+  GlyphCell,
+} from "../../../domain/ports/IGlyphMapper";
 import type { Element } from "../../../domain/entities/element/Element";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { Position } from "../../../domain/entities/position/Position";
@@ -31,7 +34,10 @@ export class TabsGlyphMapper implements IGlyphMapper {
       const segment = i === tabsEl.active ? `[${label}]` : ` ${label} `;
       for (const char of segment) {
         if (col >= end) break;
-        cells.push({ position: Position.create(col, y), char: CellChar.create(char) });
+        cells.push({
+          position: Position.create(col, y),
+          char: CellChar.create(char),
+        });
         col++;
       }
     }

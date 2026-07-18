@@ -317,23 +317,49 @@ describe("inspector visibility", () => {
 });
 
 describe("text editing", () => {
-  test("placing an element ends any text-editing session", async () => {
+  test("placing a non-text element ends any text-editing session", async () => {
     await openFixtureDoc(makeBox("b1"));
     store.getState().beginTextEditing("b1");
 
-    store.getState().placeElement("text", cell(1, 1));
+    store.getState().placeElement("box", cell(1, 1));
 
     expect(store.getState().textEditingElementId).toBeNull();
   });
 
-  test("beginTextEditing/endTextEditing toggle the session", async () => {
+  test("placing a text element opens canvas inline editing for that element", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().placeElement("text", cell(1, 1));
+
+    expect(store.getState().canvasEditingElementId).toBe(
+      store.getState().selectedElementId,
+    );
+    expect(store.getState().textEditingElementId).toBe(
+      store.getState().selectedElementId,
+    );
+  });
+
+  test("beginTextEditing/endTextEditing toggle the session without canvas overlay", async () => {
     await openFixtureDoc(makeBox("b1"));
 
     store.getState().beginTextEditing("b1");
     expect(store.getState().textEditingElementId).toBe("b1");
+    expect(store.getState().canvasEditingElementId).toBeNull();
 
     store.getState().endTextEditing();
     expect(store.getState().textEditingElementId).toBeNull();
+  });
+
+  test("beginCanvasInlineEditing sets both textEditingElementId and canvasEditingElementId", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().beginCanvasInlineEditing("b1");
+    expect(store.getState().textEditingElementId).toBe("b1");
+    expect(store.getState().canvasEditingElementId).toBe("b1");
+
+    store.getState().endTextEditing();
+    expect(store.getState().textEditingElementId).toBeNull();
+    expect(store.getState().canvasEditingElementId).toBeNull();
   });
 
   test("selecting a different element ends the editing session", async () => {
@@ -346,6 +372,25 @@ describe("text editing", () => {
 
     store.getState().selectElement("b1");
     expect(store.getState().textEditingElementId).toBeNull();
+  });
+
+  test("doubleClickOnCell on a text element begins canvas inline editing", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("text", cell(1, 1));
+    const textId = store.getState().selectedElementId!;
+    store.getState().endTextEditing();
+
+    store.getState().doubleClickOnCell(cell(1, 1));
+
+    expect(store.getState().textEditingElementId).toBe(textId);
+    expect(store.getState().canvasEditingElementId).toBe(textId);
+  });
+
+  test("doubleClickOnCell on a tool without handler does not throw", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().setActiveTool("box");
+
+    expect(() => store.getState().doubleClickOnCell(cell(0, 0))).not.toThrow();
   });
 
   test("single-key shortcuts are suspended while editing; ctrl combos still work", async () => {

@@ -35,31 +35,45 @@ function arrow(direction: ArrowDirection, width: number, height: number) {
 
 describe("ArrowGlyphMapper (golden tests)", () => {
   test("4×1 right → --->", () => {
-    expect(composer.compose(doc(4, 1, arrow("right", 4, 1))).toString()).toBe("--->");
+    expect(composer.compose(doc(4, 1, arrow("right", 4, 1))).toString()).toBe(
+      "--->",
+    );
   });
 
   test("4×1 left → <---", () => {
-    expect(composer.compose(doc(4, 1, arrow("left", 4, 1))).toString()).toBe("<---");
+    expect(composer.compose(doc(4, 1, arrow("left", 4, 1))).toString()).toBe(
+      "<---",
+    );
   });
 
   test("1×3 down → |, |, v", () => {
-    expect(composer.compose(doc(1, 3, arrow("down", 1, 3))).toString()).toBe("|\n|\nv");
+    expect(composer.compose(doc(1, 3, arrow("down", 1, 3))).toString()).toBe(
+      "|\n|\nv",
+    );
   });
 
   test("1×3 up → ^, |, |", () => {
-    expect(composer.compose(doc(1, 3, arrow("up", 1, 3))).toString()).toBe("^\n|\n|");
+    expect(composer.compose(doc(1, 3, arrow("up", 1, 3))).toString()).toBe(
+      "^\n|\n|",
+    );
   });
 
   test("1×1 right → >", () => {
-    expect(composer.compose(doc(1, 1, arrow("right", 1, 1))).toString()).toBe(">");
+    expect(composer.compose(doc(1, 1, arrow("right", 1, 1))).toString()).toBe(
+      ">",
+    );
   });
 
   test("1×1 left → <", () => {
-    expect(composer.compose(doc(1, 1, arrow("left", 1, 1))).toString()).toBe("<");
+    expect(composer.compose(doc(1, 1, arrow("left", 1, 1))).toString()).toBe(
+      "<",
+    );
   });
 
   test("1×1 down → v", () => {
-    expect(composer.compose(doc(1, 1, arrow("down", 1, 1))).toString()).toBe("v");
+    expect(composer.compose(doc(1, 1, arrow("down", 1, 1))).toString()).toBe(
+      "v",
+    );
   });
 
   test("1×1 up → ^", () => {

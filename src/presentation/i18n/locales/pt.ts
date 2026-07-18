@@ -70,6 +70,8 @@ export const pt: LocaleDictionary = {
     tabsField: "Uma aba por linha",
     activeTab: "Aba ativa",
     activeTabField: "Aba ativa",
+    textEditHint:
+      "Dê dois cliques diretamente no elemento para alterar seu texto.",
   },
   layers: {
     empty: "Nenhum elemento ainda.",

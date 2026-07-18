@@ -57,8 +57,15 @@ export function EditorPage() {
         <main className="min-w-0 flex-1">
           <Canvas />
         </main>
+        {/* Overlaid (absolute) instead of a flex column on purpose: opening it
+            must not reflow the canvas. A double click selects on the first
+            click, the inspector opens, and if the canvas shifted left the
+            element would escape the pointer before the second click. */}
         {inspectorVisible && (
-          <aside className="w-64 shrink-0 overflow-y-auto overflow-x-hidden border-l border-base-300 bg-base-200">
+          <aside
+            data-testid="inspector-aside"
+            className="absolute inset-y-0 right-0 w-64 overflow-x-hidden overflow-y-auto border-l border-base-300 bg-base-200"
+          >
             <InspectorPanel />
           </aside>
         )}

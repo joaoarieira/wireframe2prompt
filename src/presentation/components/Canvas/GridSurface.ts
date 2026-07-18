@@ -14,6 +14,7 @@ export interface GridSurfaceProps {
   onCellPointerDown(cell: Position, point: SurfacePoint): void;
   onCellPointerMove(cell: Position, point: SurfacePoint): void;
   onCellPointerUp(cell: Position, point: SurfacePoint): void;
+  onCellDoubleClick(cell: Position): void;
 }
 
 export type GridSurfaceComponent = ComponentType<GridSurfaceProps>;

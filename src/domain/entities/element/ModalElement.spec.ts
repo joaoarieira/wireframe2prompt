@@ -31,7 +31,9 @@ describe("ModalElement", () => {
   });
 
   test("withTitle accepts null", () => {
-    expect(ModalElement.create({ ...base, title: "X" }).withTitle(null).title).toBeNull();
+    expect(
+      ModalElement.create({ ...base, title: "X" }).withTitle(null).title,
+    ).toBeNull();
   });
 
   test("withKindProps accepts string and null", () => {
@@ -47,6 +49,8 @@ describe("ModalElement", () => {
 
   test("cloneWith preserves title", () => {
     const modal = ModalElement.create({ ...base, title: "M" });
-    expect((modal.moveTo(Position.create(1, 2)) as ModalElement).title).toBe("M");
+    expect((modal.moveTo(Position.create(1, 2)) as ModalElement).title).toBe(
+      "M",
+    );
   });
 });

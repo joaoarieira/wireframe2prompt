@@ -20,7 +20,10 @@ import { CardElement } from "../../domain/entities/element/CardElement";
 import { ModalElement } from "../../domain/entities/element/ModalElement";
 import { TableElement } from "../../domain/entities/element/TableElement";
 import { TabsElement } from "../../domain/entities/element/TabsElement";
-import { FreeDrawElement, freeDrawCellKey } from "../../domain/entities/element/FreeDrawElement";
+import {
+  FreeDrawElement,
+  freeDrawCellKey,
+} from "../../domain/entities/element/FreeDrawElement";
 import { Element } from "../../domain/entities/element/Element";
 import type { ElementBaseProps } from "../../domain/entities/element/Element";
 

@@ -27,22 +27,26 @@ describe("TabsElement", () => {
   });
 
   test("throws InvalidTabsError for active out of range", () => {
-    expect(() => TabsElement.create({ ...base, tabs: ["A"], active: 1 })).toThrow(
-      InvalidTabsError,
-    );
-    expect(() => TabsElement.create({ ...base, tabs: ["A"], active: -1 })).toThrow(
-      InvalidTabsError,
-    );
+    expect(() =>
+      TabsElement.create({ ...base, tabs: ["A"], active: 1 }),
+    ).toThrow(InvalidTabsError);
+    expect(() =>
+      TabsElement.create({ ...base, tabs: ["A"], active: -1 }),
+    ).toThrow(InvalidTabsError);
   });
 
   test("throws InvalidTabsError for non-integer active", () => {
-    expect(() => TabsElement.create({ ...base, tabs: ["A"], active: 0.5 })).toThrow(
-      InvalidTabsError,
-    );
+    expect(() =>
+      TabsElement.create({ ...base, tabs: ["A"], active: 0.5 }),
+    ).toThrow(InvalidTabsError);
   });
 
   test("withTabs clamps active to new range", () => {
-    const el = TabsElement.create({ ...base, tabs: ["A", "B", "C"], active: 2 });
+    const el = TabsElement.create({
+      ...base,
+      tabs: ["A", "B", "C"],
+      active: 2,
+    });
     const updated = el.withTabs(["X", "Y"]);
     expect(updated.tabs).toEqual(["X", "Y"]);
     expect(updated.active).toBe(1); // clamped from 2 to 1
@@ -67,7 +71,11 @@ describe("TabsElement", () => {
   });
 
   test("withKindProps patches tabs (clamps active)", () => {
-    const el = TabsElement.create({ ...base, tabs: ["A", "B", "C"], active: 2 });
+    const el = TabsElement.create({
+      ...base,
+      tabs: ["A", "B", "C"],
+      active: 2,
+    });
     const updated = el.withProps({ tabs: ["X"] }) as TabsElement;
     expect(updated.tabs).toEqual(["X"]);
     expect(updated.active).toBe(0);

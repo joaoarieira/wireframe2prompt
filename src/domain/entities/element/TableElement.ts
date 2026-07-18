@@ -8,7 +8,12 @@ export interface TableElementProps extends ElementBaseProps {
 }
 
 function validateShape(columns: number, rows: number): void {
-  if (!Number.isInteger(columns) || columns < 1 || !Number.isInteger(rows) || rows < 1) {
+  if (
+    !Number.isInteger(columns) ||
+    columns < 1 ||
+    !Number.isInteger(rows) ||
+    rows < 1
+  ) {
     throw new InvalidTableShapeError(columns, rows);
   }
 }
@@ -18,11 +23,7 @@ export class TableElement extends Element {
   public readonly columns: number;
   public readonly rows: number;
 
-  private constructor(
-    base: ElementBaseProps,
-    columns: number,
-    rows: number,
-  ) {
+  private constructor(base: ElementBaseProps, columns: number, rows: number) {
     super(base);
     this.columns = columns;
     this.rows = rows;

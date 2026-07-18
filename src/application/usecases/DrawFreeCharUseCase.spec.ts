@@ -1,7 +1,13 @@
 import { describe, expect, test, beforeEach } from "vitest";
-import { DrawFreeCharUseCase, drawCellsOnDocument } from "./DrawFreeCharUseCase";
+import {
+  DrawFreeCharUseCase,
+  drawCellsOnDocument,
+} from "./DrawFreeCharUseCase";
 import { SpyHistory } from "../../tests/doubles/SpyHistory";
-import { FreeDrawElement, freeDrawCellKey } from "../../domain/entities/element/FreeDrawElement";
+import {
+  FreeDrawElement,
+  freeDrawCellKey,
+} from "../../domain/entities/element/FreeDrawElement";
 import { ElementNotFoundError } from "../../domain/entities/errors/ElementNotFoundError";
 import { InvalidFreeDrawTargetError } from "../../domain/entities/errors/InvalidFreeDrawTargetError";
 import { BoxElement } from "../../domain/entities/element/BoxElement";
@@ -68,7 +74,11 @@ describe("DrawFreeCharUseCase", () => {
   test("returns document unchanged and does NOT push when cells is empty", () => {
     const fd = makeFDElement();
     const doc = makeDoc([fd]);
-    const result = useCase.execute({ document: doc, elementId: "fd1", cells: [] });
+    const result = useCase.execute({
+      document: doc,
+      elementId: "fd1",
+      cells: [],
+    });
     expect(result).toBe(doc);
     expect(history.pushCalls).toHaveLength(0);
   });
@@ -102,9 +112,9 @@ describe("DrawFreeCharUseCase", () => {
 describe("drawCellsOnDocument (pure helper)", () => {
   test("throws ElementNotFoundError for missing element", () => {
     const doc = makeDoc();
-    expect(() => drawCellsOnDocument(doc, "ghost", [{ position: pos(0, 0), char: A }])).toThrow(
-      ElementNotFoundError,
-    );
+    expect(() =>
+      drawCellsOnDocument(doc, "ghost", [{ position: pos(0, 0), char: A }]),
+    ).toThrow(ElementNotFoundError);
   });
 
   test("throws InvalidFreeDrawTargetError for non-freedraw element", () => {
@@ -116,7 +126,9 @@ describe("drawCellsOnDocument (pure helper)", () => {
       layerId: null,
     });
     expect(() =>
-      drawCellsOnDocument(makeDoc([box]), "b1", [{ position: pos(0, 0), char: A }]),
+      drawCellsOnDocument(makeDoc([box]), "b1", [
+        { position: pos(0, 0), char: A },
+      ]),
     ).toThrow(InvalidFreeDrawTargetError);
   });
 
@@ -130,7 +142,9 @@ describe("drawCellsOnDocument (pure helper)", () => {
     });
     const doc = makeDoc([fd]);
     const B = CellChar.create("b");
-    const result = drawCellsOnDocument(doc, "fd1", [{ position: pos(6, 5), char: B }]);
+    const result = drawCellsOnDocument(doc, "fd1", [
+      { position: pos(6, 5), char: B },
+    ]);
     const updated = result.getElement("fd1") as FreeDrawElement;
     expect(updated.charAt(pos(5, 5))).toBe(A);
     expect(updated.charAt(pos(6, 5))).toBe(B);

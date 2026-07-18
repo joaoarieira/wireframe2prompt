@@ -106,4 +106,15 @@ describe("InspectorPanel text editing", () => {
       editorStore.getState().document?.getElement(elementId)?.name,
     ).toBeNull();
   });
+
+  test("the text edit hint is shown below the text content field", async () => {
+    await openFreshDocumentWithText();
+    render(<InspectorPanel />);
+
+    expect(
+      screen.getByText(
+        "Double-click the element on the canvas to edit its text.",
+      ),
+    ).toBeInTheDocument();
+  });
 });

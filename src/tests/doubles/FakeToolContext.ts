@@ -1,7 +1,10 @@
 import type { Element } from "../../domain/entities/element/Element";
 import type { Position } from "../../domain/entities/position/Position";
 import type { PlaceableKind } from "../../presentation/state/element-factory/elementFactory";
-import type { SurfacePoint, ToolContext } from "../../presentation/state/tools/CanvasTool";
+import type {
+  SurfacePoint,
+  ToolContext,
+} from "../../presentation/state/tools/CanvasTool";
 
 /**
  * Call-recording {@link ToolContext} fake for tool specs. `hit` controls what
@@ -21,6 +24,7 @@ export class FakeToolContext implements ToolContext {
   beginPanCalls: SurfacePoint[] = [];
   updatePanCalls: SurfacePoint[] = [];
   endPanCalls = 0;
+  beginCanvasInlineEditingCalls: string[] = [];
 
   elementAt(): Element | null {
     return this.hit;
@@ -72,5 +76,9 @@ export class FakeToolContext implements ToolContext {
 
   endPan(): void {
     this.endPanCalls += 1;
+  }
+
+  beginCanvasInlineEditing(elementId: string): void {
+    this.beginCanvasInlineEditingCalls.push(elementId);
   }
 }

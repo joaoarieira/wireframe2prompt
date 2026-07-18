@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { PointerEvent } from "react";
+import type { MouseEvent, PointerEvent } from "react";
 import type { GridSurfaceProps } from "./GridSurface";
 import { cellAtPoint, isWithinGrid } from "./cellGeometry";
 import type { Position } from "../../../domain/entities/position/Position";
@@ -16,6 +16,7 @@ export function DomGridSurface({
   onCellPointerDown,
   onCellPointerMove,
   onCellPointerUp,
+  onCellDoubleClick,
 }: GridSurfaceProps) {
   const dragging = useRef(false);
 
@@ -64,6 +65,15 @@ export function DomGridSurface({
     onCellPointerUp(cell, pointFrom(event));
   };
 
+  const handleDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const cell = cellAtPoint(rect, buffer.width, buffer.height, event);
+    if (cell === null || !isWithinGrid(cell, buffer.width, buffer.height)) {
+      return;
+    }
+    onCellDoubleClick(cell);
+  };
+
   const rows = buffer.toString().split("\n");
 
   return (
@@ -76,6 +86,7 @@ export function DomGridSurface({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onDoubleClick={handleDoubleClick}
     >
       {rows.map((rowChars, row) =>
         [...rowChars].map((char, col) => (

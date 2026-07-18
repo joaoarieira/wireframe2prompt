@@ -20,10 +20,7 @@ export class CardElement extends Element {
   }
 
   protected cloneWith(overrides: Partial<ElementBaseProps>): CardElement {
-    return new CardElement(
-      { ...this.baseProps(), ...overrides },
-      this.title,
-    );
+    return new CardElement({ ...this.baseProps(), ...overrides }, this.title);
   }
 
   withTitle(title: string | null): CardElement {

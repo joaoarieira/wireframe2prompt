@@ -33,15 +33,15 @@ describe("TableElement", () => {
   });
 
   test("throws InvalidTableShapeError for non-integer columns", () => {
-    expect(() => TableElement.create({ ...base, columns: 1.5, rows: 2 })).toThrow(
-      InvalidTableShapeError,
-    );
+    expect(() =>
+      TableElement.create({ ...base, columns: 1.5, rows: 2 }),
+    ).toThrow(InvalidTableShapeError);
   });
 
   test("throws InvalidTableShapeError for negative rows", () => {
-    expect(() => TableElement.create({ ...base, columns: 2, rows: -1 })).toThrow(
-      InvalidTableShapeError,
-    );
+    expect(() =>
+      TableElement.create({ ...base, columns: 2, rows: -1 }),
+    ).toThrow(InvalidTableShapeError);
   });
 
   test("withColumns validates and returns new instance", () => {
@@ -77,7 +77,10 @@ describe("TableElement", () => {
 
   test("withKindProps ignores invalid patches silently", () => {
     const table = TableElement.create({ ...base, columns: 2, rows: 2 });
-    const updated = table.withProps({ columns: 0, rows: "two" }) as TableElement;
+    const updated = table.withProps({
+      columns: 0,
+      rows: "two",
+    }) as TableElement;
     expect(updated.columns).toBe(2);
     expect(updated.rows).toBe(2);
   });

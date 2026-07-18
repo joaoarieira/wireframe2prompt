@@ -14,7 +14,10 @@ import { ModalElement } from "../../domain/entities/element/ModalElement";
 import { TableElement } from "../../domain/entities/element/TableElement";
 import { TabsElement } from "../../domain/entities/element/TabsElement";
 import { FreeDrawElement } from "../../domain/entities/element/FreeDrawElement";
-import type { Element, ElementBaseProps } from "../../domain/entities/element/Element";
+import type {
+  Element,
+  ElementBaseProps,
+} from "../../domain/entities/element/Element";
 import type { LineOrientation } from "../../domain/entities/element/LineElement";
 import type { ArrowDirection } from "../../domain/entities/element/ArrowElement";
 
@@ -182,10 +185,20 @@ function serializeElement(element: Element): SerializedElement {
     return { ...base, kind: "modal", title: element.title };
   }
   if (element instanceof TableElement) {
-    return { ...base, kind: "table", columns: element.columns, rows: element.rows };
+    return {
+      ...base,
+      kind: "table",
+      columns: element.columns,
+      rows: element.rows,
+    };
   }
   if (element instanceof TabsElement) {
-    return { ...base, kind: "tabs", tabs: [...element.tabs], active: element.active };
+    return {
+      ...base,
+      kind: "tabs",
+      tabs: [...element.tabs],
+      active: element.active,
+    };
   }
   if (element instanceof FreeDrawElement) {
     const cells: Record<string, string> = {};
@@ -250,9 +263,17 @@ function deserializeElement(data: SerializedElement): Element {
     case "modal":
       return ModalElement.create({ ...base, title: data.title });
     case "table":
-      return TableElement.create({ ...base, columns: data.columns, rows: data.rows });
+      return TableElement.create({
+        ...base,
+        columns: data.columns,
+        rows: data.rows,
+      });
     case "tabs":
-      return TabsElement.create({ ...base, tabs: data.tabs, active: data.active });
+      return TabsElement.create({
+        ...base,
+        tabs: data.tabs,
+        active: data.active,
+      });
     case "freedraw": {
       const cells = new Map<string, CellChar>();
       for (const [key, value] of Object.entries(data.cells)) {

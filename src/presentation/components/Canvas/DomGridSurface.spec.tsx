@@ -11,12 +11,14 @@ function renderSurface() {
   const onDown = vi.fn();
   const onMove = vi.fn();
   const onUp = vi.fn();
+  const onDoubleClick = vi.fn();
   render(
     <DomGridSurface
       buffer={buffer}
       onCellPointerDown={onDown}
       onCellPointerMove={onMove}
       onCellPointerUp={onUp}
+      onCellDoubleClick={onDoubleClick}
     />,
   );
   const grid = screen.getByTestId("grid-surface");
@@ -27,7 +29,7 @@ function renderSurface() {
     height: 54,
   } as DOMRect);
   grid.setPointerCapture = vi.fn();
-  return { grid, onDown, onMove, onUp };
+  return { grid, onDown, onMove, onUp, onDoubleClick };
 }
 
 describe("DomGridSurface", () => {
@@ -88,5 +90,21 @@ describe("DomGridSurface", () => {
     fireEvent.pointerUp(grid, { pointerId: 1, clientX: 15, clientY: 20 });
 
     expect(onUp).not.toHaveBeenCalled();
+  });
+
+  test("double click within the grid fires onCellDoubleClick with the right cell", () => {
+    const { grid, onDoubleClick } = renderSurface();
+
+    fireEvent.dblClick(grid, { clientX: 15, clientY: 20 });
+
+    expect(onDoubleClick).toHaveBeenCalledWith(Position.create(1, 1));
+  });
+
+  test("double click outside the grid is ignored", () => {
+    const { grid, onDoubleClick } = renderSurface();
+
+    fireEvent.dblClick(grid, { clientX: 100, clientY: 20 });
+
+    expect(onDoubleClick).not.toHaveBeenCalled();
   });
 });

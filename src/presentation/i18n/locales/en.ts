@@ -72,6 +72,7 @@ export const en = {
     tabsField: "One tab per line",
     activeTab: "Active tab",
     activeTabField: "Active tab",
+    textEditHint: "Double-click the element on the canvas to edit its text.",
   },
   layers: {
     empty: "No elements yet.",

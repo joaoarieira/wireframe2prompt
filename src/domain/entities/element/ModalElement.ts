@@ -20,10 +20,7 @@ export class ModalElement extends Element {
   }
 
   protected cloneWith(overrides: Partial<ElementBaseProps>): ModalElement {
-    return new ModalElement(
-      { ...this.baseProps(), ...overrides },
-      this.title,
-    );
+    return new ModalElement({ ...this.baseProps(), ...overrides }, this.title);
   }
 
   withTitle(title: string | null): ModalElement {

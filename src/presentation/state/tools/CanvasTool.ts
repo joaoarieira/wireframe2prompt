@@ -27,6 +27,7 @@ export interface ToolContext {
   beginPan(point: SurfacePoint): void;
   updatePan(point: SurfacePoint): void;
   endPan(): void;
+  beginCanvasInlineEditing(elementId: string): void;
 }
 
 /**
@@ -41,7 +42,20 @@ export interface CanvasTool {
    * `t(tool.labelKey)`.
    */
   readonly labelKey: string;
-  onCellPointerDown(context: ToolContext, cell: Position, point: SurfacePoint): void;
-  onCellPointerMove(context: ToolContext, cell: Position, point: SurfacePoint): void;
-  onCellPointerUp(context: ToolContext, cell: Position, point: SurfacePoint): void;
+  onCellPointerDown(
+    context: ToolContext,
+    cell: Position,
+    point: SurfacePoint,
+  ): void;
+  onCellPointerMove(
+    context: ToolContext,
+    cell: Position,
+    point: SurfacePoint,
+  ): void;
+  onCellPointerUp(
+    context: ToolContext,
+    cell: Position,
+    point: SurfacePoint,
+  ): void;
+  onCellDoubleClick?(context: ToolContext, cell: Position): void;
 }

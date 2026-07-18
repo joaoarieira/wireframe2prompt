@@ -1,4 +1,7 @@
-import type { IGlyphMapper, GlyphCell } from "../../../domain/ports/IGlyphMapper";
+import type {
+  IGlyphMapper,
+  GlyphCell,
+} from "../../../domain/ports/IGlyphMapper";
 import type { Element } from "../../../domain/entities/element/Element";
 import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { Position } from "../../../domain/entities/position/Position";

@@ -27,9 +27,7 @@ export function makeText(id: string, text: string): TextElement {
   });
 }
 
-export function makeDoc(
-  ...elements: Element[]
-): WireframeDocument {
+export function makeDoc(...elements: Element[]): WireframeDocument {
   return WireframeDocument.create({
     id: "doc1",
     name: "Untitled",

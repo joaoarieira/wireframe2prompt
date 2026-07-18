@@ -50,25 +50,14 @@ describe("CardGlyphMapper (golden tests)", () => {
   test("6×5 with title 'Longtitle' (truncated to 2 chars)", () => {
     const result = composer.compose(doc(6, 5, card(6, 5, "Longtitle")));
     expect(result.toString()).toBe(
-      [
-        "+----+",
-        "| Lo |",
-        "+----+",
-        "|    |",
-        "+----+",
-      ].join("\n"),
+      ["+----+", "| Lo |", "+----+", "|    |", "+----+"].join("\n"),
     );
   });
 
   test("null title → plain box", () => {
     const result = composer.compose(doc(6, 4, card(6, 4, null)));
     expect(result.toString()).toBe(
-      [
-        "+----+",
-        "|    |",
-        "+----+",
-        "+----+",
-      ].join("\n"),
+      ["+----+", "|    |", "+----+", "+----+"].join("\n"),
     );
   });
 
@@ -79,6 +68,8 @@ describe("CardGlyphMapper (golden tests)", () => {
 
   test("height == 3 → title but no separator", () => {
     const result = composer.compose(doc(8, 3, card(8, 3, "Hi")));
-    expect(result.toString()).toBe(["+------+", "| Hi   |", "+------+"].join("\n"));
+    expect(result.toString()).toBe(
+      ["+------+", "| Hi   |", "+------+"].join("\n"),
+    );
   });
 });

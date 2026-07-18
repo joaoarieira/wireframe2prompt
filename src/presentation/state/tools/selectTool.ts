@@ -24,4 +24,12 @@ export const selectTool: CanvasTool = {
   onCellPointerUp(context) {
     context.commitDrag();
   },
+  onCellDoubleClick(context, cell) {
+    const hit = context.elementAt(cell);
+    if (hit === null || hit.kind !== "text") {
+      return;
+    }
+    context.select(hit.id);
+    context.beginCanvasInlineEditing(hit.id);
+  },
 };

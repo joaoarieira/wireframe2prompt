@@ -1,4 +1,7 @@
-import type { IGlyphMapper, GlyphCell } from "../../../domain/ports/IGlyphMapper";
+import type {
+  IGlyphMapper,
+  GlyphCell,
+} from "../../../domain/ports/IGlyphMapper";
 import type { Element } from "../../../domain/entities/element/Element";
 import { TableElement } from "../../../domain/entities/element/TableElement";
 import { Position } from "../../../domain/entities/position/Position";
@@ -12,7 +15,11 @@ const PIPE = CellChar.create("|");
  * Computes line positions for columns or rows.
  * Lines collapse gracefully when interior is too small (no throw).
  */
-function computeLines(origin: number, extent: number, count: number): Set<number> {
+function computeLines(
+  origin: number,
+  extent: number,
+  count: number,
+): Set<number> {
   const interior = extent - (count + 1);
   const base = Math.max(0, Math.floor(interior / count));
   const rem = interior <= 0 ? 0 : interior % count;

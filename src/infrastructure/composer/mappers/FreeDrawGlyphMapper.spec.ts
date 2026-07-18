@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { FreeDrawGlyphMapper } from "./FreeDrawGlyphMapper";
-import { FreeDrawElement, freeDrawCellKey } from "../../../domain/entities/element/FreeDrawElement";
+import {
+  FreeDrawElement,
+  freeDrawCellKey,
+} from "../../../domain/entities/element/FreeDrawElement";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
 import { GlyphMapperRegistry } from "../GlyphMapperRegistry";
 import { ZIndexComposer } from "../ZIndexComposer";

@@ -32,8 +32,12 @@ describe("Layer", () => {
 
   test("equals must compare id, name, visibility and lock", () => {
     const layer = Layer.create({ id: "l1", name: "Layer 1" });
-    expect(layer.equals(Layer.create({ id: "l1", name: "Layer 1" }))).toBe(true);
-    expect(layer.equals(Layer.create({ id: "l2", name: "Layer 1" }))).toBe(false);
+    expect(layer.equals(Layer.create({ id: "l1", name: "Layer 1" }))).toBe(
+      true,
+    );
+    expect(layer.equals(Layer.create({ id: "l2", name: "Layer 1" }))).toBe(
+      false,
+    );
     expect(layer.equals(layer.rename("Other"))).toBe(false);
     expect(layer.equals(layer.setVisible(false))).toBe(false);
     expect(layer.equals(layer.setLocked(true))).toBe(false);

@@ -3,6 +3,7 @@ import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import type { GridSurfaceComponent } from "./GridSurface";
 import { DomGridSurface } from "./DomGridSurface";
 import { SelectionOverlay } from "./SelectionOverlay";
+import { TextEditOverlay } from "./TextEditOverlay";
 import { cellAtPoint } from "./cellGeometry";
 import type { PointLike } from "./cellGeometry";
 import { useEditorStore } from "../../state/app-store/appStore";
@@ -11,6 +12,7 @@ import {
   selectedElementOf,
 } from "../../state/editor-store/editorStore";
 import { editorActionForKey } from "../../state/keyboard/editorKeyAction";
+import { TextElement } from "../../../domain/entities/element/TextElement";
 
 const CELL_SIZE_VARS = { "--cell-w": "10px", "--cell-h": "18px" };
 
@@ -54,6 +56,11 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const pointerMoveOnCell = useEditorStore((state) => state.pointerMoveOnCell);
   const pointerUpOnCell = useEditorStore((state) => state.pointerUpOnCell);
   const applyKeyAction = useEditorStore((state) => state.applyKeyAction);
+  const doubleClickOnCell = useEditorStore((state) => state.doubleClickOnCell);
+  const canvasEditingElementId = useEditorStore(
+    (state) => state.canvasEditingElementId,
+  );
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
   const zoomAtPoint = useEditorStore((state) => state.zoomAtPoint);
   const beginPan = useEditorStore((state) => state.beginPan);
   const updatePan = useEditorStore((state) => state.updatePan);
@@ -110,6 +117,13 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     selectedElementId,
   });
 
+  const editingElement =
+    canvasEditingElementId !== null
+      ? (visibleDocument.getElement(canvasEditingElementId) ?? null)
+      : null;
+  const textEditElement =
+    editingElement instanceof TextElement ? editingElement : null;
+
   const cellFromPoint = (point: PointLike) => {
     const rect = rootRef.current?.getBoundingClientRect();
     if (rect === undefined) {
@@ -153,6 +167,15 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   };
 
   const handlePanStart = (event: PointerEvent<HTMLDivElement>) => {
+    // A click on the canvas backdrop (outside the paper) while canvas text
+    // editing is active should end the editing session.
+    if (
+      canvasEditingElementId !== null &&
+      event.target === event.currentTarget &&
+      event.button === PRIMARY_MOUSE_BUTTON
+    ) {
+      endTextEditing();
+    }
     if (!shouldStartPan(event)) {
       return;
     }
@@ -223,11 +246,19 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
             onCellPointerDown={pointerDownOnCell}
             onCellPointerMove={pointerMoveOnCell}
             onCellPointerUp={pointerUpOnCell}
+            onCellDoubleClick={doubleClickOnCell}
           />
           {selectedElement !== null && (
             <SelectionOverlay
               element={selectedElement}
               getCell={cellFromPoint}
+            />
+          )}
+          {textEditElement !== null && (
+            <TextEditOverlay
+              element={textEditElement}
+              onEnd={endTextEditing}
+              canvasRef={rootRef}
             />
           )}
         </div>

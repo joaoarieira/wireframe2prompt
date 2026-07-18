@@ -194,18 +194,12 @@ function SelectedElementFields({ element }: { element: Element }) {
           </Select>
         </Field>
       )}
-      {element instanceof CardElement && (
-        <CardTitleField element={element} />
-      )}
-      {element instanceof ModalElement && (
-        <ModalTitleField element={element} />
-      )}
+      {element instanceof CardElement && <CardTitleField element={element} />}
+      {element instanceof ModalElement && <ModalTitleField element={element} />}
       {element instanceof TableElement && (
         <TableShapeFields element={element} />
       )}
-      {element instanceof TabsElement && (
-        <TabsFields element={element} />
-      )}
+      {element instanceof TabsElement && <TabsFields element={element} />}
     </>
   );
 }
@@ -243,6 +237,7 @@ function TextContentField({ element }: { element: TextElement }) {
         onBlur={endTextEditing}
         onKeyDown={handleKeyDown}
       />
+      <p className="text-xs opacity-70">{t("inspector.textEditHint")}</p>
     </Field>
   );
 }
