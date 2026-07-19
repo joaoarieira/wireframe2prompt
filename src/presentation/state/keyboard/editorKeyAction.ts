@@ -9,7 +9,11 @@ export type EditorKeyAction =
   | { type: "undo" }
   | { type: "redo" }
   | { type: "remove-selected" }
-  | { type: "nudge"; deltaCol: number; deltaRow: number };
+  | { type: "nudge"; deltaCol: number; deltaRow: number }
+  | { type: "copy" }
+  | { type: "paste" }
+  | { type: "duplicate" }
+  | { type: "cancel" };
 
 const nudgeByKey: Record<string, { deltaCol: number; deltaRow: number }> = {
   ArrowLeft: { deltaCol: -1, deltaRow: 0 },
@@ -35,6 +39,18 @@ export function editorActionForKey(
   }
   if (command && input.key.toLowerCase() === "y") {
     return { type: "redo" };
+  }
+  if (command && input.key.toLowerCase() === "c") {
+    return { type: "copy" };
+  }
+  if (command && input.key.toLowerCase() === "v") {
+    return { type: "paste" };
+  }
+  if (command && input.key.toLowerCase() === "d") {
+    return { type: "duplicate" };
+  }
+  if (input.key === "Escape") {
+    return { type: "cancel" };
   }
   if (input.key === "Delete" || input.key === "Backspace") {
     return { type: "remove-selected" };

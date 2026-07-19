@@ -24,6 +24,7 @@ export function LayersPanel() {
   const changeElementZIndex = useEditorStore(
     (state) => state.changeElementZIndex,
   );
+  const openContextMenu = useEditorStore((state) => state.openContextMenu);
 
   if (document === null) {
     return null;
@@ -43,8 +44,23 @@ export function LayersPanel() {
     }
   };
 
+  const handleRowContextMenu = (event: MouseEvent, elementId: string) => {
+    event.preventDefault();
+    if (!selectedElementIds.includes(elementId)) {
+      selectElement(elementId);
+    }
+    openContextMenu({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      cell: null,
+      target: "element",
+    });
+  };
+
   return (
-    <List className="p-2">
+    // select-none: shift+click multi-selects rows; without it the browser
+    // extends a text selection from the previously clicked row instead.
+    <List className="p-2 select-none">
       {topmostFirst.map((element) => {
         // Custom name if the user gave one, else the translated element kind.
         const displayName = element.name ?? t(`elementKind.${element.kind}`);
@@ -56,6 +72,7 @@ export function LayersPanel() {
               isSelected ? "bg-base-300" : ""
             }`}
             onClick={(event) => handleRowClick(event, element.id)}
+            onContextMenu={(event) => handleRowContextMenu(event, element.id)}
           >
             <ListCell
               grow

@@ -7,7 +7,12 @@ import {
   marqueeRect,
   NoOpenDocumentError,
 } from "./editorStore";
-import type { DragState, EditorStore, StrokeState, MarqueeState } from "./editorStore";
+import type {
+  DragState,
+  EditorStore,
+  StrokeState,
+  MarqueeState,
+} from "./editorStore";
 import { createContainer } from "../../../di/container";
 import type { AppContainer } from "../../../di/container";
 import { InMemoryWebStorage } from "../../../tests/doubles/InMemoryWebStorage";
@@ -378,28 +383,99 @@ describe("multi-select store actions", () => {
     );
   });
 
-  test("right-button pointer down routes to onCellSecondaryPointerDown", async () => {
+  test("right-button on already-selected element opens context menu without re-selecting", async () => {
     await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
 
-    store
-      .getState()
-      .pointerDownOnCell(cell(1, 1), { clientX: 0, clientY: 0, button: 2, shiftKey: false });
+    store.getState().pointerDownOnCell(cell(0, 0), {
+      clientX: 5,
+      clientY: 5,
+      button: 2,
+      shiftKey: false,
+    });
 
-    // select tool's secondary down → beginMarquee (not select)
-    expect(store.getState().selectedElementIds).toEqual([]);
-    expect(store.getState().marquee).not.toBeNull();
+    expect(store.getState().selectedElementIds).toEqual(["b1"]);
+    expect(store.getState().contextMenu).not.toBeNull();
   });
 
-  test("right-button on tool without secondary handler is a no-op", async () => {
+  test("right-button on element selects it and opens context menu (select tool)", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().pointerDownOnCell(cell(0, 0), {
+      clientX: 5,
+      clientY: 5,
+      button: 2,
+      shiftKey: false,
+    });
+
+    expect(store.getState().selectedElementIds).toEqual(["b1"]);
+    expect(store.getState().contextMenu?.target).toBe("element");
+    expect(store.getState().marquee).toBeNull();
+  });
+
+  test("right-button on element opens context menu regardless of active tool", async () => {
     await openFixtureDoc(makeBox("b1"));
     store.getState().setActiveTool("box");
 
-    store
-      .getState()
-      .pointerDownOnCell(cell(1, 1), { clientX: 0, clientY: 0, button: 2, shiftKey: false });
+    store.getState().pointerDownOnCell(cell(1, 1), {
+      clientX: 8,
+      clientY: 8,
+      button: 2,
+      shiftKey: false,
+    });
 
-    // placement tool has no secondary handler; nothing should be placed
+    // Store-level hit-test fires before tool delegation → menu opens, no extra element placed
+    expect(store.getState().contextMenu).not.toBeNull();
+    expect(store.getState().selectedElementIds).toEqual(["b1"]);
     expect(store.getState().document?.elements).toHaveLength(1);
+  });
+
+  test("right-button on empty space opens the paste-only menu, no marquee", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+
+    store.getState().pointerDownOnCell(cell(10, 8), {
+      clientX: 30,
+      clientY: 40,
+      button: 2,
+      shiftKey: false,
+    });
+
+    expect(store.getState().marquee).toBeNull();
+    expect(store.getState().contextMenu).toEqual({
+      clientX: 30,
+      clientY: 40,
+      cell: cell(10, 8),
+      target: "empty",
+    });
+    // Selection is untouched — the empty-target menu only offers paste.
+    expect(store.getState().selectedElementIds).toEqual(["b1"]);
+  });
+
+  test("right-button on empty space opens the paste-only menu regardless of active tool", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().setActiveTool("box");
+
+    store.getState().pointerDownOnCell(cell(10, 8), {
+      clientX: 0,
+      clientY: 0,
+      button: 2,
+      shiftKey: false,
+    });
+
+    expect(store.getState().contextMenu?.target).toBe("empty");
+    expect(store.getState().document?.elements).toHaveLength(1); // nothing placed
+  });
+
+  test("right-button with no open document opens the paste-only menu", () => {
+    store.getState().pointerDownOnCell(cell(0, 0), {
+      clientX: 0,
+      clientY: 0,
+      button: 2,
+      shiftKey: false,
+    });
+
+    expect(store.getState().contextMenu?.target).toBe("empty");
   });
 
   test("commitMarquee additive unions with current selection", async () => {
@@ -481,9 +557,12 @@ describe("multi-select store actions", () => {
     // Select b1 first so that the toggle de-selects it.
     store.getState().selectElement("b1");
 
-    store
-      .getState()
-      .pointerDownOnCell(cell(1, 1), { clientX: 0, clientY: 0, button: 0, shiftKey: true });
+    store.getState().pointerDownOnCell(cell(1, 1), {
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+      shiftKey: true,
+    });
 
     expect(store.getState().selectedElementIds).toEqual([]);
   });
@@ -1072,7 +1151,9 @@ describe("pencil/eraser stroke", () => {
   test("setActiveTool clears stroke and panDrag", async () => {
     await openFixtureDoc();
     store.getState().beginDrawStroke(cell(1, 1));
-    store.getState().beginPan({ clientX: 0, clientY: 0, button: 0, shiftKey: false });
+    store
+      .getState()
+      .beginPan({ clientX: 0, clientY: 0, button: 0, shiftKey: false });
 
     store.getState().setActiveTool("select");
 
@@ -1107,30 +1188,24 @@ describe("pencil/eraser stroke", () => {
   test("hand tool routes through toolContext to beginPan/updatePan/endPan", () => {
     store.getState().setActiveTool("hand");
 
-    store
-      .getState()
-      .pointerDownOnCell(cell(0, 0), {
-        clientX: 100,
-        clientY: 200,
-        button: 0,
-        shiftKey: false,
-      });
-    store
-      .getState()
-      .pointerMoveOnCell(cell(0, 0), {
-        clientX: 110,
-        clientY: 210,
-        button: -1,
-        shiftKey: false,
-      });
-    store
-      .getState()
-      .pointerUpOnCell(cell(0, 0), {
-        clientX: 110,
-        clientY: 210,
-        button: 0,
-        shiftKey: false,
-      });
+    store.getState().pointerDownOnCell(cell(0, 0), {
+      clientX: 100,
+      clientY: 200,
+      button: 0,
+      shiftKey: false,
+    });
+    store.getState().pointerMoveOnCell(cell(0, 0), {
+      clientX: 110,
+      clientY: 210,
+      button: -1,
+      shiftKey: false,
+    });
+    store.getState().pointerUpOnCell(cell(0, 0), {
+      clientX: 110,
+      clientY: 210,
+      button: 0,
+      shiftKey: false,
+    });
 
     expect(store.getState().viewport.offsetX).toBe(10);
     expect(store.getState().viewport.offsetY).toBe(10);
@@ -1270,9 +1345,7 @@ describe("pure helpers", () => {
 
     await openFixtureDoc(makeBox("b1"));
     const document = store.getState().document;
-    expect(
-      selectedElementOf({ document, selectedElementIds: [] }),
-    ).toBeNull();
+    expect(selectedElementOf({ document, selectedElementIds: [] })).toBeNull();
     expect(
       selectedElementOf({ document, selectedElementIds: ["b1", "b2"] }),
     ).toBeNull(); // null with 2 selected
@@ -1293,7 +1366,9 @@ describe("pure helpers", () => {
       selectedElementIds: ["b1", "b2", "ghost"],
     });
     expect(result.map((e) => e.id)).toEqual(["b1", "b2"]);
-    expect(selectedElementsOf({ document: null, selectedElementIds: [] })).toEqual([]);
+    expect(
+      selectedElementsOf({ document: null, selectedElementIds: [] }),
+    ).toEqual([]);
   });
 
   test("previewedDocument move drag with unknown elementId skips that element", async () => {
@@ -1323,5 +1398,424 @@ describe("pure helpers", () => {
     expect(rect.position.equals(cell(2, 1))).toBe(true);
     expect(rect.size.width).toBe(4);
     expect(rect.size.height).toBe(3);
+  });
+
+  test("previewedDocument with paste preview ghost shows elements at anchor", async () => {
+    await openFixtureDoc();
+    const doc = store.getState().document!;
+    const box = makeBox("b1");
+    const preview = previewedDocument(doc, null, null, {
+      elements: [box.translate(0, 0)],
+      anchorCell: cell(3, 2),
+    });
+    // Ghost element at anchor offset
+    expect(preview.elements).toHaveLength(1);
+    expect(preview.getElement("b1")?.position.col).toBe(3);
+    expect(preview.getElement("b1")?.position.row).toBe(2);
+  });
+
+  test("previewedDocument with anchorCell null returns document unchanged", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    const doc = store.getState().document!;
+    const preview = previewedDocument(doc, null, null, {
+      elements: [makeBox("b2")],
+      anchorCell: null,
+    });
+    expect(preview).toBe(doc);
+  });
+});
+
+describe("copy / paste / duplicate", () => {
+  test("copySelection fills clipboard with the selected elements", async () => {
+    await openFixtureDoc(makeBox("b1"), makeBox("b2"));
+    store.getState().selectElement("b1");
+
+    store.getState().copySelection();
+
+    expect(store.getState().clipboard).toHaveLength(1);
+    expect(store.getState().clipboard[0].id).toBe("b1");
+  });
+
+  test("copySelection with empty selection keeps the previous clipboard", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    store.getState().copySelection();
+    store.getState().selectElement(null);
+
+    store.getState().copySelection();
+
+    expect(store.getState().clipboard).toHaveLength(1);
+  });
+
+  test("duplicateSelection places clones at +1,+1 with new ids", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+
+    store.getState().duplicateSelection();
+
+    const state = store.getState();
+    expect(state.document?.elements).toHaveLength(2);
+    const cloneId = state.selectedElementIds[0];
+    expect(cloneId).not.toBe("b1");
+    const clone = state.document?.getElement(cloneId);
+    expect(clone?.position.col).toBe(1);
+    expect(clone?.position.row).toBe(1);
+  });
+
+  test("duplicateSelection pushes exactly 1 history snapshot", async () => {
+    await openFixtureDoc(makeBox("b1"), makeBox("b2"));
+    store.getState().replaceSelection(["b1", "b2"]);
+    const undoBefore = store.getState().canUndo;
+
+    store.getState().duplicateSelection();
+
+    expect(store.getState().canUndo).toBe(true);
+    // canUndo changes from false to true = 1 push
+    expect(undoBefore).toBe(false);
+    store.getState().undo();
+    expect(store.getState().document?.elements).toHaveLength(2);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("duplicateSelection with empty selection is a no-op", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().duplicateSelection();
+
+    expect(store.getState().document?.elements).toHaveLength(1);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("beginPastePreview normalizes clones and sets anchorCell", async () => {
+    await openFixtureDoc();
+    const b1 = makeBox("b1");
+    // Two boxes at (3,2) and (5,4)
+    const b1Moved = b1.translate(3, 2);
+    const b2Moved = makeBox("b2").translate(5, 4);
+    store.getState().selectElement(null);
+    store.setState({ clipboard: [b1Moved, b2Moved] });
+
+    store.getState().beginPastePreview(cell(1, 1));
+
+    const { pastePreview } = store.getState();
+    expect(pastePreview).not.toBeNull();
+    const positions = pastePreview!.elements.map((el) => ({
+      col: el.position.col,
+      row: el.position.row,
+    }));
+    // Normalized: top-left of bounding box moved to (0,0)
+    expect(positions).toContainEqual({ col: 0, row: 0 });
+    expect(positions).toContainEqual({ col: 2, row: 2 });
+    expect(pastePreview!.anchorCell).toEqual(cell(1, 1));
+    // Fresh ids
+    expect(pastePreview!.elements[0].id).not.toBe("b1");
+    expect(pastePreview!.elements[1].id).not.toBe("b2");
+  });
+
+  test("beginPastePreview with null anchorCell sets anchorCell to null", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+
+    store.getState().beginPastePreview(null);
+
+    expect(store.getState().pastePreview?.anchorCell).toBeNull();
+  });
+
+  test("beginPastePreview closes the context menu", async () => {
+    await openFixtureDoc();
+    store.setState({
+      clipboard: [makeBox("b1")],
+      contextMenu: { clientX: 10, clientY: 10, cell: null, target: "element" },
+    });
+
+    store.getState().beginPastePreview(null);
+
+    expect(store.getState().contextMenu).toBeNull();
+  });
+
+  test("beginPastePreview with empty clipboard is a no-op", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPastePreview(null);
+
+    expect(store.getState().pastePreview).toBeNull();
+  });
+
+  test("updatePastePreview updates the anchorCell", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(cell(0, 0));
+
+    store.getState().updatePastePreview(cell(5, 3));
+
+    expect(store.getState().pastePreview?.anchorCell).toEqual(cell(5, 3));
+  });
+
+  test("updatePastePreview with no preview is a no-op", async () => {
+    await openFixtureDoc();
+    store.getState().updatePastePreview(cell(5, 5));
+    expect(store.getState().pastePreview).toBeNull();
+  });
+
+  test("cancelPastePreview clears the preview", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(cell(0, 0));
+
+    store.getState().cancelPastePreview();
+
+    expect(store.getState().pastePreview).toBeNull();
+  });
+
+  test("commitPastePreview adds elements at anchor, 1 undo push, selection = placed ids", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(null);
+    store.getState().updatePastePreview(cell(4, 2));
+
+    store.getState().commitPastePreview(cell(4, 2));
+
+    const state = store.getState();
+    expect(state.document?.elements).toHaveLength(1);
+    const placed = state.document!.elements[0];
+    expect(placed.position.col).toBe(4);
+    expect(placed.position.row).toBe(2);
+    expect(state.selectedElementIds).toEqual([placed.id]);
+    expect(state.pastePreview).toBeNull();
+    expect(state.canUndo).toBe(true);
+  });
+
+  test("commitPastePreview second paste generates new ids", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+
+    store.getState().beginPastePreview(null);
+    store.getState().commitPastePreview(cell(0, 0));
+    const firstId = store.getState().selectedElementIds[0];
+
+    store.getState().beginPastePreview(null);
+    store.getState().commitPastePreview(cell(2, 2));
+    const secondId = store.getState().selectedElementIds[0];
+
+    expect(firstId).not.toBe(secondId);
+    expect(store.getState().document?.elements).toHaveLength(2);
+  });
+
+  test("commitPastePreview with no active preview is a no-op", async () => {
+    await openFixtureDoc();
+    store.getState().commitPastePreview(cell(0, 0));
+    expect(store.getState().document?.elements).toHaveLength(0);
+  });
+
+  test("pointer left-click during paste preview commits it", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(null);
+
+    store.getState().pointerDownOnCell(cell(3, 3), {
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+      shiftKey: false,
+    });
+
+    expect(store.getState().pastePreview).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(1);
+  });
+
+  test("pointer right-click during paste preview cancels it", async () => {
+    await openFixtureDoc();
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(null);
+
+    store.getState().pointerDownOnCell(cell(3, 3), {
+      clientX: 0,
+      clientY: 0,
+      button: 2,
+      shiftKey: false,
+    });
+
+    expect(store.getState().pastePreview).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(0);
+  });
+
+  test("pointer move during paste preview updates anchor without routing to tool", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.setState({ clipboard: [makeBox("b2")] });
+    store.getState().beginPastePreview(null);
+
+    store.getState().pointerMoveOnCell(cell(5, 3), {
+      clientX: 0,
+      clientY: 0,
+      button: -1,
+      shiftKey: false,
+    });
+
+    expect(store.getState().pastePreview?.anchorCell).toEqual(cell(5, 3));
+    // No drag started (tool not routed)
+    expect(store.getState().drag).toBeNull();
+  });
+
+  test("applyKeyAction copy/paste/duplicate/cancel are routed correctly", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+
+    store.getState().applyKeyAction({ type: "copy" });
+    expect(store.getState().clipboard).toHaveLength(1);
+
+    store.getState().applyKeyAction({ type: "paste" });
+    expect(store.getState().pastePreview).not.toBeNull();
+
+    store.getState().applyKeyAction({ type: "cancel" });
+    expect(store.getState().pastePreview).toBeNull();
+
+    store.getState().applyKeyAction({ type: "duplicate" });
+    expect(store.getState().document?.elements).toHaveLength(2);
+  });
+
+  test("applyKeyAction Delete during paste preview cancels preview, not removes selection", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(null);
+
+    store.getState().applyKeyAction({ type: "remove-selected" });
+
+    expect(store.getState().pastePreview).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(1); // NOT deleted
+  });
+
+  test("Escape precedence: contextMenu → pastePreview → drag", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    // Directly set both active simultaneously to test priority
+    store.setState({
+      clipboard: [makeBox("b1")],
+      pastePreview: { elements: [makeBox("id-x")], anchorCell: null },
+      contextMenu: { clientX: 0, clientY: 0, cell: null, target: "element" },
+    });
+
+    // First Escape closes context menu, paste preview untouched
+    store.getState().applyKeyAction({ type: "cancel" });
+    expect(store.getState().contextMenu).toBeNull();
+    expect(store.getState().pastePreview).not.toBeNull();
+
+    // Second Escape cancels paste preview
+    store.getState().applyKeyAction({ type: "cancel" });
+    expect(store.getState().pastePreview).toBeNull();
+  });
+
+  test("applyKeyAction copy/paste/duplicate suspended during text editing", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    store.setState({ textEditingElementId: "b1", clipboard: [makeBox("b1")] });
+
+    store.getState().applyKeyAction({ type: "copy" });
+    store.getState().applyKeyAction({ type: "paste" });
+    store.getState().applyKeyAction({ type: "duplicate" });
+
+    expect(store.getState().clipboard).toHaveLength(1); // unchanged
+    expect(store.getState().pastePreview).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(1);
+  });
+
+  test("openDocument preserves clipboard but clears preview and menu", async () => {
+    const b1 = makeBox("b1");
+    store.setState({ clipboard: [b1] });
+
+    await openFixtureDoc();
+
+    expect(store.getState().clipboard).toHaveLength(1);
+    expect(store.getState().pastePreview).toBeNull();
+    expect(store.getState().contextMenu).toBeNull();
+  });
+
+  test("setActiveTool clears pastePreview and contextMenu", async () => {
+    await openFixtureDoc();
+    store.setState({
+      clipboard: [makeBox("b1")],
+      contextMenu: { clientX: 0, clientY: 0, cell: null, target: "element" },
+    });
+    store.getState().beginPastePreview(null);
+
+    store.getState().setActiveTool("box");
+
+    expect(store.getState().pastePreview).toBeNull();
+    expect(store.getState().contextMenu).toBeNull();
+  });
+
+  test("openContextMenu and closeContextMenu", async () => {
+    await openFixtureDoc();
+
+    store.getState().openContextMenu({
+      clientX: 50,
+      clientY: 80,
+      cell: null,
+      target: "element",
+    });
+    expect(store.getState().contextMenu).toEqual({
+      clientX: 50,
+      clientY: 80,
+      cell: null,
+      target: "element",
+    });
+
+    store.getState().closeContextMenu();
+    expect(store.getState().contextMenu).toBeNull();
+  });
+
+  test("pointer down with open context menu closes it first", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.setState({
+      contextMenu: { clientX: 0, clientY: 0, cell: null, target: "element" },
+    });
+
+    store.getState().pointerDownOnCell(cell(5, 5));
+
+    expect(store.getState().contextMenu).toBeNull();
+  });
+
+  test("Escape cancels drag when no contextMenu or pastePreview", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    store.getState().beginMove(["b1"], cell(0, 0));
+    expect(store.getState().drag).not.toBeNull();
+
+    store.getState().applyKeyAction({ type: "cancel" });
+
+    expect(store.getState().drag).toBeNull();
+  });
+
+  test("Escape cancels marquee when no contextMenu, pastePreview, or drag", async () => {
+    await openFixtureDoc();
+    store.getState().beginMarquee(cell(0, 0));
+    expect(store.getState().marquee).not.toBeNull();
+
+    store.getState().applyKeyAction({ type: "cancel" });
+
+    expect(store.getState().marquee).toBeNull();
+  });
+
+  test("Escape cancels stroke when no higher-priority interaction is active", async () => {
+    await openFixtureDoc();
+    store.getState().setActiveTool("pencil");
+    store.getState().beginDrawStroke(cell(1, 1));
+    expect(store.getState().stroke).not.toBeNull();
+
+    store.getState().applyKeyAction({ type: "cancel" });
+
+    expect(store.getState().stroke).toBeNull();
+  });
+
+  test("Escape with no active interaction is a no-op", async () => {
+    await openFixtureDoc();
+
+    // Should not throw; all guards are null, nothing to cancel
+    expect(() =>
+      store.getState().applyKeyAction({ type: "cancel" }),
+    ).not.toThrow();
+    expect(store.getState().drag).toBeNull();
+    expect(store.getState().marquee).toBeNull();
+    expect(store.getState().stroke).toBeNull();
   });
 });

@@ -63,6 +63,42 @@ describe("editorActionForKey", () => {
     });
   });
 
+  test("ctrl+c / cmd+c → copy", () => {
+    expect(editorActionForKey(key({ key: "c", ctrlKey: true }))).toEqual({
+      type: "copy",
+    });
+    expect(editorActionForKey(key({ key: "C", metaKey: true }))).toEqual({
+      type: "copy",
+    });
+    expect(editorActionForKey(key({ key: "c" }))).toBeNull();
+  });
+
+  test("ctrl+v / cmd+v → paste", () => {
+    expect(editorActionForKey(key({ key: "v", ctrlKey: true }))).toEqual({
+      type: "paste",
+    });
+    expect(editorActionForKey(key({ key: "V", metaKey: true }))).toEqual({
+      type: "paste",
+    });
+    expect(editorActionForKey(key({ key: "v" }))).toBeNull();
+  });
+
+  test("ctrl+d / cmd+d → duplicate", () => {
+    expect(editorActionForKey(key({ key: "d", ctrlKey: true }))).toEqual({
+      type: "duplicate",
+    });
+    expect(editorActionForKey(key({ key: "D", metaKey: true }))).toEqual({
+      type: "duplicate",
+    });
+    expect(editorActionForKey(key({ key: "d" }))).toBeNull();
+  });
+
+  test("Escape → cancel", () => {
+    expect(editorActionForKey(key({ key: "Escape" }))).toEqual({
+      type: "cancel",
+    });
+  });
+
   test("non-shortcut keys → null", () => {
     expect(editorActionForKey(key({ key: "z" }))).toBeNull();
     expect(editorActionForKey(key({ key: "x", ctrlKey: true }))).toBeNull();

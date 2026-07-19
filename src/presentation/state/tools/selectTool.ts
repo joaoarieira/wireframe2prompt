@@ -5,7 +5,7 @@ import type { CanvasTool } from "./CanvasTool";
  *
  * Left-button on element: select (or shift-toggle) and begin move drag.
  * Left-button on empty space: begin marquee (1-cell commit = clear selection).
- * Right-button anywhere: begin marquee (additive via shift, resolved on up).
+ * Right-button: handled entirely by the store (context menu), never reaches tools.
  * Shift+click on element: toggle without starting a drag.
  * Clicking an already-selected element: moves the whole group.
  */
@@ -30,10 +30,6 @@ export const selectTool: CanvasTool = {
       context.select(hit.id);
       context.beginMove([hit.id], cell);
     }
-  },
-
-  onCellSecondaryPointerDown(context, cell) {
-    context.beginMarquee(cell);
   },
 
   onCellPointerMove(context, cell) {

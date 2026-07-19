@@ -48,6 +48,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const document = useEditorStore((state) => state.document);
   const drag = useEditorStore((state) => state.drag);
   const stroke = useEditorStore((state) => state.stroke);
+  const pastePreview = useEditorStore((state) => state.pastePreview);
   const marquee = useEditorStore((state) => state.marquee);
   const selectedElementIds = useEditorStore(
     (state) => state.selectedElementIds,
@@ -106,7 +107,9 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   }, [currentZoom, zoomAtPoint, panViewportBy]);
 
   const visibleDocument =
-    document === null ? null : previewedDocument(document, drag, stroke);
+    document === null
+      ? null
+      : previewedDocument(document, drag, stroke, pastePreview);
   const buffer = useMemo(
     () => (visibleDocument === null ? null : composeBuffer(visibleDocument)),
     [visibleDocument, composeBuffer],
@@ -142,6 +145,13 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Let text overlays (textarea/input) keep their native clipboard behaviour.
+    if (
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLInputElement
+    ) {
+      return;
+    }
     const action = editorActionForKey(event);
     if (action === null) {
       return;

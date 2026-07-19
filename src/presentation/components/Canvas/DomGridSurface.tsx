@@ -12,7 +12,7 @@ import type { SurfacePoint } from "../../state/tools/CanvasTool";
  * the cursor leaves the grid.
  *
  * Primary (button 0) and secondary (button 2) pointer-down events are both
- * forwarded; button 2 routing (marquee vs. tool) happens in the store.
+ * forwarded; button 2 opens the context menu (full or paste-only) in the store.
  * Middle button (1) is left for the Canvas pan handler.
  */
 export function DomGridSurface({
@@ -48,6 +48,14 @@ export function DomGridSurface({
     if (cell === null || !isWithinGrid(cell, buffer.width, buffer.height)) {
       return;
     }
+    if (event.button === 2) {
+      // A right-click may open the context menu during this very event: React
+      // commits the menu synchronously, so by the time the native pointerdown
+      // finishes bubbling to `document` the menu's outside-click listener is
+      // already live and would close it instantly. The secondary press is
+      // fully handled here — never let it reach document-level listeners.
+      event.stopPropagation();
+    }
     dragging.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
     onCellPointerDown(cell, pointFrom(event));
@@ -55,7 +63,10 @@ export function DomGridSurface({
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const cell = cellFrom(event);
-    if (!dragging.current || cell === null) {
+    // Forward all moves so the paste-preview ghost tracks the cursor without
+    // requiring a button press. Tool move handlers (updateDrag, updateMarquee,
+    // extendStroke, updatePan) are no-ops when their respective gesture is idle.
+    if (cell === null) {
       return;
     }
     onCellPointerMove(cell, pointFrom(event));

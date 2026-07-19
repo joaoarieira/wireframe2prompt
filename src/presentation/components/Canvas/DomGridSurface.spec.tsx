@@ -102,6 +102,31 @@ describe("DomGridSurface", () => {
     );
   });
 
+  test("right-click pointerdown does not bubble to document, so the context menu it opens is not dismissed by its own opening click", () => {
+    const { grid, onDown } = renderSurface();
+    const documentPointerDown = vi.fn();
+    document.addEventListener("pointerdown", documentPointerDown);
+
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 2,
+      clientX: 15,
+      clientY: 20,
+    });
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 0,
+      clientX: 15,
+      clientY: 20,
+    });
+
+    document.removeEventListener("pointerdown", documentPointerDown);
+    expect(onDown).toHaveBeenCalledTimes(2);
+    // Only the primary press reached document; the secondary one was stopped.
+    expect(documentPointerDown).toHaveBeenCalledTimes(1);
+    expect(documentPointerDown.mock.calls[0][0].button).toBe(0);
+  });
+
   test("ignores middle button (1) so the Canvas pan handler can own it", () => {
     const { grid, onDown } = renderSurface();
 
@@ -134,18 +159,43 @@ describe("DomGridSurface", () => {
 
   test("contextmenu is prevented so the browser menu does not open on right-click", () => {
     const { grid } = renderSurface();
-    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    const event = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+    });
     grid.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
   });
 
-  test("ignores pointer down outside the grid and moves without a drag", () => {
+  test("ignores pointer down outside the grid; hover move inside grid IS forwarded", () => {
+    // Pointer down outside the grid is ignored.
+    // Hover moves (without a prior drag) ARE forwarded so the paste-preview
+    // ghost can track the cursor; tool move handlers guard internally.
     const { grid, onDown, onMove } = renderSurface();
 
     fireEvent.pointerDown(grid, { pointerId: 1, clientX: 100, clientY: 20 });
     fireEvent.pointerMove(grid, { pointerId: 1, clientX: 15, clientY: 20 });
 
     expect(onDown).not.toHaveBeenCalled();
+    expect(onMove).toHaveBeenCalledWith(
+      Position.create(1, 1),
+      expect.objectContaining({ clientX: 15, clientY: 20 }),
+    );
+  });
+
+  test("pointer move with a degenerate (zero-size) rect is ignored", () => {
+    // When getBoundingClientRect reports a zero-size rect (e.g. unmounted or
+    // hidden element), cellAtPoint returns null → move is dropped.
+    const { grid, onMove } = renderSurface();
+    vi.spyOn(grid, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0,
+    } as DOMRect);
+
+    fireEvent.pointerMove(grid, { pointerId: 1, clientX: 15, clientY: 20 });
+
     expect(onMove).not.toHaveBeenCalled();
   });
 

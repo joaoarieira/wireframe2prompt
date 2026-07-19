@@ -436,6 +436,21 @@ describe("Canvas", () => {
     expect(editorStore.getState().canvasEditingElementId).toBeNull();
   });
 
+  test("keydown from an HTMLInputElement does not trigger applyKeyAction", () => {
+    openDoc();
+    editorStore.setState({ selectedElementIds: ["b1"] });
+    render(<Canvas />);
+
+    // Simulate a keydown whose target is an input element (bubbles to canvas).
+    const canvas = screen.getByTestId("canvas");
+    const input = document.createElement("input");
+    canvas.appendChild(input);
+    fireEvent.keyDown(input, { key: "Delete" });
+
+    // Element must NOT be removed — the keydown was swallowed.
+    expect(editorStore.getState().document?.elements).toHaveLength(1);
+  });
+
   test("double click on grid fires doubleClickOnCell on the store", () => {
     openDoc();
     render(<Canvas />);

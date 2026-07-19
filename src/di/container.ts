@@ -23,6 +23,7 @@ import { DrawFreeCharUseCase } from "../application/usecases/DrawFreeCharUseCase
 import { EraseCellUseCase } from "../application/usecases/EraseCellUseCase";
 import { MoveElementsUseCase } from "../application/usecases/MoveElementsUseCase";
 import { RemoveElementsUseCase } from "../application/usecases/RemoveElementsUseCase";
+import { AddElementsUseCase } from "../application/usecases/AddElementsUseCase";
 
 /**
  * Composition root output: the fully-wired use cases the Presentation layer
@@ -44,6 +45,7 @@ export interface AppContainer {
   redo: RedoUseCase;
   drawFreeChar: DrawFreeCharUseCase;
   eraseCell: EraseCellUseCase;
+  addElements: AddElementsUseCase;
   moveElements: MoveElementsUseCase;
   removeElements: RemoveElementsUseCase;
   readonly history: IHistory;
@@ -90,6 +92,7 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     redo: new RedoUseCase(history),
     drawFreeChar: new DrawFreeCharUseCase(history),
     eraseCell: new EraseCellUseCase(history),
+    addElements: new AddElementsUseCase(history),
     moveElements: new MoveElementsUseCase(history),
     removeElements: new RemoveElementsUseCase(history),
     history,

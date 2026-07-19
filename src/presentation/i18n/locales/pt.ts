@@ -99,4 +99,10 @@ export const pt: LocaleDictionary = {
     draw: "Desenho",
     moreTools: "Mais ferramentas de {{name}}",
   },
+  contextMenu: {
+    copy: "Copiar",
+    paste: "Colar",
+    duplicate: "Duplicar",
+    delete: "Excluir",
+  },
 };

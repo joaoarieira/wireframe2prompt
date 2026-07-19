@@ -5,6 +5,7 @@ import { Canvas } from "../components/Canvas/Canvas";
 import { LayersPanel } from "../components/LayersPanel/LayersPanel";
 import { InspectorPanel } from "../components/InspectorPanel/InspectorPanel";
 import { FloatingFooter } from "../components/FloatingFooter/FloatingFooter";
+import { EditorContextMenu } from "../components/ContextMenu/EditorContextMenu";
 import { Alert } from "../ui/alert/Alert";
 import { Spinner } from "../ui/spinner/Spinner";
 import { ButtonLink } from "../ui/button-link/ButtonLink";
@@ -15,8 +16,7 @@ export function EditorPage() {
   const documentStatus = useEditorStore((state) => state.documentStatus);
   const documentName = useEditorStore((state) => state.document?.name ?? "");
   const inspectorVisible = useEditorStore(
-    (state) =>
-      state.inspectorOpen && state.selectedElementIds.length === 1,
+    (state) => state.inspectorOpen && state.selectedElementIds.length === 1,
   );
 
   if (documentStatus === "missing") {
@@ -71,6 +71,7 @@ export function EditorPage() {
           </aside>
         )}
         <FloatingFooter />
+        <EditorContextMenu />
       </div>
     </div>
   );

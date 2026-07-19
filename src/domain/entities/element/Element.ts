@@ -100,4 +100,9 @@ export abstract class Element {
   withName(name: string | null): Element {
     return this.cloneWith({ name });
   }
+
+  /** New identity for a structurally identical element (used by copy/duplicate). */
+  withId(id: string): Element {
+    return this.cloneWith({ id });
+  }
 }

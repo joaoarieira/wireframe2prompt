@@ -39,6 +39,16 @@ describe("LayersPanel", () => {
     expect(screen.getByText("No elements yet.")).toBeInTheDocument();
   });
 
+  test("list suppresses native text selection so shift+click multi-select does not highlight row text", () => {
+    editorStore.setState({
+      document: makeDoc(box("b1")),
+      documentStatus: "ready",
+    });
+    render(<LayersPanel />);
+
+    expect(screen.getByRole("list")).toHaveClass("select-none");
+  });
+
   test("lists elements topmost first", () => {
     editorStore.setState({
       document: makeDoc(box("low", 0), box("high", 5)),
@@ -149,5 +159,34 @@ describe("LayersPanel", () => {
     render(<LayersPanel />);
 
     expect(screen.getByRole("listitem")).toHaveTextContent("My Button");
+  });
+
+  test("right-click on unselected row selects it and opens the context menu", () => {
+    editorStore.setState({
+      document: makeDoc(box("b1")),
+      documentStatus: "ready",
+      selectedElementIds: [],
+    });
+    render(<LayersPanel />);
+
+    fireEvent.contextMenu(screen.getByRole("listitem"));
+
+    expect(editorStore.getState().selectedElementIds).toEqual(["b1"]);
+    expect(editorStore.getState().contextMenu).not.toBeNull();
+    expect(editorStore.getState().contextMenu?.cell).toBeNull();
+  });
+
+  test("right-click on selected row preserves selection and opens the context menu", () => {
+    editorStore.setState({
+      document: makeDoc(box("b1")),
+      documentStatus: "ready",
+      selectedElementIds: ["b1"],
+    });
+    render(<LayersPanel />);
+
+    fireEvent.contextMenu(screen.getByRole("listitem"));
+
+    expect(editorStore.getState().selectedElementIds).toEqual(["b1"]);
+    expect(editorStore.getState().contextMenu).not.toBeNull();
   });
 });

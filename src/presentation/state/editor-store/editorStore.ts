@@ -87,6 +87,25 @@ export interface PanDragState {
   lastClientY: number;
 }
 
+export interface PastePreviewState {
+  /** Fresh-id clones, normalized so the set's bounding-box top-left is (0,0). */
+  elements: readonly Element[];
+  /** Cell under the cursor; null until the mouse first enters the canvas. */
+  anchorCell: Position | null;
+}
+
+export interface ContextMenuState {
+  clientX: number;
+  clientY: number;
+  /** Grid cell where the menu was opened; null when opened from the LayersPanel. */
+  cell: Position | null;
+  /**
+   * What was right-clicked: "element" shows the full menu (copy / paste /
+   * duplicate / delete); "empty" (free canvas area) shows only paste.
+   */
+  target: "element" | "empty";
+}
+
 export type DocumentStatus = "idle" | "loading" | "ready" | "missing";
 
 export interface EditorState {
@@ -122,6 +141,12 @@ export interface EditorState {
    * this is true AND exactly one element is selected.
    */
   inspectorOpen: boolean;
+  /** Internal clipboard — not the OS clipboard. Survives document switches. */
+  clipboard: readonly Element[];
+  /** Active paste-preview ghost, or null when not in paste mode. */
+  pastePreview: PastePreviewState | null;
+  /** Active context menu position and source cell, or null when closed. */
+  contextMenu: ContextMenuState | null;
 }
 
 export interface EditorActions {
@@ -171,6 +196,14 @@ export interface EditorActions {
   beginPan(point: SurfacePoint): void;
   updatePan(point: SurfacePoint): void;
   endPan(): void;
+  copySelection(): void;
+  duplicateSelection(): void;
+  beginPastePreview(anchorCell: Position | null): void;
+  updatePastePreview(cell: Position): void;
+  commitPastePreview(cell: Position): void;
+  cancelPastePreview(): void;
+  openContextMenu(anchor: ContextMenuState): void;
+  closeContextMenu(): void;
   pointerDownOnCell(cell: Position, point?: SurfacePoint): void;
   pointerMoveOnCell(cell: Position, point?: SurfacePoint): void;
   pointerUpOnCell(cell: Position, point?: SurfacePoint): void;
@@ -216,6 +249,9 @@ const initialState: EditorState = {
   textEditingElementId: null,
   canvasEditingElementId: null,
   inspectorOpen: false,
+  clipboard: [],
+  pastePreview: null,
+  contextMenu: null,
 };
 
 /**
@@ -312,6 +348,8 @@ export function createEditorStore(
           textEditingElementId: null,
           canvasEditingElementId: null,
           inspectorOpen: false,
+          pastePreview: null,
+          contextMenu: null,
         });
         const document = await container.loadDocument.execute({
           id: documentId,
@@ -402,6 +440,8 @@ export function createEditorStore(
           marquee: null,
           stroke: null,
           panDrag: null,
+          pastePreview: null,
+          contextMenu: null,
         });
       },
 
@@ -496,7 +536,10 @@ export function createEditorStore(
       },
 
       applyKeyAction: (action) => {
-        if (get().textEditingElementId !== null && isSingleKeyAction(action)) {
+        if (
+          get().textEditingElementId !== null &&
+          suspendedDuringTextEditing(action)
+        ) {
           return;
         }
         if (action.type === "undo") {
@@ -507,7 +550,27 @@ export function createEditorStore(
           get().redo();
           return;
         }
+        if (action.type === "cancel") {
+          cancelActiveInteraction(get);
+          return;
+        }
+        if (action.type === "copy") {
+          get().copySelection();
+          return;
+        }
+        if (action.type === "paste") {
+          get().beginPastePreview(null);
+          return;
+        }
+        if (action.type === "duplicate") {
+          get().duplicateSelection();
+          return;
+        }
         if (action.type === "remove-selected") {
+          if (get().pastePreview !== null) {
+            get().cancelPastePreview();
+            return;
+          }
           get().removeSelectedElements();
           return;
         }
@@ -738,16 +801,105 @@ export function createEditorStore(
         set({ panDrag: null });
       },
 
+      copySelection: () => {
+        const elements = selectedElementsOf(get());
+        if (elements.length === 0) return;
+        set({ clipboard: elements });
+      },
+
+      duplicateSelection: () => {
+        const elements = selectedElementsOf(get());
+        if (elements.length === 0) return;
+        const document = requireDocument("duplicate the selection");
+        const clones = elements.map((el) =>
+          el.withId(generateId()).translate(1, 1),
+        );
+        commitDocument(
+          container.addElements.execute({ document, elements: clones }),
+        );
+        set({ selectedElementIds: clones.map((el) => el.id) });
+      },
+
+      beginPastePreview: (anchorCell) => {
+        const { clipboard } = get();
+        if (clipboard.length === 0) return;
+        requireDocument("begin paste preview");
+        set({
+          pastePreview: {
+            elements: normalizedClones(clipboard, generateId),
+            anchorCell,
+          },
+          contextMenu: null,
+        });
+      },
+
+      updatePastePreview: (cell) => {
+        const { pastePreview } = get();
+        if (pastePreview === null) return;
+        set({ pastePreview: { ...pastePreview, anchorCell: cell } });
+      },
+
+      commitPastePreview: (cell) => {
+        const { pastePreview } = get();
+        if (pastePreview === null) return;
+        const document = requireDocument("commit paste preview");
+        const placed = pastedElementsAt(document, pastePreview.elements, cell);
+        commitDocument(
+          container.addElements.execute({ document, elements: placed }),
+        );
+        set({
+          pastePreview: null,
+          selectedElementIds: placed.map((el) => el.id),
+          inspectorOpen: false,
+        });
+      },
+
+      cancelPastePreview: () => {
+        set({ pastePreview: null });
+      },
+
+      openContextMenu: (anchor) => {
+        set({ contextMenu: anchor });
+      },
+
+      closeContextMenu: () => {
+        set({ contextMenu: null });
+      },
+
       pointerDownOnCell: (cell, point = NO_POINT) => {
-        const tool = activeTool(toolRegistry, get());
-        if (point.button === 2) {
-          tool.onCellSecondaryPointerDown?.(toolContext(), cell, point);
+        if (get().contextMenu !== null) get().closeContextMenu();
+        const { pastePreview } = get();
+        if (pastePreview !== null) {
+          if (point.button === 0) get().commitPastePreview(cell);
+          else get().cancelPastePreview();
           return;
         }
-        tool.onCellPointerDown(toolContext(), cell, point);
+        if (point.button === 2) {
+          const { document: doc } = get();
+          const hit = doc !== null ? elementAtCell(doc, cell) : null;
+          if (hit !== null && !get().selectedElementIds.includes(hit.id)) {
+            get().selectElement(hit.id);
+          }
+          get().openContextMenu({
+            clientX: point.clientX,
+            clientY: point.clientY,
+            cell,
+            target: hit !== null ? "element" : "empty",
+          });
+          return;
+        }
+        activeTool(toolRegistry, get()).onCellPointerDown(
+          toolContext(),
+          cell,
+          point,
+        );
       },
 
       pointerMoveOnCell: (cell, point = NO_POINT) => {
+        if (get().pastePreview !== null) {
+          get().updatePastePreview(cell);
+          return;
+        }
         activeTool(toolRegistry, get()).onCellPointerMove(
           toolContext(),
           cell,
@@ -832,9 +984,11 @@ export function previewedDocument(
   document: WireframeDocument,
   drag: DragState | null,
   stroke: StrokeState | null = null,
+  pastePreview: PastePreviewState | null = null,
 ): WireframeDocument {
   const withDrag = applyDragPreview(document, drag);
-  return applyStrokePreview(withDrag, stroke);
+  const withStroke = applyStrokePreview(withDrag, stroke);
+  return applyPastePreviewGhost(withStroke, pastePreview);
 }
 
 /** Selected element instance, or null when not exactly one element is selected. */
@@ -867,9 +1021,10 @@ export function selectedElementsOf(
  * const rect = marqueeRect({ startCell: pos(5,3), lastCell: pos(2,1) });
  * // => { position: pos(2,1), size: size(4, 3) }
  */
-export function marqueeRect(
-  marquee: MarqueeState,
-): { position: Position; size: Size } {
+export function marqueeRect(marquee: MarqueeState): {
+  position: Position;
+  size: Size;
+} {
   const minCol = Math.min(marquee.startCell.col, marquee.lastCell.col);
   const minRow = Math.min(marquee.startCell.row, marquee.lastCell.row);
   const maxCol = Math.max(marquee.startCell.col, marquee.lastCell.col);
@@ -950,18 +1105,96 @@ function requireElement(
   return element;
 }
 
-/** Modifier-less shortcuts — the ones a text field must be able to swallow. */
-function isSingleKeyAction(action: EditorKeyAction): boolean {
-  return action.type === "remove-selected" || action.type === "nudge";
+/** Shortcuts suspended while a text field has focus (undo/redo stay live). */
+function suspendedDuringTextEditing(action: EditorKeyAction): boolean {
+  return (
+    action.type === "remove-selected" ||
+    action.type === "nudge" ||
+    action.type === "cancel" ||
+    action.type === "copy" ||
+    action.type === "paste" ||
+    action.type === "duplicate"
+  );
+}
+
+/** Cancels the highest-priority active interaction (contextMenu → pastePreview → drag → marquee → stroke). */
+function cancelActiveInteraction(get: () => EditorStoreState): void {
+  if (get().contextMenu !== null) {
+    get().closeContextMenu();
+    return;
+  }
+  if (get().pastePreview !== null) {
+    get().cancelPastePreview();
+    return;
+  }
+  if (get().drag !== null) {
+    get().cancelDrag();
+    return;
+  }
+  if (get().marquee !== null) {
+    get().cancelMarquee();
+    return;
+  }
+  if (get().stroke !== null) {
+    get().cancelStroke();
+  }
+}
+
+/** Normalizes clones: subtracts the top-left of the bounding box and assigns fresh ids. */
+function normalizedClones(
+  elements: readonly Element[],
+  generateId: () => string,
+): readonly Element[] {
+  const minCol = Math.min(...elements.map((el) => el.position.col));
+  const minRow = Math.min(...elements.map((el) => el.position.row));
+  return elements.map((el) =>
+    el.withId(generateId()).translate(-minCol, -minRow),
+  );
+}
+
+/** Bounding-box size of a normalized set of elements. */
+function clipboardBoundingSize(elements: readonly Element[]): Size {
+  const maxCol = Math.max(
+    ...elements.map((el) => el.position.col + el.size.width),
+  );
+  const maxRow = Math.max(
+    ...elements.map((el) => el.position.row + el.size.height),
+  );
+  return Size.create(maxCol, maxRow);
+}
+
+/** Translates normalized elements to the anchor and elevates z-indexes. */
+function pastedElementsAt(
+  document: WireframeDocument,
+  normalized: readonly Element[],
+  anchor: Position,
+): readonly Element[] {
+  const bboxSize = clipboardBoundingSize(normalized);
+  const minZ = Math.min(...normalized.map((el) => el.zIndex));
+  const lift = zIndexForPlacement(document, anchor, bboxSize) - minZ;
+  return normalized.map((el) =>
+    el.translate(anchor.col, anchor.row).withZIndex(el.zIndex + lift),
+  );
+}
+
+/** Renders the paste-preview ghost into the document. */
+function applyPastePreviewGhost(
+  document: WireframeDocument,
+  pastePreview: PastePreviewState | null,
+): WireframeDocument {
+  if (pastePreview === null || pastePreview.anchorCell === null)
+    return document;
+  const anchor = pastePreview.anchorCell;
+  return pastePreview.elements.reduce(
+    (doc, el) => doc.addElement(el.translate(anchor.col, anchor.row)),
+    document,
+  );
 }
 
 /** Resize never lets the mouse shrink an element below 1×1. */
 function dragTargetSize(drag: Extract<DragState, { mode: "resize" }>): Size {
   return Size.create(
-    Math.max(
-      1,
-      drag.originSize.width + drag.lastCell.col - drag.startCell.col,
-    ),
+    Math.max(1, drag.originSize.width + drag.lastCell.col - drag.startCell.col),
     Math.max(
       1,
       drag.originSize.height + drag.lastCell.row - drag.startCell.row,

@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 import { BoxElement } from "./BoxElement";
 import { LineElement } from "./LineElement";
 import { TextElement } from "./TextElement";
+import { FreeDrawElement } from "./FreeDrawElement";
+import { CellChar } from "../cell-char/CellChar";
 import { Position } from "../position/Position";
 import { Size } from "../size/Size";
 import { BorderStyle } from "../../value-objects/border-style/BorderStyle";
@@ -127,6 +129,30 @@ describe("Element", () => {
 
     const emptied = text.withProps({ text: "" });
     expect(emptied.size.equals(Size.create(1, 1))).toBe(true);
+  });
+
+  test("withId must return a clone with the new id, same type and rest preserved", () => {
+    const box = BoxElement.create({ ...base, name: "Header" });
+    const copy = box.withId("new-id");
+    expect(copy.id).toBe("new-id");
+    expect(box.id).toBe("e1");
+    expect(copy).toBeInstanceOf(BoxElement);
+    expect(copy.name).toBe("Header");
+    expect(copy.position.equals(box.position)).toBe(true);
+  });
+
+  test("withId on FreeDrawElement preserves the cells map", () => {
+    const el = FreeDrawElement.create({
+      id: "fd1",
+      position: Position.create(0, 0),
+      layerId: null,
+      zIndex: 0,
+      cells: new Map([["0,0", CellChar.create("*")]]),
+    });
+    const copy = el.withId("fd2");
+    expect(copy.id).toBe("fd2");
+    expect(copy).toBeInstanceOf(FreeDrawElement);
+    expect((copy as FreeDrawElement).cells.size).toBe(1);
   });
 
   test("withLayer must return a new element assigned to the given layer", () => {

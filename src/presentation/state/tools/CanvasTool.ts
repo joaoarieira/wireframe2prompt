@@ -66,10 +66,4 @@ export interface CanvasTool {
     point: SurfacePoint,
   ): void;
   onCellDoubleClick?(context: ToolContext, cell: Position): void;
-  /** Handles right-click (button 2) on a grid cell. No-op if absent. */
-  onCellSecondaryPointerDown?(
-    context: ToolContext,
-    cell: Position,
-    point: SurfacePoint,
-  ): void;
 }

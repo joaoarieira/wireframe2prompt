@@ -100,6 +100,12 @@ export const en = {
     draw: "Draw",
     moreTools: "More {{name}} tools",
   },
+  contextMenu: {
+    copy: "Copy",
+    paste: "Paste",
+    duplicate: "Duplicate",
+    delete: "Delete",
+  },
 } as const;
 
 /**

@@ -7,7 +7,6 @@ import { makeBox, makeText } from "../../../tests/fixtures";
 const cell = Position.create(1, 1);
 const noPoint = { clientX: 0, clientY: 0, button: 0, shiftKey: false };
 const shiftPoint = { clientX: 0, clientY: 0, button: 0, shiftKey: true };
-const rightPoint = { clientX: 0, clientY: 0, button: 2, shiftKey: false };
 
 describe("selectTool — primary pointer down on empty space", () => {
   test("begins a marquee (no hit, no shift)", () => {
@@ -49,9 +48,7 @@ describe("selectTool — primary pointer down on an element", () => {
     selectTool.onCellPointerDown(ctx, cell, noPoint);
 
     expect(ctx.selectCalls).toEqual([]);
-    expect(ctx.beginMoveCalls).toEqual([
-      { elementIds: ["b1", "b2"], cell },
-    ]);
+    expect(ctx.beginMoveCalls).toEqual([{ elementIds: ["b1", "b2"], cell }]);
   });
 
   test("shift+click toggles without starting a drag", () => {
@@ -63,26 +60,6 @@ describe("selectTool — primary pointer down on an element", () => {
     expect(ctx.toggleSelectCalls).toEqual(["b1"]);
     expect(ctx.beginMoveCalls).toEqual([]);
     expect(ctx.selectCalls).toEqual([]);
-  });
-});
-
-describe("selectTool — secondary pointer down (right-click)", () => {
-  test("begins a marquee regardless of hit", () => {
-    const ctx = new FakeToolContext();
-    ctx.hit = makeBox("b1");
-
-    selectTool.onCellSecondaryPointerDown!(ctx, cell, rightPoint);
-
-    expect(ctx.beginMarqueeCalls).toEqual([cell]);
-    expect(ctx.selectCalls).toEqual([]);
-  });
-
-  test("begins a marquee on empty space", () => {
-    const ctx = new FakeToolContext();
-
-    selectTool.onCellSecondaryPointerDown!(ctx, cell, rightPoint);
-
-    expect(ctx.beginMarqueeCalls).toEqual([cell]);
   });
 });
 
