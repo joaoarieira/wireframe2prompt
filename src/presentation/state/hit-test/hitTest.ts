@@ -45,7 +45,7 @@ export function zIndexForPlacement(
   size: Size,
 ): number {
   const overlapped = document.elements.filter((element) =>
-    boundsIntersect(element, position, size),
+    elementIntersectsRect(element, position, size),
   );
   if (overlapped.length === 0) {
     return 0;
@@ -53,7 +53,14 @@ export function zIndexForPlacement(
   return Math.max(...overlapped.map((element) => element.zIndex)) + 1;
 }
 
-function boundsIntersect(
+/**
+ * Returns true when element's bounding box intersects the given rectangle.
+ * Used by marquee selection (intersect rule, not containment).
+ *
+ * @example
+ * const hits = document.elements.filter(el => elementIntersectsRect(el, pos, size));
+ */
+export function elementIntersectsRect(
   element: Element,
   position: Position,
   size: Size,

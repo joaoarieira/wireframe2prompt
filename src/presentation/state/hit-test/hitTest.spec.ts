@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { elementAtCell, zIndexForPlacement } from "./hitTest";
+import { elementAtCell, elementIntersectsRect, zIndexForPlacement } from "./hitTest";
 import { makeDoc } from "../../../tests/fixtures";
 import { BoxElement } from "../../../domain/entities/element/BoxElement";
 import { Position } from "../../../domain/entities/position/Position";
@@ -38,6 +38,36 @@ describe("elementAtCell", () => {
   test("z-index tie: the later element wins, matching the compositor", () => {
     const document = makeDoc(box("first", 0, 0), box("second", 0, 0));
     expect(elementAtCell(document, Position.create(1, 1))?.id).toBe("second");
+  });
+});
+
+describe("elementIntersectsRect", () => {
+  const at = Position.create;
+  const sz = Size.create;
+
+  test("overlapping rects → true", () => {
+    const el = box("a", 2, 1);
+    expect(elementIntersectsRect(el, at(3, 2), sz(2, 2))).toBe(true);
+  });
+
+  test("fully contained → true", () => {
+    const el = box("a", 0, 0);
+    expect(elementIntersectsRect(el, at(1, 1), sz(1, 1))).toBe(true);
+  });
+
+  test("touching right edge only → false (exclusive bounds)", () => {
+    const el = box("a", 0, 0); // width=4, so right edge at col 4
+    expect(elementIntersectsRect(el, at(4, 0), sz(2, 2))).toBe(false);
+  });
+
+  test("touching bottom edge only → false (exclusive bounds)", () => {
+    const el = box("a", 0, 0); // height=3, so bottom edge at row 3
+    expect(elementIntersectsRect(el, at(0, 3), sz(2, 2))).toBe(false);
+  });
+
+  test("completely separate → false", () => {
+    const el = box("a", 0, 0);
+    expect(elementIntersectsRect(el, at(10, 10), sz(2, 2))).toBe(false);
   });
 });
 

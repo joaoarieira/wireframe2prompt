@@ -9,9 +9,10 @@ afterEach(() => {
   editorStore.setState({
     document: null,
     documentStatus: "idle",
-    selectedElementId: null,
+    selectedElementIds: [],
     activeToolId: "select",
     drag: null,
+    marquee: null,
     stroke: null,
     panDrag: null,
     textEditingElementId: null,

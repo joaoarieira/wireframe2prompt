@@ -8,13 +8,16 @@ import type {
 
 /**
  * Call-recording {@link ToolContext} fake for tool specs. `hit` controls what
- * `elementAt` reports (default: empty space).
+ * `elementAt` reports (default: empty space). `selectionIdsValue` controls what
+ * `selectionIds()` returns.
  */
 export class FakeToolContext implements ToolContext {
   hit: Element | null = null;
+  selectionIdsValue: readonly string[] = [];
   selectCalls: Array<string | null> = [];
+  toggleSelectCalls: string[] = [];
   placeCalls: Array<{ kind: PlaceableKind; cell: Position }> = [];
-  beginMoveCalls: Array<{ elementId: string; cell: Position }> = [];
+  beginMoveCalls: Array<{ elementIds: readonly string[]; cell: Position }> = [];
   updateDragCalls: Position[] = [];
   commitDragCalls = 0;
   beginDrawStrokeCalls: Position[] = [];
@@ -25,21 +28,32 @@ export class FakeToolContext implements ToolContext {
   updatePanCalls: SurfacePoint[] = [];
   endPanCalls = 0;
   beginCanvasInlineEditingCalls: string[] = [];
+  beginMarqueeCalls: Position[] = [];
+  updateMarqueeCalls: Position[] = [];
+  commitMarqueeCalls: boolean[] = [];
 
   elementAt(): Element | null {
     return this.hit;
+  }
+
+  selectionIds(): readonly string[] {
+    return this.selectionIdsValue;
   }
 
   select(elementId: string | null): void {
     this.selectCalls.push(elementId);
   }
 
+  toggleSelect(elementId: string): void {
+    this.toggleSelectCalls.push(elementId);
+  }
+
   placeElement(kind: PlaceableKind, cell: Position): void {
     this.placeCalls.push({ kind, cell });
   }
 
-  beginMove(elementId: string, cell: Position): void {
-    this.beginMoveCalls.push({ elementId, cell });
+  beginMove(elementIds: readonly string[], cell: Position): void {
+    this.beginMoveCalls.push({ elementIds, cell });
   }
 
   updateDrag(cell: Position): void {
@@ -80,5 +94,17 @@ export class FakeToolContext implements ToolContext {
 
   beginCanvasInlineEditing(elementId: string): void {
     this.beginCanvasInlineEditingCalls.push(elementId);
+  }
+
+  beginMarquee(cell: Position): void {
+    this.beginMarqueeCalls.push(cell);
+  }
+
+  updateMarquee(cell: Position): void {
+    this.updateMarqueeCalls.push(cell);
+  }
+
+  commitMarquee(additive: boolean): void {
+    this.commitMarqueeCalls.push(additive);
   }
 }

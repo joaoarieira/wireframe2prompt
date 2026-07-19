@@ -5,71 +5,143 @@ import { Position } from "../../../domain/entities/position/Position";
 import { makeBox, makeText } from "../../../tests/fixtures";
 
 const cell = Position.create(1, 1);
-const noPoint = { clientX: 0, clientY: 0 };
+const noPoint = { clientX: 0, clientY: 0, button: 0, shiftKey: false };
+const shiftPoint = { clientX: 0, clientY: 0, button: 0, shiftKey: true };
+const rightPoint = { clientX: 0, clientY: 0, button: 2, shiftKey: false };
 
-describe("selectTool", () => {
-  test("pointer down on empty space clears the selection", () => {
-    const context = new FakeToolContext();
+describe("selectTool — primary pointer down on empty space", () => {
+  test("begins a marquee (no hit, no shift)", () => {
+    const ctx = new FakeToolContext();
 
-    selectTool.onCellPointerDown(context, cell, noPoint);
+    selectTool.onCellPointerDown(ctx, cell, noPoint);
 
-    expect(context.selectCalls).toEqual([null]);
-    expect(context.beginMoveCalls).toEqual([]);
+    expect(ctx.beginMarqueeCalls).toEqual([cell]);
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginMoveCalls).toEqual([]);
   });
 
-  test("pointer down on an element selects it and starts a move drag", () => {
-    const context = new FakeToolContext();
-    context.hit = makeBox("b1");
+  test("begins a marquee with shift too (additive resolved on up)", () => {
+    const ctx = new FakeToolContext();
 
-    selectTool.onCellPointerDown(context, cell, noPoint);
+    selectTool.onCellPointerDown(ctx, cell, shiftPoint);
 
-    expect(context.selectCalls).toEqual(["b1"]);
-    expect(context.beginMoveCalls).toEqual([{ elementId: "b1", cell }]);
+    expect(ctx.beginMarqueeCalls).toEqual([cell]);
+    expect(ctx.selectCalls).toEqual([]);
+  });
+});
+
+describe("selectTool — primary pointer down on an element", () => {
+  test("selects and begins a move when element is not in selection", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeBox("b1");
+
+    selectTool.onCellPointerDown(ctx, cell, noPoint);
+
+    expect(ctx.selectCalls).toEqual(["b1"]);
+    expect(ctx.beginMoveCalls).toEqual([{ elementIds: ["b1"], cell }]);
   });
 
-  test("pointer move forwards the cell to the drag", () => {
-    const context = new FakeToolContext();
+  test("moves the whole group when hit element is already selected", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeBox("b1");
+    ctx.selectionIdsValue = ["b1", "b2"];
+
+    selectTool.onCellPointerDown(ctx, cell, noPoint);
+
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginMoveCalls).toEqual([
+      { elementIds: ["b1", "b2"], cell },
+    ]);
+  });
+
+  test("shift+click toggles without starting a drag", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeBox("b1");
+
+    selectTool.onCellPointerDown(ctx, cell, shiftPoint);
+
+    expect(ctx.toggleSelectCalls).toEqual(["b1"]);
+    expect(ctx.beginMoveCalls).toEqual([]);
+    expect(ctx.selectCalls).toEqual([]);
+  });
+});
+
+describe("selectTool — secondary pointer down (right-click)", () => {
+  test("begins a marquee regardless of hit", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeBox("b1");
+
+    selectTool.onCellSecondaryPointerDown!(ctx, cell, rightPoint);
+
+    expect(ctx.beginMarqueeCalls).toEqual([cell]);
+    expect(ctx.selectCalls).toEqual([]);
+  });
+
+  test("begins a marquee on empty space", () => {
+    const ctx = new FakeToolContext();
+
+    selectTool.onCellSecondaryPointerDown!(ctx, cell, rightPoint);
+
+    expect(ctx.beginMarqueeCalls).toEqual([cell]);
+  });
+});
+
+describe("selectTool — pointer move and up", () => {
+  test("pointer move updates both drag and marquee (both no-op-safe)", () => {
+    const ctx = new FakeToolContext();
     const target = Position.create(4, 2);
 
-    selectTool.onCellPointerMove(context, target, noPoint);
+    selectTool.onCellPointerMove(ctx, target, noPoint);
 
-    expect(context.updateDragCalls).toEqual([target]);
+    expect(ctx.updateDragCalls).toEqual([target]);
+    expect(ctx.updateMarqueeCalls).toEqual([target]);
   });
 
-  test("pointer up commits the drag", () => {
-    const context = new FakeToolContext();
+  test("pointer up commits drag and marquee with shiftKey flag", () => {
+    const ctx = new FakeToolContext();
 
-    selectTool.onCellPointerUp(context, cell, noPoint);
+    selectTool.onCellPointerUp(ctx, cell, shiftPoint);
 
-    expect(context.commitDragCalls).toBe(1);
+    expect(ctx.commitDragCalls).toBe(1);
+    expect(ctx.commitMarqueeCalls).toEqual([true]);
   });
 
-  test("double click on a text element selects it and starts text editing", () => {
-    const context = new FakeToolContext();
-    context.hit = makeText("t1", "hello");
+  test("pointer up without shift passes false to commitMarquee", () => {
+    const ctx = new FakeToolContext();
 
-    selectTool.onCellDoubleClick!(context, cell);
+    selectTool.onCellPointerUp(ctx, cell, noPoint);
 
-    expect(context.selectCalls).toEqual(["t1"]);
-    expect(context.beginCanvasInlineEditingCalls).toEqual(["t1"]);
+    expect(ctx.commitMarqueeCalls).toEqual([false]);
+  });
+});
+
+describe("selectTool — double click", () => {
+  test("double click on a text element selects it and starts canvas editing", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeText("t1", "hello");
+
+    selectTool.onCellDoubleClick!(ctx, cell);
+
+    expect(ctx.selectCalls).toEqual(["t1"]);
+    expect(ctx.beginCanvasInlineEditingCalls).toEqual(["t1"]);
   });
 
   test("double click on a non-text element does nothing", () => {
-    const context = new FakeToolContext();
-    context.hit = makeBox("b1");
+    const ctx = new FakeToolContext();
+    ctx.hit = makeBox("b1");
 
-    selectTool.onCellDoubleClick!(context, cell);
+    selectTool.onCellDoubleClick!(ctx, cell);
 
-    expect(context.selectCalls).toEqual([]);
-    expect(context.beginCanvasInlineEditingCalls).toEqual([]);
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginCanvasInlineEditingCalls).toEqual([]);
   });
 
   test("double click on empty space does nothing", () => {
-    const context = new FakeToolContext();
+    const ctx = new FakeToolContext();
 
-    selectTool.onCellDoubleClick!(context, cell);
+    selectTool.onCellDoubleClick!(ctx, cell);
 
-    expect(context.selectCalls).toEqual([]);
-    expect(context.beginCanvasInlineEditingCalls).toEqual([]);
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginCanvasInlineEditingCalls).toEqual([]);
   });
 });

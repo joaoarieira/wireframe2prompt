@@ -11,8 +11,8 @@ async function openFreshDocumentWithText(): Promise<string> {
     .createDocument(`inspector-spec-${Math.random()}`);
   await editorStore.getState().openDocument(id);
   editorStore.getState().placeElement("text", Position.create(1, 1));
-  const elementId = editorStore.getState().selectedElementId;
-  if (elementId === null) {
+  const elementId = editorStore.getState().selectedElementIds[0];
+  if (elementId === undefined) {
     throw new Error("expected placeElement to select the new text element");
   }
   return elementId;
@@ -78,7 +78,7 @@ describe("InspectorPanel text editing", () => {
     expect(
       editorStore.getState().document?.getElement(elementId),
     ).toBeUndefined();
-    expect(editorStore.getState().selectedElementId).toBeNull();
+    expect(editorStore.getState().selectedElementIds).toEqual([]);
   });
 
   test("the ✕ button closes the inspector", async () => {

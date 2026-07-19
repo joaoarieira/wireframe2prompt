@@ -6,6 +6,9 @@ import type { PlaceableKind } from "../element-factory/elementFactory";
 export interface SurfacePoint {
   clientX: number;
   clientY: number;
+  /** `PointerEvent.button` (0 = primary, 2 = secondary, -1 during move). */
+  button: number;
+  shiftKey: boolean;
 }
 
 /**
@@ -16,8 +19,10 @@ export interface SurfacePoint {
 export interface ToolContext {
   elementAt(cell: Position): Element | null;
   select(elementId: string | null): void;
+  selectionIds(): readonly string[];
+  toggleSelect(elementId: string): void;
   placeElement(kind: PlaceableKind, cell: Position): void;
-  beginMove(elementId: string, cell: Position): void;
+  beginMove(elementIds: readonly string[], cell: Position): void;
   updateDrag(cell: Position): void;
   commitDrag(): void;
   beginDrawStroke(cell: Position): void;
@@ -28,6 +33,9 @@ export interface ToolContext {
   updatePan(point: SurfacePoint): void;
   endPan(): void;
   beginCanvasInlineEditing(elementId: string): void;
+  beginMarquee(cell: Position): void;
+  updateMarquee(cell: Position): void;
+  commitMarquee(additive: boolean): void;
 }
 
 /**
@@ -58,4 +66,10 @@ export interface CanvasTool {
     point: SurfacePoint,
   ): void;
   onCellDoubleClick?(context: ToolContext, cell: Position): void;
+  /** Handles right-click (button 2) on a grid cell. No-op if absent. */
+  onCellSecondaryPointerDown?(
+    context: ToolContext,
+    cell: Position,
+    point: SurfacePoint,
+  ): void;
 }

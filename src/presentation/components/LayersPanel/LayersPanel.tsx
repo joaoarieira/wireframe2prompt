@@ -1,3 +1,4 @@
+import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { List, ListCell, ListRow } from "../../ui/list/List";
@@ -6,13 +7,19 @@ import { Button } from "../../ui/button/Button";
 
 /**
  * Stacking order of the document, topmost first. Clicking a row selects the
- * element; the arrows nudge its z-index (higher z wins overlapping cells).
+ * element and opens the inspector; Shift+clicking toggles it without opening
+ * the inspector. The arrows nudge z-index (higher z wins overlapping cells).
  */
 export function LayersPanel() {
   const { t } = useTranslation();
   const document = useEditorStore((state) => state.document);
-  const selectedElementId = useEditorStore((state) => state.selectedElementId);
+  const selectedElementIds = useEditorStore(
+    (state) => state.selectedElementIds,
+  );
   const selectElement = useEditorStore((state) => state.selectElement);
+  const toggleElementSelection = useEditorStore(
+    (state) => state.toggleElementSelection,
+  );
   const openInspector = useEditorStore((state) => state.openInspector);
   const changeElementZIndex = useEditorStore(
     (state) => state.changeElementZIndex,
@@ -27,22 +34,28 @@ export function LayersPanel() {
     return <p className="p-4 text-sm opacity-60">{t("layers.empty")}</p>;
   }
 
+  const handleRowClick = (event: MouseEvent, elementId: string) => {
+    if (event.shiftKey) {
+      toggleElementSelection(elementId);
+    } else {
+      selectElement(elementId);
+      openInspector();
+    }
+  };
+
   return (
     <List className="p-2">
       {topmostFirst.map((element) => {
         // Custom name if the user gave one, else the translated element kind.
         const displayName = element.name ?? t(`elementKind.${element.kind}`);
+        const isSelected = selectedElementIds.includes(element.id);
         return (
           <ListRow
             key={element.id}
             className={`cursor-pointer items-center p-2 ${
-              element.id === selectedElementId ? "bg-base-300" : ""
+              isSelected ? "bg-base-300" : ""
             }`}
-            onClick={() => {
-              // click = press already released, so opening here is fine
-              selectElement(element.id);
-              openInspector();
-            }}
+            onClick={(event) => handleRowClick(event, element.id)}
           >
             <ListCell
               grow

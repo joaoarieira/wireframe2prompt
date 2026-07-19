@@ -10,7 +10,7 @@ function openDocWithText() {
     document: makeDoc(textEl),
     documentStatus: "ready",
     textEditingElementId: "t1",
-    selectedElementId: "t1",
+    selectedElementIds: ["t1"],
   });
   return textEl;
 }
@@ -20,7 +20,7 @@ afterEach(() => {
   editorStore.setState({
     document: null,
     documentStatus: "idle",
-    selectedElementId: null,
+    selectedElementIds: [],
     textEditingElementId: null,
   });
 });

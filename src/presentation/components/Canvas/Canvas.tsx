@@ -3,13 +3,14 @@ import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import type { GridSurfaceComponent } from "./GridSurface";
 import { DomGridSurface } from "./DomGridSurface";
 import { SelectionOverlay } from "./SelectionOverlay";
+import { MarqueeOverlay } from "./MarqueeOverlay";
 import { TextEditOverlay } from "./TextEditOverlay";
 import { cellAtPoint } from "./cellGeometry";
 import type { PointLike } from "./cellGeometry";
 import { useEditorStore } from "../../state/app-store/appStore";
 import {
   previewedDocument,
-  selectedElementOf,
+  selectedElementsOf,
 } from "../../state/editor-store/editorStore";
 import { editorActionForKey } from "../../state/keyboard/editorKeyAction";
 import { TextElement } from "../../../domain/entities/element/TextElement";
@@ -47,7 +48,10 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const document = useEditorStore((state) => state.document);
   const drag = useEditorStore((state) => state.drag);
   const stroke = useEditorStore((state) => state.stroke);
-  const selectedElementId = useEditorStore((state) => state.selectedElementId);
+  const marquee = useEditorStore((state) => state.marquee);
+  const selectedElementIds = useEditorStore(
+    (state) => state.selectedElementIds,
+  );
   const activeToolId = useEditorStore((state) => state.activeToolId);
   const panDrag = useEditorStore((state) => state.panDrag);
   const viewport = useEditorStore((state) => state.viewport);
@@ -112,9 +116,9 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     return null;
   }
 
-  const selectedElement = selectedElementOf({
+  const selectedElements = selectedElementsOf({
     document: visibleDocument,
-    selectedElementId,
+    selectedElementIds,
   });
 
   const editingElement =
@@ -182,14 +186,24 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     event.preventDefault(); // stops the browser's middle-button autoscroll
     panning.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
-    beginPan({ clientX: event.clientX, clientY: event.clientY });
+    beginPan({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      button: event.button,
+      shiftKey: event.shiftKey,
+    });
   };
 
   const handlePanMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!panning.current) {
       return;
     }
-    updatePan({ clientX: event.clientX, clientY: event.clientY });
+    updatePan({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      button: event.button,
+      shiftKey: event.shiftKey,
+    });
   };
 
   const handlePanEnd = (event: PointerEvent<HTMLDivElement>) => {
@@ -248,12 +262,15 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
             onCellPointerUp={pointerUpOnCell}
             onCellDoubleClick={doubleClickOnCell}
           />
-          {selectedElement !== null && (
+          {selectedElements.map((el) => (
             <SelectionOverlay
-              element={selectedElement}
+              key={el.id}
+              element={el}
               getCell={cellFromPoint}
+              showResizeHandle={selectedElements.length === 1}
             />
-          )}
+          ))}
+          {marquee !== null && <MarqueeOverlay marquee={marquee} />}
           {textEditElement !== null && (
             <TextEditOverlay
               element={textEditElement}

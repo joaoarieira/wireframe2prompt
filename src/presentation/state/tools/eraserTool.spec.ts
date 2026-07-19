@@ -4,7 +4,7 @@ import { FakeToolContext } from "../../../tests/doubles/FakeToolContext";
 import { Position } from "../../../domain/entities/position/Position";
 
 const cell = Position.create(3, 2);
-const noPoint = { clientX: 0, clientY: 0 };
+const noPoint = { clientX: 0, clientY: 0, button: 0, shiftKey: false };
 
 describe("eraserTool", () => {
   test("pointer down begins an erase stroke at the cell", () => {

@@ -15,7 +15,8 @@ export function EditorPage() {
   const documentStatus = useEditorStore((state) => state.documentStatus);
   const documentName = useEditorStore((state) => state.document?.name ?? "");
   const inspectorVisible = useEditorStore(
-    (state) => state.inspectorOpen && state.selectedElementId !== null,
+    (state) =>
+      state.inspectorOpen && state.selectedElementIds.length === 1,
   );
 
   if (documentStatus === "missing") {

@@ -11,6 +11,8 @@ interface SelectionOverlayProps {
   element: Element;
   /** Maps a pointer event to the grid cell under it (owned by the Canvas). */
   getCell(point: PointLike): Position | null;
+  /** Show the resize handle. True only when exactly one element is selected. */
+  showResizeHandle: boolean;
 }
 
 /**
@@ -18,7 +20,11 @@ interface SelectionOverlayProps {
  * is pointer-transparent so the grid keeps receiving move drags; only the
  * handle grabs the pointer, driving the store's resize-drag lifecycle.
  */
-export function SelectionOverlay({ element, getCell }: SelectionOverlayProps) {
+export function SelectionOverlay({
+  element,
+  getCell,
+  showResizeHandle,
+}: SelectionOverlayProps) {
   const { t } = useTranslation();
   const beginResize = useEditorStore((state) => state.beginResize);
   const updateDrag = useEditorStore((state) => state.updateDrag);
@@ -62,14 +68,16 @@ export function SelectionOverlay({ element, getCell }: SelectionOverlayProps) {
         height: `calc(var(--cell-h) * ${element.size.height})`,
       }}
     >
-      <span
-        role="button"
-        aria-label={t("canvas.resize")}
-        className="pointer-events-auto absolute -right-1 -bottom-1 size-2 cursor-se-resize bg-primary"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      />
+      {showResizeHandle && (
+        <span
+          role="button"
+          aria-label={t("canvas.resize")}
+          className="pointer-events-auto absolute -right-1 -bottom-1 size-2 cursor-se-resize bg-primary"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        />
+      )}
     </div>
   );
 }

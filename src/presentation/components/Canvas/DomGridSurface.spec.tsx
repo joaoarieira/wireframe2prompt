@@ -40,28 +40,69 @@ describe("DomGridSurface", () => {
     expect(grid.querySelector('[data-col="3"][data-row="2"]')).not.toBeNull();
   });
 
-  test("maps a pointer drag to cell events", () => {
+  test("maps a primary-button drag to cell events with button and shiftKey", () => {
     const { grid, onDown, onMove, onUp } = renderSurface();
 
-    fireEvent.pointerDown(grid, { pointerId: 1, clientX: 15, clientY: 20 });
-    fireEvent.pointerMove(grid, { pointerId: 1, clientX: 35, clientY: 50 });
-    fireEvent.pointerUp(grid, { pointerId: 1, clientX: 35, clientY: 50 });
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 0,
+      shiftKey: false,
+      clientX: 15,
+      clientY: 20,
+    });
+    fireEvent.pointerMove(grid, {
+      pointerId: 1,
+      button: -1,
+      shiftKey: false,
+      clientX: 35,
+      clientY: 50,
+    });
+    fireEvent.pointerUp(grid, {
+      pointerId: 1,
+      button: 0,
+      shiftKey: false,
+      clientX: 35,
+      clientY: 50,
+    });
 
     expect(onDown).toHaveBeenCalledWith(Position.create(1, 1), {
       clientX: 15,
       clientY: 20,
+      button: 0,
+      shiftKey: false,
     });
     expect(onMove).toHaveBeenCalledWith(Position.create(3, 2), {
       clientX: 35,
       clientY: 50,
+      button: -1,
+      shiftKey: false,
     });
     expect(onUp).toHaveBeenCalledWith(Position.create(3, 2), {
       clientX: 35,
       clientY: 50,
+      button: 0,
+      shiftKey: false,
     });
   });
 
-  test("ignores non-primary buttons so the middle button can pan", () => {
+  test("right-click (button 2) fires onCellPointerDown with button 2", () => {
+    const { grid, onDown } = renderSurface();
+
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 2,
+      shiftKey: false,
+      clientX: 15,
+      clientY: 20,
+    });
+
+    expect(onDown).toHaveBeenCalledWith(
+      Position.create(1, 1),
+      expect.objectContaining({ button: 2 }),
+    );
+  });
+
+  test("ignores middle button (1) so the Canvas pan handler can own it", () => {
     const { grid, onDown } = renderSurface();
 
     fireEvent.pointerDown(grid, {
@@ -72,6 +113,30 @@ describe("DomGridSurface", () => {
     });
 
     expect(onDown).not.toHaveBeenCalled();
+  });
+
+  test("shift+click passes shiftKey true in the SurfacePoint", () => {
+    const { grid, onDown } = renderSurface();
+
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 0,
+      shiftKey: true,
+      clientX: 15,
+      clientY: 20,
+    });
+
+    expect(onDown).toHaveBeenCalledWith(
+      Position.create(1, 1),
+      expect.objectContaining({ shiftKey: true }),
+    );
+  });
+
+  test("contextmenu is prevented so the browser menu does not open on right-click", () => {
+    const { grid } = renderSurface();
+    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    grid.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
   });
 
   test("ignores pointer down outside the grid and moves without a drag", () => {

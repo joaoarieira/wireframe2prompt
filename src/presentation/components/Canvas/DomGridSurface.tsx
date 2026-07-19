@@ -10,6 +10,10 @@ import type { SurfacePoint } from "../../state/tools/CanvasTool";
  * CSS grid. Pointer events are handled at the container and mapped to cells by
  * geometry (not per-span targets) so pointer capture keeps drags working when
  * the cursor leaves the grid.
+ *
+ * Primary (button 0) and secondary (button 2) pointer-down events are both
+ * forwarded; button 2 routing (marquee vs. tool) happens in the store.
+ * Middle button (1) is left for the Canvas pan handler.
  */
 export function DomGridSurface({
   buffer,
@@ -31,12 +35,13 @@ export function DomGridSurface({
   const pointFrom = (event: PointerEvent<HTMLDivElement>): SurfacePoint => ({
     clientX: event.clientX,
     clientY: event.clientY,
+    button: event.button,
+    shiftKey: event.shiftKey,
   });
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    // Only the primary button drives tools; middle/right are left for the
-    // Canvas's middle-button pan and the browser context menu.
-    if (event.button !== 0) {
+    // Primary (0) and secondary (2) drive tools; middle (1) pans.
+    if (event.button !== 0 && event.button !== 2) {
       return;
     }
     const cell = cellFrom(event);
@@ -87,6 +92,7 @@ export function DomGridSurface({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {rows.map((rowChars, row) =>
         [...rowChars].map((char, col) => (

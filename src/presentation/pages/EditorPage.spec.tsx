@@ -27,7 +27,7 @@ afterEach(() => {
   editorStore.setState({
     document: null,
     documentStatus: "idle",
-    selectedElementId: null,
+    selectedElementIds: [],
     inspectorOpen: false,
   });
 });
@@ -62,7 +62,7 @@ describe("EditorPage", () => {
 
   test("the open inspector overlays the canvas instead of reflowing it", () => {
     openReadyDocument();
-    editorStore.setState({ selectedElementId: "t1", inspectorOpen: true });
+    editorStore.setState({ selectedElementIds: ["t1"], inspectorOpen: true });
     render(<EditorPage />);
 
     const aside = screen.getByTestId("inspector-aside");

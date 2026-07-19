@@ -13,7 +13,11 @@ import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository"
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
 import { buildElement } from "../element-factory/elementFactory";
 import type { PlaceableKind } from "../element-factory/elementFactory";
-import { elementAtCell, zIndexForPlacement } from "../hit-test/hitTest";
+import {
+  elementAtCell,
+  elementIntersectsRect,
+  zIndexForPlacement,
+} from "../hit-test/hitTest";
 import type {
   CanvasTool,
   SurfacePoint,
@@ -47,15 +51,26 @@ export interface Viewport {
   offsetY: number;
 }
 
-export type DragMode = "move" | "resize";
+export type DragState =
+  | {
+      mode: "move";
+      elementIds: readonly string[];
+      startCell: Position;
+      lastCell: Position;
+      originPositions: ReadonlyMap<string, Position>;
+    }
+  | {
+      mode: "resize";
+      elementId: string;
+      startCell: Position;
+      lastCell: Position;
+      originPosition: Position;
+      originSize: Size;
+    };
 
-export interface DragState {
-  mode: DragMode;
-  elementId: string;
+export interface MarqueeState {
   startCell: Position;
   lastCell: Position;
-  originPosition: Position;
-  originSize: Size;
 }
 
 export type StrokeState =
@@ -78,9 +93,10 @@ export interface EditorState {
   document: WireframeDocument | null;
   documentStatus: DocumentStatus;
   summaries: DocumentSummary[];
-  selectedElementId: string | null;
+  selectedElementIds: readonly string[];
   activeToolId: string;
   drag: DragState | null;
+  marquee: MarqueeState | null;
   stroke: StrokeState | null;
   pencilChar: CellChar;
   panDrag: PanDragState | null;
@@ -103,7 +119,7 @@ export interface EditorState {
   /**
    * Whether the inspector panel is shown. Selecting or placing an element
    * opens it; the panel's ✕ closes it. The page only renders the panel when
-   * this is true AND something is selected.
+   * this is true AND exactly one element is selected.
    */
   inspectorOpen: boolean;
 }
@@ -115,6 +131,8 @@ export interface EditorActions {
   openDocument(documentId: string): Promise<void>;
   saveCurrentDocument(): Promise<void>;
   selectElement(elementId: string | null): void;
+  toggleElementSelection(elementId: string): void;
+  replaceSelection(elementIds: readonly string[]): void;
   openInspector(): void;
   closeInspector(): void;
   beginTextEditing(elementId: string): void;
@@ -126,7 +144,7 @@ export interface EditorActions {
   moveElementTo(elementId: string, position: Position): void;
   resizeElementTo(elementId: string, size: Size): void;
   nudgeSelection(deltaCol: number, deltaRow: number): void;
-  removeSelectedElement(): void;
+  removeSelectedElements(): void;
   changeElementZIndex(elementId: string, zIndex: number): void;
   editElementProps(
     elementId: string,
@@ -135,11 +153,15 @@ export interface EditorActions {
   undo(): void;
   redo(): void;
   applyKeyAction(action: EditorKeyAction): void;
-  beginMove(elementId: string, cell: Position): void;
+  beginMove(elementIds: readonly string[], cell: Position): void;
   beginResize(elementId: string, cell: Position): void;
   updateDrag(cell: Position): void;
   commitDrag(): void;
   cancelDrag(): void;
+  beginMarquee(cell: Position): void;
+  updateMarquee(cell: Position): void;
+  commitMarquee(additive: boolean): void;
+  cancelMarquee(): void;
   beginDrawStroke(cell: Position): void;
   beginEraseStroke(cell: Position): void;
   extendStroke(cell: Position): void;
@@ -170,15 +192,21 @@ export interface EditorStoreOptions {
   toolRegistry?: ToolRegistry;
 }
 
-const NO_POINT: SurfacePoint = { clientX: 0, clientY: 0 };
+const NO_POINT: SurfacePoint = {
+  clientX: 0,
+  clientY: 0,
+  button: 0,
+  shiftKey: false,
+};
 
 const initialState: EditorState = {
   document: null,
   documentStatus: "idle",
   summaries: [],
-  selectedElementId: null,
+  selectedElementIds: [],
   activeToolId: "select",
   drag: null,
+  marquee: null,
   stroke: null,
   pencilChar: CellChar.create("*"),
   panDrag: null,
@@ -229,8 +257,10 @@ export function createEditorStore(
       elementAt: (cell) =>
         elementAtCell(requireDocument("hit-test a cell"), cell),
       select: (elementId) => get().selectElement(elementId),
+      selectionIds: () => get().selectedElementIds,
+      toggleSelect: (elementId) => get().toggleElementSelection(elementId),
       placeElement: (kind, cell) => get().placeElement(kind, cell),
-      beginMove: (elementId, cell) => get().beginMove(elementId, cell),
+      beginMove: (elementIds, cell) => get().beginMove(elementIds, cell),
       updateDrag: (cell) => get().updateDrag(cell),
       commitDrag: () => get().commitDrag(),
       beginDrawStroke: (cell) => get().beginDrawStroke(cell),
@@ -242,28 +272,10 @@ export function createEditorStore(
       endPan: () => get().endPan(),
       beginCanvasInlineEditing: (elementId) =>
         get().beginCanvasInlineEditing(elementId),
+      beginMarquee: (cell) => get().beginMarquee(cell),
+      updateMarquee: (cell) => get().updateMarquee(cell),
+      commitMarquee: (additive) => get().commitMarquee(additive),
     });
-
-    const beginDrag = (
-      mode: DragMode,
-      elementId: string,
-      cell: Position,
-    ): void => {
-      const element = requireElement(
-        requireDocument(`start a ${mode} drag`),
-        elementId,
-      );
-      set({
-        drag: {
-          mode,
-          elementId,
-          startCell: cell,
-          lastCell: cell,
-          originPosition: element.position,
-          originSize: element.size,
-        },
-      });
-    };
 
     return {
       ...initialState,
@@ -292,8 +304,9 @@ export function createEditorStore(
         set({
           documentStatus: "loading",
           document: null,
-          selectedElementId: null,
+          selectedElementIds: [],
           drag: null,
+          marquee: null,
           stroke: null,
           panDrag: null,
           textEditingElementId: null,
@@ -323,16 +336,37 @@ export function createEditorStore(
       // (commitDrag) or via an explicit openInspector call.
       selectElement: (elementId) => {
         const { textEditingElementId, canvasEditingElementId } = get();
+        const newIds = elementId === null ? [] : [elementId];
         set({
-          selectedElementId: elementId,
-          // selecting something else ends any text-editing session
+          selectedElementIds: newIds,
           textEditingElementId:
             textEditingElementId === elementId ? elementId : null,
           canvasEditingElementId:
             canvasEditingElementId === elementId ? elementId : null,
-          // clicking empty space truly closes the panel (flag included) —
-          // otherwise the next pointer down would re-show it before release
           inspectorOpen: elementId === null ? false : get().inspectorOpen,
+        });
+      },
+
+      toggleElementSelection: (elementId) => {
+        const { selectedElementIds } = get();
+        const newIds = selectedElementIds.includes(elementId)
+          ? selectedElementIds.filter((id) => id !== elementId)
+          : [...selectedElementIds, elementId];
+        set({
+          selectedElementIds: newIds,
+          textEditingElementId: null,
+          canvasEditingElementId: null,
+          inspectorOpen: newIds.length !== 1 ? false : get().inspectorOpen,
+        });
+      },
+
+      replaceSelection: (elementIds) => {
+        const unique = [...new Set(elementIds)];
+        set({
+          selectedElementIds: unique,
+          textEditingElementId: null,
+          canvasEditingElementId: null,
+          inspectorOpen: false,
         });
       },
 
@@ -362,7 +396,13 @@ export function createEditorStore(
 
       setActiveTool: (toolId) => {
         toolRegistry.get(toolId); // fail fast on unknown ids
-        set({ activeToolId: toolId, drag: null, stroke: null, panDrag: null });
+        set({
+          activeToolId: toolId,
+          drag: null,
+          marquee: null,
+          stroke: null,
+          panDrag: null,
+        });
       },
 
       listTools: () => toolRegistry.list(),
@@ -379,7 +419,7 @@ export function createEditorStore(
         );
         commitDocument(container.addElement.execute({ document, element }));
         set({
-          selectedElementId: element.id,
+          selectedElementIds: [element.id],
           textEditingElementId: kind === "text" ? element.id : null,
           canvasEditingElementId: kind === "text" ? element.id : null,
           inspectorOpen: true,
@@ -401,31 +441,34 @@ export function createEditorStore(
       },
 
       nudgeSelection: (deltaCol, deltaRow) => {
-        const { selectedElementId } = get();
-        if (selectedElementId === null) {
+        const { selectedElementIds } = get();
+        if (selectedElementIds.length === 0) {
           return;
         }
         const document = requireDocument("nudge the selection");
-        const element = requireElement(document, selectedElementId);
-        get().moveElementTo(
-          selectedElementId,
-          element.position.translate(deltaCol, deltaRow),
-        );
+        const moves = selectedElementIds.map((id) => {
+          const element = requireElement(document, id);
+          return {
+            elementId: id,
+            position: element.position.translate(deltaCol, deltaRow),
+          };
+        });
+        commitDocument(container.moveElements.execute({ document, moves }));
       },
 
-      removeSelectedElement: () => {
-        const { selectedElementId } = get();
-        if (selectedElementId === null) {
+      removeSelectedElements: () => {
+        const { selectedElementIds } = get();
+        if (selectedElementIds.length === 0) {
           return;
         }
         const document = requireDocument("remove the selection");
         commitDocument(
-          container.removeElement.execute({
+          container.removeElements.execute({
             document,
-            elementId: selectedElementId,
+            elementIds: selectedElementIds,
           }),
         );
-        set({ selectedElementId: null });
+        set({ selectedElementIds: [] });
       },
 
       changeElementZIndex: (elementId, zIndex) => {
@@ -465,15 +508,44 @@ export function createEditorStore(
           return;
         }
         if (action.type === "remove-selected") {
-          get().removeSelectedElement();
+          get().removeSelectedElements();
           return;
         }
         get().nudgeSelection(action.deltaCol, action.deltaRow);
       },
 
-      beginMove: (elementId, cell) => beginDrag("move", elementId, cell),
+      beginMove: (elementIds, cell) => {
+        const doc = requireDocument("start a move drag");
+        const originPositions = new Map(
+          elementIds.map((id) => [id, requireElement(doc, id).position]),
+        );
+        set({
+          drag: {
+            mode: "move",
+            elementIds,
+            startCell: cell,
+            lastCell: cell,
+            originPositions,
+          },
+        });
+      },
 
-      beginResize: (elementId, cell) => beginDrag("resize", elementId, cell),
+      beginResize: (elementId, cell) => {
+        const element = requireElement(
+          requireDocument("start a resize drag"),
+          elementId,
+        );
+        set({
+          drag: {
+            mode: "resize",
+            elementId,
+            startCell: cell,
+            lastCell: cell,
+            originPosition: element.position,
+            originSize: element.size,
+          },
+        });
+      },
 
       updateDrag: (cell) => {
         const { drag } = get();
@@ -484,13 +556,13 @@ export function createEditorStore(
       },
 
       commitDrag: () => {
-        const { drag } = get();
+        const { drag, selectedElementIds } = get();
         if (drag === null) {
           return;
         }
-        // The pointer was released over the dragged (= selected) element:
-        // this is the moment the inspector opens, not on pointer down.
-        set({ drag: null, inspectorOpen: true });
+        // Open the inspector only for a single-element selection; multi-move
+        // leaves the inspector closed so it doesn't pop open unexpectedly.
+        set({ drag: null, inspectorOpen: selectedElementIds.length === 1 });
         if (drag.lastCell.equals(drag.startCell)) {
           return;
         }
@@ -502,16 +574,60 @@ export function createEditorStore(
         set({ drag: null });
       },
 
-      beginDrawStroke: (cell) => {
-        const document = requireDocument("begin draw stroke");
-        const { selectedElementId, pencilChar } = get();
-        let targetElementId: string | null = null;
-        if (selectedElementId !== null) {
-          const el = document.getElement(selectedElementId);
-          if (el instanceof FreeDrawElement) {
-            targetElementId = selectedElementId;
-          }
+      beginMarquee: (cell) => {
+        set({ marquee: { startCell: cell, lastCell: cell } });
+      },
+
+      updateMarquee: (cell) => {
+        const { marquee } = get();
+        if (marquee === null) {
+          return;
         }
+        set({ marquee: { ...marquee, lastCell: cell } });
+      },
+
+      commitMarquee: (additive) => {
+        const { marquee } = get();
+        if (marquee === null) {
+          return;
+        }
+        set({ marquee: null });
+        const document = get().document;
+        if (document === null) {
+          return;
+        }
+        const rect = marqueeRect(marquee);
+        const hits = document.elements
+          .filter((el) => elementIntersectsRect(el, rect.position, rect.size))
+          .map((el) => el.id);
+
+        // A 1-cell marquee on empty space with no shift = clear selection
+        if (
+          hits.length === 0 &&
+          rect.size.width === 1 &&
+          rect.size.height === 1 &&
+          !additive
+        ) {
+          get().selectElement(null);
+          return;
+        }
+        const { selectedElementIds } = get();
+        const newIds = additive
+          ? [...new Set([...selectedElementIds, ...hits])]
+          : hits;
+        get().replaceSelection(newIds);
+      },
+
+      cancelMarquee: () => {
+        set({ marquee: null });
+      },
+
+      beginDrawStroke: (cell) => {
+        requireDocument("begin draw stroke");
+        const { pencilChar } = get();
+        const selected = selectedElementOf(get());
+        const targetElementId =
+          selected instanceof FreeDrawElement ? selected.id : null;
         const key = `${cell.col},${cell.row}`;
         set({
           stroke: {
@@ -570,7 +686,7 @@ export function createEditorStore(
             commitDocument(
               container.addElement.execute({ document, element: el }),
             );
-            set({ selectedElementId: el.id, inspectorOpen: true });
+            set({ selectedElementIds: [el.id], inspectorOpen: true });
           } else {
             const cells = [...stroke.cells.entries()].map(([key, char]) => ({
               position: parseCellKeyToPosition(key),
@@ -623,11 +739,12 @@ export function createEditorStore(
       },
 
       pointerDownOnCell: (cell, point = NO_POINT) => {
-        activeTool(toolRegistry, get()).onCellPointerDown(
-          toolContext(),
-          cell,
-          point,
-        );
+        const tool = activeTool(toolRegistry, get());
+        if (point.button === 2) {
+          tool.onCellSecondaryPointerDown?.(toolContext(), cell, point);
+          return;
+        }
+        tool.onCellPointerDown(toolContext(), cell, point);
       },
 
       pointerMoveOnCell: (cell, point = NO_POINT) => {
@@ -720,14 +837,47 @@ export function previewedDocument(
   return applyStrokePreview(withDrag, stroke);
 }
 
-/** Selected element instance, or null when nothing valid is selected. */
+/** Selected element instance, or null when not exactly one element is selected. */
 export function selectedElementOf(
-  state: Pick<EditorState, "document" | "selectedElementId">,
+  state: Pick<EditorState, "document" | "selectedElementIds">,
 ): Element | null {
-  if (state.document === null || state.selectedElementId === null) {
+  if (state.document === null || state.selectedElementIds.length !== 1) {
     return null;
   }
-  return state.document.getElement(state.selectedElementId) ?? null;
+  return state.document.getElement(state.selectedElementIds[0]) ?? null;
+}
+
+/** All currently selected element instances (filters out stale ids). */
+export function selectedElementsOf(
+  state: Pick<EditorState, "document" | "selectedElementIds">,
+): Element[] {
+  if (state.document === null) {
+    return [];
+  }
+  return state.selectedElementIds
+    .map((id) => state.document!.getElement(id))
+    .filter((el): el is Element => el !== undefined);
+}
+
+/**
+ * Normalises a marquee state into a { position, size } rectangle.
+ * Handles inverted drags (last < start) by taking min/max.
+ *
+ * @example
+ * const rect = marqueeRect({ startCell: pos(5,3), lastCell: pos(2,1) });
+ * // => { position: pos(2,1), size: size(4, 3) }
+ */
+export function marqueeRect(
+  marquee: MarqueeState,
+): { position: Position; size: Size } {
+  const minCol = Math.min(marquee.startCell.col, marquee.lastCell.col);
+  const minRow = Math.min(marquee.startCell.row, marquee.lastCell.row);
+  const maxCol = Math.max(marquee.startCell.col, marquee.lastCell.col);
+  const maxRow = Math.max(marquee.startCell.row, marquee.lastCell.row);
+  return {
+    position: Position.create(minCol, minRow),
+    size: Size.create(maxCol - minCol + 1, maxRow - minRow + 1),
+  };
 }
 
 function applyDragPreview(
@@ -736,7 +886,13 @@ function applyDragPreview(
 ): WireframeDocument {
   if (drag === null) return document;
   if (drag.mode === "move") {
-    return document.moveElement(drag.elementId, dragTargetPosition(drag));
+    const deltaCol = drag.lastCell.col - drag.startCell.col;
+    const deltaRow = drag.lastCell.row - drag.startCell.row;
+    return drag.elementIds.reduce((doc, id) => {
+      const origin = drag.originPositions.get(id);
+      if (origin === undefined) return doc;
+      return doc.moveElement(id, origin.translate(deltaCol, deltaRow));
+    }, document);
   }
   return document.resizeElement(drag.elementId, dragTargetSize(drag));
 }
@@ -799,17 +955,13 @@ function isSingleKeyAction(action: EditorKeyAction): boolean {
   return action.type === "remove-selected" || action.type === "nudge";
 }
 
-function dragTargetPosition(drag: DragState): Position {
-  return drag.originPosition.translate(
-    drag.lastCell.col - drag.startCell.col,
-    drag.lastCell.row - drag.startCell.row,
-  );
-}
-
 /** Resize never lets the mouse shrink an element below 1×1. */
-function dragTargetSize(drag: DragState): Size {
+function dragTargetSize(drag: Extract<DragState, { mode: "resize" }>): Size {
   return Size.create(
-    Math.max(1, drag.originSize.width + drag.lastCell.col - drag.startCell.col),
+    Math.max(
+      1,
+      drag.originSize.width + drag.lastCell.col - drag.startCell.col,
+    ),
     Math.max(
       1,
       drag.originSize.height + drag.lastCell.row - drag.startCell.row,
@@ -823,11 +975,13 @@ function executeDrag(
   drag: DragState,
 ): WireframeDocument {
   if (drag.mode === "move") {
-    return container.moveElement.execute({
-      document,
-      elementId: drag.elementId,
-      position: dragTargetPosition(drag),
+    const deltaCol = drag.lastCell.col - drag.startCell.col;
+    const deltaRow = drag.lastCell.row - drag.startCell.row;
+    const moves = drag.elementIds.map((id) => {
+      const origin = drag.originPositions.get(id)!;
+      return { elementId: id, position: origin.translate(deltaCol, deltaRow) };
     });
+    return container.moveElements.execute({ document, moves });
   }
   return container.resizeElement.execute({
     document,

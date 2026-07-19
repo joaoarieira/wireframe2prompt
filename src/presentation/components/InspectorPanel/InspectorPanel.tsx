@@ -28,12 +28,14 @@ function integerFrom(event: ChangeEvent<HTMLInputElement>): number | null {
 export function InspectorPanel() {
   const { t } = useTranslation();
   const document = useEditorStore((state) => state.document);
-  const selectedElementId = useEditorStore((state) => state.selectedElementId);
-  const closeInspector = useEditorStore((state) => state.closeInspector);
-  const removeSelectedElement = useEditorStore(
-    (state) => state.removeSelectedElement,
+  const selectedElementIds = useEditorStore(
+    (state) => state.selectedElementIds,
   );
-  const element = selectedElementOf({ document, selectedElementId });
+  const closeInspector = useEditorStore((state) => state.closeInspector);
+  const removeSelectedElements = useEditorStore(
+    (state) => state.removeSelectedElements,
+  );
+  const element = selectedElementOf({ document, selectedElementIds });
 
   if (element === null) {
     return null;
@@ -60,7 +62,7 @@ export function InspectorPanel() {
         variant="danger"
         size="sm"
         className="mt-2"
-        onClick={removeSelectedElement}
+        onClick={removeSelectedElements}
       >
         {t("inspector.delete")}
       </Button>

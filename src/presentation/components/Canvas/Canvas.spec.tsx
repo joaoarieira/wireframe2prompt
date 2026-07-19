@@ -32,9 +32,10 @@ afterEach(() => {
   editorStore.setState({
     document: null,
     documentStatus: "idle",
-    selectedElementId: null,
+    selectedElementIds: [],
     activeToolId: "select",
     drag: null,
+    marquee: null,
     stroke: null,
     panDrag: null,
     textEditingElementId: null,
@@ -159,28 +160,28 @@ describe("Canvas", () => {
 
     const element = selectedElementOf({
       document: editorStore.getState().document,
-      selectedElementId: "b1",
+      selectedElementIds: ["b1"],
     });
     expect(element?.position.col).toBe(0);
   });
 
   test("an arrow key nudges the selected element", () => {
     openDoc();
-    editorStore.setState({ selectedElementId: "b1" });
+    editorStore.setState({ selectedElementIds: ["b1"] });
     render(<Canvas />);
 
     fireEvent.keyDown(screen.getByTestId("canvas"), { key: "ArrowRight" });
 
     const element = selectedElementOf({
       document: editorStore.getState().document,
-      selectedElementId: "b1",
+      selectedElementIds: ["b1"],
     });
     expect(element?.position.col).toBe(1);
   });
 
   test("the resize handle maps the cursor to a grid cell", () => {
     openDoc();
-    editorStore.setState({ selectedElementId: "b1" });
+    editorStore.setState({ selectedElementIds: ["b1"] });
     render(<Canvas />);
 
     // 20×10 grid at 10×18px cells; jsdom otherwise reports a zero-size rect,
@@ -193,6 +194,47 @@ describe("Canvas", () => {
     fireEvent.pointerDown(handle, { pointerId: 1, clientX: 5, clientY: 5 });
 
     expect(editorStore.getState().drag).not.toBeNull();
+  });
+
+  test("with 2 elements selected, 2 selection overlays are shown without resize handle", () => {
+    editorStore.setState({
+      document: makeDoc(makeBox("b1"), makeBox("b2")),
+      documentStatus: "ready",
+      selectedElementIds: ["b1", "b2"],
+    });
+    render(<Canvas />);
+
+    const overlays = screen.getAllByTestId("selection-overlay");
+    expect(overlays).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: "Resize element" }),
+    ).toBeNull();
+  });
+
+  test("with 1 element selected, 1 overlay with a resize handle is shown", () => {
+    openDoc();
+    editorStore.setState({ selectedElementIds: ["b1"] });
+    render(<Canvas />);
+
+    expect(screen.getAllByTestId("selection-overlay")).toHaveLength(1);
+    expect(
+      screen.getByRole("button", { name: "Resize element" }),
+    ).toBeInTheDocument();
+  });
+
+  test("marquee overlay appears when marquee state is set", () => {
+    openDoc();
+    act(() => {
+      editorStore.setState({
+        marquee: {
+          startCell: { col: 0, row: 0 } as never,
+          lastCell: { col: 3, row: 2 } as never,
+        },
+      });
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("marquee-overlay")).not.toBeNull();
   });
 
   test("holding the middle button pans without changing the active tool", () => {
@@ -340,7 +382,7 @@ describe("Canvas", () => {
       documentStatus: "ready",
       canvasEditingElementId: "t1",
       textEditingElementId: "t1",
-      selectedElementId: "t1",
+      selectedElementIds: ["t1"],
     });
     render(<Canvas />);
 
@@ -354,7 +396,7 @@ describe("Canvas", () => {
       documentStatus: "ready",
       textEditingElementId: "t1",
       canvasEditingElementId: null,
-      selectedElementId: "t1",
+      selectedElementIds: ["t1"],
     });
     render(<Canvas />);
 
@@ -367,7 +409,7 @@ describe("Canvas", () => {
       documentStatus: "ready",
       canvasEditingElementId: "b1",
       textEditingElementId: "b1",
-      selectedElementId: "b1",
+      selectedElementIds: ["b1"],
     });
     render(<Canvas />);
 
@@ -381,7 +423,7 @@ describe("Canvas", () => {
       documentStatus: "ready",
       canvasEditingElementId: "t1",
       textEditingElementId: "t1",
-      selectedElementId: "t1",
+      selectedElementIds: ["t1"],
     });
     render(<Canvas />);
     const canvas = screen.getByTestId("canvas");
