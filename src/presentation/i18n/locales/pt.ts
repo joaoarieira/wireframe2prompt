@@ -114,6 +114,7 @@ export const pt: LocaleDictionary = {
     containers: "Contêineres",
     draw: "Desenho",
     moreTools: "Mais ferramentas de {{name}}",
+    toolWithShortcut: "{{name}} ({{shortcut}})",
   },
   contextMenu: {
     copy: "Copiar",

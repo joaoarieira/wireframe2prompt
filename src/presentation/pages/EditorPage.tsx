@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useToolShortcuts } from "../hooks/useToolShortcuts";
 import { Canvas } from "../components/Canvas/Canvas";
 import { LayersSidebar } from "../components/LayersSidebar/LayersSidebar";
 import { InspectorPanel } from "../components/InspectorPanel/InspectorPanel";
@@ -21,6 +22,7 @@ export function EditorPage() {
   useDocumentTitle(
     documentName ? `${documentName} - wireframe2prompt` : "wireframe2prompt",
   );
+  useToolShortcuts();
 
   if (documentStatus === "missing") {
     return (

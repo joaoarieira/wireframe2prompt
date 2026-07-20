@@ -115,6 +115,7 @@ export const en = {
     containers: "Containers",
     draw: "Draw",
     moreTools: "More {{name}} tools",
+    toolWithShortcut: "{{name}} ({{shortcut}})",
   },
   contextMenu: {
     copy: "Copy",

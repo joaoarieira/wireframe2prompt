@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { EditorPage } from "./EditorPage";
 import { editorStore } from "../state/app-store/appStore";
 import { makeDoc, makeText } from "../../tests/fixtures";
@@ -24,11 +30,15 @@ function openReadyDocument() {
 
 afterEach(() => {
   cleanup();
+  act(() => {
+    editorStore.getState().setActiveTool("select");
+  });
   editorStore.setState({
     document: null,
     documentStatus: "idle",
     selectedElementIds: [],
     inspectorOpen: false,
+    canvasEditingElementId: null,
   });
 });
 
@@ -61,6 +71,23 @@ describe("EditorPage", () => {
       screen.getByRole("link", { name: "Back to wireframes" }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("inspector-aside")).toBeNull();
+  });
+
+  test("a window tool shortcut activates the tool through the footer", () => {
+    openReadyDocument();
+    render(<EditorPage />);
+
+    act(() => {
+      fireEvent.keyDown(window, { key: "r" });
+    });
+
+    expect(editorStore.getState().activeToolId).toBe("box");
+    // "Box" names both the group's quick button and its menu item; the footer's
+    // quick button (outside the dropdown) is the one that reflects activation.
+    const quickBox = screen
+      .getAllByRole("button", { name: "Box" })
+      .find((button) => button.closest(".dropdown") === null);
+    expect(quickBox).toHaveAttribute("aria-pressed", "true");
   });
 
   test("the open inspector overlays the canvas instead of reflowing it", () => {

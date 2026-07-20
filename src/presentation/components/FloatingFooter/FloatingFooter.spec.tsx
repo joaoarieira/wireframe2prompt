@@ -56,6 +56,20 @@ describe("FloatingFooter tool palette", () => {
     expect(screen.getByRole("button", { name: "Text" })).toBeInTheDocument();
   });
 
+  test("a tool with a shortcut appends it to the tooltip only", () => {
+    render(<FloatingFooter />);
+    const text = screen.getByRole("button", { name: "Text" });
+    // aria-label stays the bare name; the shortcut rides on the title tooltip.
+    expect(text).toHaveAttribute("title", "Text (T)");
+    expect(text).toHaveAttribute("aria-label", "Text");
+  });
+
+  test("a tool without a shortcut keeps a plain tooltip", () => {
+    setTool("dropdown"); // the Containers quick button now shows Dropdown
+    render(<FloatingFooter />);
+    expect(quickButton("Dropdown")).toHaveAttribute("title", "Dropdown");
+  });
+
   test("clicking a standalone tool makes it the active tool", () => {
     render(<FloatingFooter />);
     const hand = screen.getByRole("button", { name: "Hand" });

@@ -7,6 +7,7 @@ import { ButtonGroup } from "../../ui/button-group/ButtonGroup";
 import { Dropdown, DropdownItem } from "../../ui/dropdown/Dropdown";
 import { FloatingBar } from "../../ui/floating-bar/FloatingBar";
 import { TextInput } from "../../ui/text-input/TextInput";
+import { SHORTCUT_LABEL_BY_TOOL } from "../../state/keyboard/toolShortcut";
 import { TOOL_ICONS } from "./toolIcons";
 import { FOOTER_LAYOUT, type FooterSlot } from "./footerLayout";
 
@@ -91,13 +92,18 @@ function ToolButton({ toolId, active, onSelect, className }: ToolButtonProps) {
   const { t } = useTranslation();
   const Icon = TOOL_ICONS[toolId];
   const label = t(`tools.${toolId}`);
+  const shortcut = SHORTCUT_LABEL_BY_TOOL[toolId];
+  // Screen readers get the bare tool name; the tooltip appends the shortcut.
+  const title = shortcut
+    ? t("footer.toolWithShortcut", { name: label, shortcut })
+    : label;
   return (
     <Button
       variant={active ? "neutral" : "ghost"}
       size="sm"
       aria-pressed={active}
       aria-label={label}
-      title={label}
+      title={title}
       className={className}
       onClick={() => onSelect(toolId)}
     >
