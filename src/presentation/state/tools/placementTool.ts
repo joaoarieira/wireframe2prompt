@@ -2,8 +2,11 @@ import type { CanvasTool } from "./CanvasTool";
 import type { PlaceableKind } from "../element-factory/elementFactory";
 
 /**
- * Builds a tool that stamps a new element of the given kind on pointer down.
- * The tool stays active so several elements can be placed in a row.
+ * Builds a tool that places a new element of the given kind. Pointer down
+ * anchors the element on the pressed cell; dragging sizes it (like resizing an
+ * existing element) and the element is committed once on pointer up — a plain
+ * click (down and up on the same cell) still yields the default size. The tool
+ * stays active so several elements can be placed in a row.
  *
  * `labelKey` is an i18n key (e.g. `"tools.box"`), not display text — this
  * state layer stays free of i18next; the FloatingFooter translates it.
@@ -19,13 +22,13 @@ export function createPlacementTool(
     id: kind,
     labelKey,
     onCellPointerDown(context, cell) {
-      context.placeElement(kind, cell);
+      context.beginPlacement(kind, cell);
     },
-    onCellPointerMove() {
-      // placement happens on pointer down only
+    onCellPointerMove(context, cell) {
+      context.updateDrag(cell);
     },
-    onCellPointerUp() {
-      // placement happens on pointer down only
+    onCellPointerUp(context) {
+      context.commitDrag();
     },
   };
 }

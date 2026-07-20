@@ -16,7 +16,7 @@ export class FakeToolContext implements ToolContext {
   selectionIdsValue: readonly string[] = [];
   selectCalls: Array<string | null> = [];
   toggleSelectCalls: string[] = [];
-  placeCalls: Array<{ kind: PlaceableKind; cell: Position }> = [];
+  beginPlacementCalls: Array<{ kind: PlaceableKind; cell: Position }> = [];
   beginMoveCalls: Array<{ elementIds: readonly string[]; cell: Position }> = [];
   updateDragCalls: Position[] = [];
   commitDragCalls = 0;
@@ -48,8 +48,8 @@ export class FakeToolContext implements ToolContext {
     this.toggleSelectCalls.push(elementId);
   }
 
-  placeElement(kind: PlaceableKind, cell: Position): void {
-    this.placeCalls.push({ kind, cell });
+  beginPlacement(kind: PlaceableKind, cell: Position): void {
+    this.beginPlacementCalls.push({ kind, cell });
   }
 
   beginMove(elementIds: readonly string[], cell: Position): void {

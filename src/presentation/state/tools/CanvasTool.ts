@@ -21,7 +21,7 @@ export interface ToolContext {
   select(elementId: string | null): void;
   selectionIds(): readonly string[];
   toggleSelect(elementId: string): void;
-  placeElement(kind: PlaceableKind, cell: Position): void;
+  beginPlacement(kind: PlaceableKind, cell: Position): void;
   beginMove(elementIds: readonly string[], cell: Position): void;
   updateDrag(cell: Position): void;
   commitDrag(): void;

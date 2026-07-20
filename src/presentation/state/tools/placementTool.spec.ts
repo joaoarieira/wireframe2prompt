@@ -14,24 +14,24 @@ describe("createPlacementTool", () => {
     expect(tool.labelKey).toBe("tools.line");
   });
 
-  test("pointer down places an element of its kind at the cell", () => {
+  test("pointer down anchors a placement drag of its kind at the cell", () => {
     const tool = createPlacementTool("box", "tools.box");
     const context = new FakeToolContext();
 
     tool.onCellPointerDown(context, cell, noPoint);
 
-    expect(context.placeCalls).toEqual([{ kind: "box", cell }]);
+    expect(context.beginPlacementCalls).toEqual([{ kind: "box", cell }]);
   });
 
-  test("pointer move and up are no-ops", () => {
+  test("pointer move sizes the drag and pointer up commits it", () => {
     const tool = createPlacementTool("text", "tools.text");
     const context = new FakeToolContext();
 
     tool.onCellPointerMove(context, cell, noPoint);
     tool.onCellPointerUp(context, cell, noPoint);
 
-    expect(context.placeCalls).toEqual([]);
-    expect(context.updateDragCalls).toEqual([]);
-    expect(context.commitDragCalls).toBe(0);
+    expect(context.beginPlacementCalls).toEqual([]);
+    expect(context.updateDragCalls).toEqual([cell]);
+    expect(context.commitDragCalls).toBe(1);
   });
 });

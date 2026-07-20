@@ -900,6 +900,187 @@ describe("drag gestures", () => {
     ).toBe(true);
   });
 
+  test("resizing a horizontal line downwards flips it to vertical in one undo", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("line", cell(0, 0)); // id-1: 6×1 h
+
+    store.getState().beginResize("id-1", cell(5, 0));
+    store.getState().updateDrag(cell(5, 3)); // 3 cells down
+
+    const dragState = store.getState();
+    const ghost = previewedDocument(
+      dragState.document!,
+      dragState.drag,
+    ).getElement("id-1") as LineElement;
+    expect(ghost.orientation).toBe("v");
+    expect(ghost.size.equals(Size.create(1, 4))).toBe(true);
+
+    store.getState().commitDrag();
+    const committed = store
+      .getState()
+      .document!.getElement("id-1") as LineElement;
+    expect(committed.orientation).toBe("v");
+    expect(committed.size.equals(Size.create(1, 4))).toBe(true);
+
+    store.getState().undo(); // one snapshot restores size AND orientation
+    const restored = store
+      .getState()
+      .document!.getElement("id-1") as LineElement;
+    expect(restored.orientation).toBe("h");
+    expect(restored.size.equals(Size.create(6, 1))).toBe(true);
+  });
+
+  test("widening a horizontal line one cell down keeps it horizontal", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("line", cell(0, 0)); // id-1: 6×1 h
+
+    store.getState().beginResize("id-1", cell(5, 0));
+    store.getState().updateDrag(cell(8, 1)); // +3 cols, +1 row
+    store.getState().commitDrag();
+
+    const line = store.getState().document!.getElement("id-1") as LineElement;
+    expect(line.orientation).toBe("h");
+    // Height collapses to the line's canonical 1; width grows.
+    expect(line.size.equals(Size.create(9, 1))).toBe(true);
+  });
+
+  test("a plain click places a default-sized element and one undo removes it", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("box", cell(2, 1));
+    store.getState().commitDrag();
+
+    const state = store.getState();
+    const placed = state.document!.getElement("id-1")!;
+    expect(placed.position.equals(cell(2, 1))).toBe(true);
+    expect(placed.size.equals(Size.create(8, 4))).toBe(true);
+    expect(state.selectedElementIds).toEqual(["id-1"]);
+    expect(state.inspectorOpen).toBe(true);
+    expect(state.drag).toBeNull();
+
+    store.getState().undo();
+    expect(store.getState().document!.getElement("id-1")).toBeUndefined();
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("a placement drag across 5×5 cells sizes the box inclusively", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("box", cell(0, 0));
+    store.getState().updateDrag(cell(4, 4));
+    store.getState().commitDrag();
+
+    const placed = store.getState().document!.getElement("id-1")!;
+    expect(placed.size.equals(Size.create(5, 5))).toBe(true);
+  });
+
+  test("a line placement drag one cell down stays horizontal", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("line", cell(0, 0));
+    store.getState().updateDrag(cell(3, 1));
+    store.getState().commitDrag();
+
+    const line = store.getState().document!.getElement("id-1") as LineElement;
+    expect(line.orientation).toBe("h");
+    expect(line.size.equals(Size.create(4, 1))).toBe(true);
+  });
+
+  test("a line placement drag four cells down flips to vertical 1×5", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("line", cell(0, 0));
+    store.getState().updateDrag(cell(0, 4));
+    store.getState().commitDrag();
+
+    const line = store.getState().document!.getElement("id-1") as LineElement;
+    expect(line.orientation).toBe("v");
+    expect(line.size.equals(Size.create(1, 5))).toBe(true);
+  });
+
+  test("text placement enters inline editing only after pointer up", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("text", cell(1, 1));
+    expect(store.getState().canvasEditingElementId).toBeNull();
+
+    store.getState().commitDrag();
+    const state = store.getState();
+    expect(state.canvasEditingElementId).toBe("id-1");
+    expect(state.textEditingElementId).toBe("id-1");
+  });
+
+  test("cancelling a placement gesture creates nothing", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("box", cell(0, 0));
+    store.getState().updateDrag(cell(3, 3));
+    store.getState().cancelDrag();
+
+    expect(store.getState().drag).toBeNull();
+    expect(store.getState().document!.elements).toHaveLength(0);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("previewedDocument shows the placement ghost before it is committed", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("box", cell(1, 1));
+    store.getState().updateDrag(cell(3, 3));
+
+    const state = store.getState();
+    const ghost = previewedDocument(state.document!, state.drag).getElement(
+      "id-1",
+    )!;
+    expect(ghost.position.equals(cell(1, 1))).toBe(true);
+    expect(ghost.size.equals(Size.create(3, 3))).toBe(true);
+    expect(state.document!.getElement("id-1")).toBeUndefined();
+  });
+
+  test("a placement gesture runs addElement exactly once", async () => {
+    await openFixtureDoc();
+    const addSpy = vi.spyOn(container.addElement, "execute");
+
+    store.getState().beginPlacement("box", cell(0, 0));
+    store.getState().updateDrag(cell(2, 2));
+    store.getState().updateDrag(cell(4, 4));
+    store.getState().commitDrag();
+
+    expect(addSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("previewedDocument ignores a placement whose id already exists", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    const document = store.getState().document!;
+    const drag: DragState = {
+      mode: "place",
+      kind: "box",
+      elementId: "b1", // collides with the existing element
+      startCell: cell(0, 0),
+      lastCell: cell(2, 2),
+    };
+
+    // addElement throws on the duplicate id, so the ghost is dropped.
+    expect(previewedDocument(document, drag).elements).toHaveLength(1);
+  });
+
+  test("previewedDocument resize drag on an unknown element is a no-op", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    const document = store.getState().document!;
+    const drag: DragState = {
+      mode: "resize",
+      elementId: "ghost",
+      startCell: cell(0, 0),
+      lastCell: cell(3, 3),
+      originPosition: cell(0, 0),
+      originSize: Size.create(2, 2),
+    };
+
+    const preview = previewedDocument(document, drag);
+    expect(preview.getElement("b1")?.size.equals(Size.create(2, 2))).toBe(true);
+    expect(preview.getElement("ghost")).toBeUndefined();
+  });
+
   test("a drag that returns to the start cell commits nothing", async () => {
     await openFixtureDoc(makeBox("b1"));
 

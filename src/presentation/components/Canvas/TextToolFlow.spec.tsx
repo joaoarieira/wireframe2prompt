@@ -81,7 +81,7 @@ describe("text tool placement — full pointer sequence", () => {
     expect(screen.getByTestId("text-edit-overlay")).toHaveFocus();
   });
 
-  test("canvasEditingElementId is not cleared by pointerUp or click", () => {
+  test("canvasEditingElementId is set on pointerUp and survives the click", () => {
     const grid = setupGrid();
 
     fireEvent.pointerDown(grid, {
@@ -90,16 +90,18 @@ describe("text tool placement — full pointer sequence", () => {
       clientX: 15,
       clientY: 18,
     });
-    const idAfterDown = editorStore.getState().canvasEditingElementId;
-
+    // Placement commits on pointer up, so inline editing begins there.
     fireEvent.pointerUp(grid, {
       pointerId: 1,
       button: 0,
       clientX: 15,
       clientY: 18,
     });
+    const idAfterUp = editorStore.getState().canvasEditingElementId;
+    expect(idAfterUp).not.toBeNull();
+
     fireEvent.click(grid, { button: 0, clientX: 15, clientY: 18 });
 
-    expect(editorStore.getState().canvasEditingElementId).toBe(idAfterDown);
+    expect(editorStore.getState().canvasEditingElementId).toBe(idAfterUp);
   });
 });

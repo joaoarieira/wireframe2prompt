@@ -8,6 +8,8 @@ import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
 import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
+import { LineElement } from "../../../domain/entities/element/LineElement";
+import type { LineOrientation } from "../../../domain/entities/element/LineElement";
 import type { CharBuffer } from "../../../domain/value-objects/char-buffer/CharBuffer";
 import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
@@ -27,6 +29,11 @@ import { ToolRegistry, createDefaultToolRegistry } from "../tools/ToolRegistry";
 import type { EditorKeyAction } from "../keyboard/editorKeyAction";
 import { drawCellsOnDocument } from "../../../application/usecases/DrawFreeCharUseCase";
 import { eraseCellsOnDocument } from "../../../application/usecases/EraseCellUseCase";
+import {
+  lineOrientationForDrag,
+  lineSizeForOrientation,
+  placementDragSize,
+} from "./dragGeometry";
 
 const DEFAULT_GRID_COLS = 80;
 const DEFAULT_GRID_ROWS = 24;
@@ -74,6 +81,14 @@ export type DragState =
       lastCell: Position;
       originPosition: Position;
       originSize: Size;
+    }
+  | {
+      mode: "place";
+      kind: PlaceableKind;
+      /** Pre-generated so the id is stable across the whole gesture. */
+      elementId: string;
+      startCell: Position;
+      lastCell: Position;
     };
 
 export interface MarqueeState {
@@ -183,6 +198,7 @@ export interface EditorActions {
   setActiveTool(toolId: string): void;
   listTools(): readonly CanvasTool[];
   placeElement(kind: PlaceableKind, cell: Position): void;
+  beginPlacement(kind: PlaceableKind, cell: Position): void;
   moveElementTo(elementId: string, position: Position): void;
   resizeElementTo(elementId: string, size: Size): void;
   nudgeSelection(deltaCol: number, deltaRow: number): void;
@@ -346,13 +362,36 @@ export function createEditorStore(
       scheduleAutosave();
     };
 
+    /**
+     * Adds the element built by a placement drag once, on pointer up, so a
+     * click-drag-to-size gesture still costs a single undo snapshot. Replays
+     * the selection/inspector/text-editing effects of {@link placeElement}.
+     */
+    const commitPlacementDrag = (
+      drag: Extract<DragState, { mode: "place" }>,
+    ): void => {
+      const document = requireDocument("commit a placement drag");
+      const built = placedElement(drag);
+      const element = built.withZIndex(
+        zIndexForPlacement(document, built.position, built.size),
+      );
+      set({ drag: null });
+      commitDocument(container.addElement.execute({ document, element }));
+      set({
+        selectedElementIds: [element.id],
+        textEditingElementId: drag.kind === "text" ? element.id : null,
+        canvasEditingElementId: drag.kind === "text" ? element.id : null,
+        inspectorOpen: true,
+      });
+    };
+
     const toolContext = (): ToolContext => ({
       elementAt: (cell) =>
         elementAtCell(requireDocument("hit-test a cell"), cell),
       select: (elementId) => get().selectElement(elementId),
       selectionIds: () => get().selectedElementIds,
       toggleSelect: (elementId) => get().toggleElementSelection(elementId),
-      placeElement: (kind, cell) => get().placeElement(kind, cell),
+      beginPlacement: (kind, cell) => get().beginPlacement(kind, cell),
       beginMove: (elementIds, cell) => get().beginMove(elementIds, cell),
       updateDrag: (cell) => get().updateDrag(cell),
       commitDrag: () => get().commitDrag(),
@@ -525,6 +564,22 @@ export function createEditorStore(
         });
       },
 
+      // Anchors a placement drag on the pressed cell. Nothing is committed
+      // until pointer up (commitDrag → commitPlacementDrag); until then the
+      // element exists only as a preview via previewedDocument.
+      beginPlacement: (kind, cell) => {
+        requireDocument("start a placement drag");
+        set({
+          drag: {
+            mode: "place",
+            kind,
+            elementId: generateId(),
+            startCell: cell,
+            lastCell: cell,
+          },
+        });
+      },
+
       moveElementTo: (elementId, position) => {
         const document = requireDocument("move an element");
         commitDocument(
@@ -680,6 +735,12 @@ export function createEditorStore(
       commitDrag: () => {
         const { drag, selectedElementIds } = get();
         if (drag === null) {
+          return;
+        }
+        // Placement commits even on a plain click (start === last), so it must
+        // run before the "returned to start" early-return below.
+        if (drag.mode === "place") {
+          commitPlacementDrag(drag);
           return;
         }
         // Open the inspector only for a single-element selection; multi-move
@@ -1099,6 +1160,13 @@ function applyDragPreview(
   drag: DragState | null,
 ): WireframeDocument {
   if (drag === null) return document;
+  if (drag.mode === "place") {
+    try {
+      return document.addElement(placedElement(drag));
+    } catch {
+      return document;
+    }
+  }
   if (drag.mode === "move") {
     const deltaCol = drag.lastCell.col - drag.startCell.col;
     const deltaRow = drag.lastCell.row - drag.startCell.row;
@@ -1108,7 +1176,22 @@ function applyDragPreview(
       return doc.moveElement(id, origin.translate(deltaCol, deltaRow));
     }, document);
   }
-  return document.resizeElement(drag.elementId, dragTargetSize(drag));
+  return resizedPreview(document, drag);
+}
+
+/** Resize preview, flipping a line's orientation mid-gesture when it crosses the threshold. */
+function resizedPreview(
+  document: WireframeDocument,
+  drag: Extract<DragState, { mode: "resize" }>,
+): WireframeDocument {
+  const element = document.getElement(drag.elementId);
+  if (element === undefined) return document;
+  const outcome = resizeOutcome(element, drag);
+  const resized = document.resizeElement(drag.elementId, outcome.size);
+  if (outcome.props === undefined) return resized;
+  return resized.replaceElement(
+    resized.getElement(drag.elementId)!.withProps(outcome.props),
+  );
 }
 
 function applyStrokePreview(
@@ -1261,10 +1344,65 @@ function dragTargetSize(drag: Extract<DragState, { mode: "resize" }>): Size {
   );
 }
 
+interface ResizeOutcome {
+  size: Size;
+  /** Set only when the gesture flips a line's orientation. */
+  props?: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * Size (and optional orientation flip) a resize drag produces. Only lines flip;
+ * every other kind just grows to the drag target.
+ */
+function resizeOutcome(
+  element: Element,
+  drag: Extract<DragState, { mode: "resize" }>,
+): ResizeOutcome {
+  const target = dragTargetSize(drag);
+  if (!(element instanceof LineElement)) {
+    return { size: target };
+  }
+  const shape = lineDragShape(element.orientation, target, drag);
+  return shape.orientation === element.orientation
+    ? { size: shape.size }
+    : { size: shape.size, props: { orientation: shape.orientation } };
+}
+
+/** The element a placement drag produces: default size on a plain click, else the drag box. */
+function placedElement(drag: Extract<DragState, { mode: "place" }>): Element {
+  const element = buildElement(drag.kind, {
+    id: drag.elementId,
+    position: drag.startCell,
+    zIndex: 0,
+  });
+  if (drag.lastCell.equals(drag.startCell)) {
+    return element;
+  }
+  const target = placementDragSize(drag.startCell, drag.lastCell);
+  if (!(element instanceof LineElement)) {
+    return element.resize(target);
+  }
+  const shape = lineDragShape(element.orientation, target, drag);
+  return element.withOrientation(shape.orientation).resize(shape.size);
+}
+
+/** Orientation + canonical line size for a resize/placement drag's target box. */
+function lineDragShape(
+  current: LineOrientation,
+  target: Size,
+  drag: Extract<DragState, { mode: "resize" | "place" }>,
+): { orientation: LineOrientation; size: Size } {
+  const deltaCol = drag.lastCell.col - drag.startCell.col;
+  const deltaRow = drag.lastCell.row - drag.startCell.row;
+  const orientation = lineOrientationForDrag(current, deltaCol, deltaRow);
+  return { orientation, size: lineSizeForOrientation(orientation, target) };
+}
+
 function executeDrag(
   container: AppContainer,
   document: WireframeDocument,
-  drag: DragState,
+  // "place" is committed separately (commitPlacementDrag), never here.
+  drag: Exclude<DragState, { mode: "place" }>,
 ): WireframeDocument {
   if (drag.mode === "move") {
     const deltaCol = drag.lastCell.col - drag.startCell.col;
@@ -1275,10 +1413,13 @@ function executeDrag(
     });
     return container.moveElements.execute({ document, moves });
   }
+  const element = requireElement(document, drag.elementId);
+  const outcome = resizeOutcome(element, drag);
   return container.resizeElement.execute({
     document,
     elementId: drag.elementId,
-    size: dragTargetSize(drag),
+    size: outcome.size,
+    props: outcome.props,
   });
 }
 
