@@ -190,6 +190,7 @@ export interface EditorActions {
   selectElement(elementId: string | null): void;
   toggleElementSelection(elementId: string): void;
   replaceSelection(elementIds: readonly string[]): void;
+  selectAllElements(): void;
   openInspector(): void;
   closeInspector(): void;
   beginTextEditing(elementId: string): void;
@@ -506,6 +507,11 @@ export function createEditorStore(
         });
       },
 
+      selectAllElements: () => {
+        const document = requireDocument("select all elements");
+        get().replaceSelection(document.elements.map((element) => element.id));
+      },
+
       openInspector: () => {
         set({ inspectorOpen: true });
       },
@@ -678,6 +684,10 @@ export function createEditorStore(
         }
         if (action.type === "duplicate") {
           get().duplicateSelection();
+          return;
+        }
+        if (action.type === "select-all") {
+          get().selectAllElements();
           return;
         }
         if (action.type === "remove-selected") {
@@ -1255,7 +1265,8 @@ function suspendedDuringTextEditing(action: EditorKeyAction): boolean {
     action.type === "cancel" ||
     action.type === "copy" ||
     action.type === "paste" ||
-    action.type === "duplicate"
+    action.type === "duplicate" ||
+    action.type === "select-all"
   );
 }
 

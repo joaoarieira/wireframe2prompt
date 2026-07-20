@@ -106,6 +106,12 @@ export const en = {
     paste: "Paste",
     duplicate: "Duplicate",
     delete: "Delete",
+    selectAll: "Select all",
+    copyShortcut: "ctrl + c",
+    pasteShortcut: "ctrl + v",
+    duplicateShortcut: "ctrl + d",
+    deleteShortcut: "del",
+    selectAllShortcut: "ctrl + a",
   },
   sidebar: {
     about: "About",

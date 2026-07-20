@@ -9,7 +9,7 @@ import {
  * Context menu for canvas and layers-panel right-clicks. Rendered once in
  * EditorPage; reads position from the store so no prop drilling is needed.
  * Right-clicking an element shows the full menu; free canvas area ("empty"
- * target) shows only Paste.
+ * target) shows only Paste and Select all.
  */
 export function EditorContextMenu() {
   const { t } = useTranslation();
@@ -19,6 +19,10 @@ export function EditorContextMenu() {
   const copySelection = useEditorStore((s) => s.copySelection);
   const beginPastePreview = useEditorStore((s) => s.beginPastePreview);
   const duplicateSelection = useEditorStore((s) => s.duplicateSelection);
+  const selectAllElements = useEditorStore((s) => s.selectAllElements);
+  const documentIsEmpty = useEditorStore(
+    (s) => (s.document?.elements.length ?? 0) === 0,
+  );
   const removeSelectedElements = useEditorStore(
     (s) => s.removeSelectedElements,
   );
@@ -43,19 +47,32 @@ export function EditorContextMenu() {
       onClose={closeContextMenu}
     >
       {elementOnly && (
-        <ContextMenuItem disabled={noSelection} onClick={handle(copySelection)}>
+        <ContextMenuItem
+          disabled={noSelection}
+          shortcut={t("contextMenu.copyShortcut")}
+          onClick={handle(copySelection)}
+        >
           {t("contextMenu.copy")}
         </ContextMenuItem>
       )}
       <ContextMenuItem
         disabled={noClipboard}
+        shortcut={t("contextMenu.pasteShortcut")}
         onClick={handle(() => beginPastePreview(contextMenu.cell))}
       >
         {t("contextMenu.paste")}
       </ContextMenuItem>
+      <ContextMenuItem
+        disabled={documentIsEmpty}
+        shortcut={t("contextMenu.selectAllShortcut")}
+        onClick={handle(selectAllElements)}
+      >
+        {t("contextMenu.selectAll")}
+      </ContextMenuItem>
       {elementOnly && (
         <ContextMenuItem
           disabled={noSelection}
+          shortcut={t("contextMenu.duplicateShortcut")}
           onClick={handle(duplicateSelection)}
         >
           {t("contextMenu.duplicate")}
@@ -64,6 +81,7 @@ export function EditorContextMenu() {
       {elementOnly && (
         <ContextMenuItem
           disabled={noSelection}
+          shortcut={t("contextMenu.deleteShortcut")}
           onClick={handle(removeSelectedElements)}
         >
           {t("contextMenu.delete")}

@@ -41,7 +41,7 @@ export function ContextMenu({ x, y, onClose, children }: ContextMenuProps) {
     <ul
       ref={ref}
       role="menu"
-      className="menu fixed z-50 w-40 rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
+      className="menu fixed z-50 w-52 rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
       style={{ left: x, top: y }}
     >
       {children}
@@ -49,16 +49,23 @@ export function ContextMenu({ x, y, onClose, children }: ContextMenuProps) {
   );
 }
 
+interface ContextMenuItemProps extends ComponentProps<"button"> {
+  /** Keyboard shortcut hint, right-aligned and de-emphasized. */
+  shortcut?: string;
+}
+
 /**
  * A single item inside a {@link ContextMenu}.
  *
- * @example <ContextMenuItem onClick={copy}>Copy</ContextMenuItem>
+ * @example <ContextMenuItem onClick={copy} shortcut="ctrl + c">Copy</ContextMenuItem>
  */
 export function ContextMenuItem({
   disabled,
   className,
+  shortcut,
+  children,
   ...rest
-}: ComponentProps<"button">) {
+}: ContextMenuItemProps) {
   return (
     <li>
       <button
@@ -66,7 +73,15 @@ export function ContextMenuItem({
         disabled={disabled}
         className={disabled ? "menu-disabled" : className}
         {...rest}
-      />
+      >
+        {children}
+        {shortcut !== undefined && (
+          // aria-hidden keeps the accessible name as just the action label.
+          <span aria-hidden="true" className="ml-auto text-xs opacity-50">
+            {shortcut}
+          </span>
+        )}
+      </button>
     </li>
   );
 }

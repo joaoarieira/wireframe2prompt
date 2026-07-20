@@ -1934,6 +1934,17 @@ describe("copy / paste / duplicate", () => {
     expect(store.getState().document?.elements).toHaveLength(2);
   });
 
+  test("applyKeyAction select-all selects every element and closes the inspector", async () => {
+    await openFixtureDoc(makeBox("b1"), makeBox("b2"));
+    store.getState().selectElement("b1");
+    store.getState().openInspector();
+
+    store.getState().applyKeyAction({ type: "select-all" });
+
+    expect(store.getState().selectedElementIds).toEqual(["b1", "b2"]);
+    expect(store.getState().inspectorOpen).toBe(false);
+  });
+
   test("applyKeyAction Delete during paste preview cancels preview, not removes selection", async () => {
     await openFixtureDoc(makeBox("b1"));
     store.getState().selectElement("b1");
@@ -1974,10 +1985,12 @@ describe("copy / paste / duplicate", () => {
     store.getState().applyKeyAction({ type: "copy" });
     store.getState().applyKeyAction({ type: "paste" });
     store.getState().applyKeyAction({ type: "duplicate" });
+    store.getState().applyKeyAction({ type: "select-all" });
 
     expect(store.getState().clipboard).toHaveLength(1); // unchanged
     expect(store.getState().pastePreview).toBeNull();
     expect(store.getState().document?.elements).toHaveLength(1);
+    expect(store.getState().textEditingElementId).toBe("b1"); // still editing
   });
 
   test("openDocument preserves clipboard but clears preview and menu", async () => {

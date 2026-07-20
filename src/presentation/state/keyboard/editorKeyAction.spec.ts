@@ -93,6 +93,16 @@ describe("editorActionForKey", () => {
     expect(editorActionForKey(key({ key: "d" }))).toBeNull();
   });
 
+  test("ctrl+a / cmd+a → select-all", () => {
+    expect(editorActionForKey(key({ key: "a", ctrlKey: true }))).toEqual({
+      type: "select-all",
+    });
+    expect(editorActionForKey(key({ key: "A", metaKey: true }))).toEqual({
+      type: "select-all",
+    });
+    expect(editorActionForKey(key({ key: "a" }))).toBeNull();
+  });
+
   test("Escape → cancel", () => {
     expect(editorActionForKey(key({ key: "Escape" }))).toEqual({
       type: "cancel",

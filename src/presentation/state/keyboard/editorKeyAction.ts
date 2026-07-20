@@ -13,6 +13,7 @@ export type EditorKeyAction =
   | { type: "copy" }
   | { type: "paste" }
   | { type: "duplicate" }
+  | { type: "select-all" }
   | { type: "cancel" };
 
 const nudgeByKey: Record<string, { deltaCol: number; deltaRow: number }> = {
@@ -48,6 +49,9 @@ export function editorActionForKey(
   }
   if (command && input.key.toLowerCase() === "d") {
     return { type: "duplicate" };
+  }
+  if (command && input.key.toLowerCase() === "a") {
+    return { type: "select-all" };
   }
   if (input.key === "Escape") {
     return { type: "cancel" };

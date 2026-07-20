@@ -38,17 +38,29 @@ describe("EditorContextMenu", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
-  test("renders all four items when context menu is open", () => {
+  test("renders all five items when context menu is open", () => {
     openWithMenu();
     expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Paste" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Select all" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Duplicate" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
   });
 
-  test("empty-area menu shows only Paste", () => {
+  test("every item shows its keyboard shortcut hint", () => {
+    openWithMenu();
+    expect(screen.getByText("ctrl + c")).toBeInTheDocument();
+    expect(screen.getByText("ctrl + v")).toBeInTheDocument();
+    expect(screen.getByText("ctrl + a")).toBeInTheDocument();
+    expect(screen.getByText("ctrl + d")).toBeInTheDocument();
+    expect(screen.getByText("del")).toBeInTheDocument();
+  });
+
+  test("empty-area menu shows only Paste and Select all", () => {
     const box = makeBox("b1");
     editorStore.setState({
       document: makeDoc(box),
@@ -59,6 +71,9 @@ describe("EditorContextMenu", () => {
     render(<EditorContextMenu />);
 
     expect(screen.getByRole("button", { name: "Paste" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Select all" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Copy" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Duplicate" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
@@ -120,6 +135,33 @@ describe("EditorContextMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(editorStore.getState().document?.elements).toHaveLength(0);
     expect(editorStore.getState().contextMenu).toBeNull();
+  });
+
+  test("Select all selects every element and closes the menu", () => {
+    editorStore.setState({
+      document: makeDoc(makeBox("b1"), makeBox("b2")),
+      contextMenu: { clientX: 100, clientY: 200, cell, target: "empty" },
+      selectedElementIds: [],
+      clipboard: [],
+    });
+    render(<EditorContextMenu />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+
+    expect(editorStore.getState().selectedElementIds).toEqual(["b1", "b2"]);
+    expect(editorStore.getState().contextMenu).toBeNull();
+  });
+
+  test("Select all is disabled when the document has no elements", () => {
+    editorStore.setState({
+      document: makeDoc(),
+      contextMenu: { clientX: 100, clientY: 200, cell, target: "empty" },
+      selectedElementIds: [],
+      clipboard: [],
+    });
+    render(<EditorContextMenu />);
+
+    expect(screen.getByRole("button", { name: "Select all" })).toBeDisabled();
   });
 
   test("menu closes after Duplicate action", () => {

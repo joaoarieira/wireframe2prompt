@@ -105,6 +105,12 @@ export const pt: LocaleDictionary = {
     paste: "Colar",
     duplicate: "Duplicar",
     delete: "Excluir",
+    selectAll: "Selecionar todos",
+    copyShortcut: "ctrl + c",
+    pasteShortcut: "ctrl + v",
+    duplicateShortcut: "ctrl + d",
+    deleteShortcut: "del",
+    selectAllShortcut: "ctrl + a",
   },
   sidebar: {
     about: "Sobre",

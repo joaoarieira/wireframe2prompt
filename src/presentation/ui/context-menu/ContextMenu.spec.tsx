@@ -38,9 +38,11 @@ describe("ContextMenu", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  test("calls onClose on Escape keydown", () => {
+  test("calls onClose on Escape keydown, but not on other keys", () => {
     const onClose = vi.fn();
     renderMenu(onClose);
+    fireEvent.keyDown(document, { key: "a" });
+    expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -74,6 +76,20 @@ describe("ContextMenuItem", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test("shortcut renders de-emphasized and outside the accessible name", () => {
+    render(
+      <ContextMenu x={0} y={0} onClose={vi.fn()}>
+        <ContextMenuItem shortcut="ctrl + c">Copy</ContextMenuItem>
+      </ContextMenu>,
+    );
+    // aria-hidden keeps the name "Copy", not "Copy ctrl + c".
+    const button = screen.getByRole("button", { name: "Copy" });
+    const hint = screen.getByText("ctrl + c");
+    expect(button).toContainElement(hint);
+    expect(hint).toHaveClass("ml-auto", "text-xs", "opacity-50");
+    expect(hint).toHaveAttribute("aria-hidden", "true");
   });
 
   test("disabled item has menu-disabled class and disabled attribute", () => {

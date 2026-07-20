@@ -165,6 +165,20 @@ describe("Canvas", () => {
     expect(element?.position.col).toBe(0);
   });
 
+  test("ctrl+a selects every element and blocks the page-wide text selection", () => {
+    openDoc();
+    render(<Canvas />);
+
+    const notPrevented = fireEvent.keyDown(screen.getByTestId("canvas"), {
+      key: "a",
+      ctrlKey: true,
+    });
+
+    // fireEvent returns false when preventDefault ran → no native select-all.
+    expect(notPrevented).toBe(false);
+    expect(editorStore.getState().selectedElementIds).toEqual(["b1"]);
+  });
+
   test("an arrow key nudges the selected element", () => {
     openDoc();
     editorStore.setState({ selectedElementIds: ["b1"] });
