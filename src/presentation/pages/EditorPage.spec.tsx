@@ -51,12 +51,15 @@ describe("EditorPage", () => {
     expect(document.querySelector(".loading")).not.toBeNull();
   });
 
-  test("ready state renders the canvas and the document name", () => {
+  test("ready state renders the canvas and the sidebar", () => {
     openReadyDocument();
     render(<EditorPage />);
 
     expect(screen.getByTestId("canvas")).toBeInTheDocument();
-    expect(screen.getByText("Untitled")).toBeInTheDocument();
+    // Sidebar header exposes the back action by aria-label (glyph, not text).
+    expect(
+      screen.getByRole("link", { name: "Back to wireframes" }),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId("inspector-aside")).toBeNull();
   });
 

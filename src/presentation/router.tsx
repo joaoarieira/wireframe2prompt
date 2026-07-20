@@ -7,6 +7,7 @@ import {
 import { editorStore } from "./state/app-store/appStore";
 import { DocumentListPage } from "./pages/DocumentListPage";
 import { EditorPage } from "./pages/EditorPage";
+import { AboutPage } from "./pages/AboutPage";
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -28,7 +29,17 @@ const editorRoute = createRoute({
   component: EditorPage,
 });
 
-const routeTree = rootRoute.addChildren([documentListRoute, editorRoute]);
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: AboutPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  documentListRoute,
+  editorRoute,
+  aboutRoute,
+]);
 
 export const router = createRouter({ routeTree });
 

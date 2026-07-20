@@ -105,4 +105,36 @@ export const pt: LocaleDictionary = {
     duplicate: "Duplicar",
     delete: "Excluir",
   },
+  sidebar: {
+    about: "Sobre",
+    github: "GitHub",
+    openGithub: "Abrir repositório no GitHub",
+    switchTheme: "Mudar tema",
+    switchLanguage: "Mudar idioma",
+  },
+  theme: {
+    system: "Sistema",
+    light: "Claro",
+    dark: "Escuro",
+  },
+  // Language names are endonyms — the same in every locale.
+  language: {
+    en: "English",
+    pt: "Português",
+  },
+  about: {
+    backToHome: "← Voltar",
+    title: "Sobre o wireframe2prompt",
+    summary:
+      "O wireframe2prompt é um editor de wireframes em ASCII que exporta seus layouts como texto puro, pronto para ser usado em qualquer LLM.",
+    whatIsTitle: "O que é o wireframe2prompt?",
+    whatIsBody:
+      "Uma ferramenta web para criar wireframes de baixa fidelidade em uma grade de caracteres. Arraste componentes prontos para o canvas, ajuste posição e tamanho, e exporte o resultado como uma string ASCII para usar como prompt.",
+    howToUseTitle: "Como usar",
+    howToUseBody:
+      'Crie um wireframe na tela inicial, escolha ferramentas na paleta flutuante na parte inferior do canvas e clique em "COPIAR RESULTADO" para copiar a string ASCII para o seu prompt.',
+    techStackTitle: "Tecnologias",
+    techStackBody:
+      "React 19 · TypeScript · Vite · Zustand · TanStack Router · daisyUI · Tailwind CSS · Vitest.",
+  },
 };

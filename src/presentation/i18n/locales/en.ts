@@ -106,6 +106,37 @@ export const en = {
     duplicate: "Duplicate",
     delete: "Delete",
   },
+  sidebar: {
+    about: "About",
+    github: "GitHub",
+    openGithub: "Open GitHub repository",
+    switchTheme: "Change theme",
+    switchLanguage: "Switch language",
+  },
+  theme: {
+    system: "System",
+    light: "Light",
+    dark: "Dark",
+  },
+  language: {
+    en: "English",
+    pt: "Português",
+  },
+  about: {
+    backToHome: "← Back",
+    title: "About wireframe2prompt",
+    summary:
+      "wireframe2prompt is an ASCII wireframe editor that exports your layouts as plain text, ready to feed to any LLM.",
+    whatIsTitle: "What is wireframe2prompt?",
+    whatIsBody:
+      "A browser-based tool for designing low-fidelity wireframes using a character grid. Drag ready-made components onto the canvas, adjust their position and size, and export the result as a raw ASCII string to use as a prompt.",
+    howToUseTitle: "How to use",
+    howToUseBody:
+      'Create a wireframe from the home screen, pick tools from the floating palette at the bottom of the canvas, and click "COPY OUTPUT" to grab the ASCII string for your LLM prompt.',
+    techStackTitle: "Tech stack",
+    techStackBody:
+      "React 19 · TypeScript · Vite · Zustand · TanStack Router · daisyUI · Tailwind CSS · Vitest.",
+  },
 } as const;
 
 /**

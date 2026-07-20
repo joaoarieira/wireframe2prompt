@@ -4,6 +4,24 @@ import { en } from "./locales/en";
 import { pt } from "./locales/pt";
 import { detectLocale } from "./detectLocale";
 
+const LANGUAGE_STORAGE_KEY = "wireframe2prompt-language";
+export type SupportedLanguage = "en" | "pt";
+
+/** The languages offered in the switcher; the first is the source of truth. */
+export const SUPPORTED_LANGUAGES: readonly SupportedLanguage[] = ["en", "pt"];
+
+/** The manually chosen language from localStorage, or null if none/garbage. */
+export function getStoredLanguage(): SupportedLanguage | null {
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (stored === "en" || stored === "pt") return stored;
+  return null;
+}
+
+/** Persists an explicit language choice so it survives a reload. */
+export function storeLanguage(language: SupportedLanguage): void {
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+}
+
 /**
  * The shared react-i18next instance. Imported for its side effect (init) by
  * `main.tsx` before the first render and by the test setup; components reach it
@@ -17,7 +35,7 @@ void i18n.use(initReactI18next).init({
     en: { translation: en },
     pt: { translation: pt },
   },
-  lng: detectLocale(navigator.language),
+  lng: getStoredLanguage() ?? detectLocale(navigator.language),
   fallbackLng: "en",
   interpolation: { escapeValue: false },
   react: { useSuspense: false },
