@@ -781,6 +781,50 @@ describe("text editing", () => {
     expect(store.getState().textEditingElementId).toBeNull();
   });
 
+  test("beginCanvasFieldEditing tracks the element and the targeted slot", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().beginCanvasFieldEditing("b1", "hint");
+    expect(store.getState().textEditingElementId).toBe("b1");
+    expect(store.getState().canvasEditingElementId).toBe("b1");
+    expect(store.getState().canvasEditingField).toBe("hint");
+
+    store.getState().endTextEditing();
+    expect(store.getState().canvasEditingField).toBeNull();
+  });
+
+  test("re-selecting the field-edited element keeps its slot; another clears it", async () => {
+    await openFixtureDoc(makeBox("b1"), makeBox("b2"));
+
+    store.getState().beginCanvasFieldEditing("b1", "label");
+    store.getState().selectElement("b1");
+    expect(store.getState().canvasEditingField).toBe("label");
+
+    store.getState().selectElement("b2");
+    expect(store.getState().canvasEditingField).toBeNull();
+  });
+
+  test("beginCanvasInlineEditing clears any prior field slot", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().beginCanvasFieldEditing("b1", "placeholder");
+    store.getState().beginCanvasInlineEditing("b1");
+    expect(store.getState().canvasEditingField).toBeNull();
+  });
+
+  test("doubleClickOnCell on a field element begins editing its targeted slot", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("input", cell(1, 1));
+    const inputId = store.getState().selectedElementIds[0];
+    store.getState().endTextEditing();
+
+    // The label sits on the input's top border row (the placement anchor).
+    store.getState().doubleClickOnCell(cell(3, 1));
+
+    expect(store.getState().canvasEditingElementId).toBe(inputId);
+    expect(store.getState().canvasEditingField).toBe("label");
+  });
+
   test("doubleClickOnCell on a text element begins canvas inline editing", async () => {
     await openFixtureDoc();
     store.getState().placeElement("text", cell(1, 1));
@@ -1308,6 +1352,8 @@ describe("pointer routing and tools", () => {
       "arrow",
       "card",
       "modal",
+      "input",
+      "dropdown",
       "table",
       "tabs",
       "pencil",

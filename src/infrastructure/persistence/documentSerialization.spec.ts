@@ -20,6 +20,8 @@ import { CardElement } from "../../domain/entities/element/CardElement";
 import { ModalElement } from "../../domain/entities/element/ModalElement";
 import { TableElement } from "../../domain/entities/element/TableElement";
 import { TabsElement } from "../../domain/entities/element/TabsElement";
+import { InputElement } from "../../domain/entities/element/InputElement";
+import { DropdownElement } from "../../domain/entities/element/DropdownElement";
 import {
   FreeDrawElement,
   freeDrawCellKey,
@@ -272,6 +274,54 @@ describe("documentSerialization", () => {
     expect(restored.kind).toBe("tabs");
     expect([...restored.tabs]).toEqual(["Tab 1", "Tab 2"]);
     expect(restored.active).toBe(1);
+  });
+
+  test("round-trips InputElement with its three text slots", () => {
+    const input = InputElement.create({
+      id: "in",
+      position: Position.create(1, 2),
+      size: Size.create(22, 4),
+      zIndex: 0,
+      layerId: null,
+      label: "Email",
+      placeholder: "you@example.com",
+      hint: "We never share it.",
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(40, 10),
+      elements: [input],
+    });
+    const restored = roundTrip(doc).getElement("in") as InputElement;
+    expect(restored.kind).toBe("input");
+    expect(restored.label).toBe("Email");
+    expect(restored.placeholder).toBe("you@example.com");
+    expect(restored.hint).toBe("We never share it.");
+  });
+
+  test("round-trips DropdownElement with null slots", () => {
+    const dropdown = DropdownElement.create({
+      id: "dd",
+      position: Position.create(0, 0),
+      size: Size.create(22, 4),
+      zIndex: 0,
+      layerId: null,
+      label: null,
+      placeholder: null,
+      hint: null,
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(40, 10),
+      elements: [dropdown],
+    });
+    const restored = roundTrip(doc).getElement("dd") as DropdownElement;
+    expect(restored.kind).toBe("dropdown");
+    expect(restored.label).toBeNull();
+    expect(restored.placeholder).toBeNull();
+    expect(restored.hint).toBeNull();
   });
 
   test("round-trips FreeDrawElement", () => {

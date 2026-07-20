@@ -7,6 +7,8 @@ import { CardElement } from "../../../domain/entities/element/CardElement";
 import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
+import { InputElement } from "../../../domain/entities/element/InputElement";
+import { DropdownElement } from "../../../domain/entities/element/DropdownElement";
 import type { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 
@@ -19,7 +21,9 @@ export type PlaceableKind =
   | "card"
   | "modal"
   | "table"
-  | "tabs";
+  | "tabs"
+  | "input"
+  | "dropdown";
 
 export interface BuildElementSpec {
   id: string;
@@ -107,6 +111,28 @@ const buildersByKind: Record<PlaceableKind, ElementBuilder> = {
       layerId: null,
       tabs: ["Tab 1", "Tab 2"],
       active: 0,
+    }),
+  input: ({ id, position, zIndex }) =>
+    InputElement.create({
+      id,
+      position,
+      size: Size.create(22, 4),
+      zIndex,
+      layerId: null,
+      label: "Label",
+      placeholder: "Placeholder",
+      hint: "Hint",
+    }),
+  dropdown: ({ id, position, zIndex }) =>
+    DropdownElement.create({
+      id,
+      position,
+      size: Size.create(22, 4),
+      zIndex,
+      layerId: null,
+      label: "Label",
+      placeholder: "Placeholder",
+      hint: "Hint",
     }),
 };
 

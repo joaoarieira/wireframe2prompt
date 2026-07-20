@@ -46,6 +46,8 @@ export function createDefaultToolRegistry(): ToolRegistry {
   registry.register(createPlacementTool("arrow", "tools.arrow"));
   registry.register(createPlacementTool("card", "tools.card"));
   registry.register(createPlacementTool("modal", "tools.modal"));
+  registry.register(createPlacementTool("input", "tools.input"));
+  registry.register(createPlacementTool("dropdown", "tools.dropdown"));
   registry.register(createPlacementTool("table", "tools.table"));
   registry.register(createPlacementTool("tabs", "tools.tabs"));
   registry.register(pencilTool);

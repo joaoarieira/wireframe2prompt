@@ -7,6 +7,8 @@ import { CardGlyphMapper } from "./mappers/CardGlyphMapper";
 import { ModalGlyphMapper } from "./mappers/ModalGlyphMapper";
 import { TableGlyphMapper } from "./mappers/TableGlyphMapper";
 import { TabsGlyphMapper } from "./mappers/TabsGlyphMapper";
+import { InputGlyphMapper } from "./mappers/InputGlyphMapper";
+import { DropdownGlyphMapper } from "./mappers/DropdownGlyphMapper";
 import { FreeDrawGlyphMapper } from "./mappers/FreeDrawGlyphMapper";
 
 /** Registry wired with all implemented mappers. */
@@ -20,5 +22,7 @@ export function createDefaultGlyphMapperRegistry(): GlyphMapperRegistry {
     .register(new ModalGlyphMapper())
     .register(new TableGlyphMapper())
     .register(new TabsGlyphMapper())
+    .register(new InputGlyphMapper())
+    .register(new DropdownGlyphMapper())
     .register(new FreeDrawGlyphMapper());
 }

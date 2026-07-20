@@ -13,6 +13,8 @@ import { CardElement } from "../../domain/entities/element/CardElement";
 import { ModalElement } from "../../domain/entities/element/ModalElement";
 import { TableElement } from "../../domain/entities/element/TableElement";
 import { TabsElement } from "../../domain/entities/element/TabsElement";
+import { InputElement } from "../../domain/entities/element/InputElement";
+import { DropdownElement } from "../../domain/entities/element/DropdownElement";
 import { FreeDrawElement } from "../../domain/entities/element/FreeDrawElement";
 import type {
   Element,
@@ -111,6 +113,14 @@ interface SerializedTabsElement extends SerializedElementBase {
   active: number;
 }
 
+/** Shared shape of input and dropdown elements: three optional text slots. */
+interface SerializedFieldElement extends SerializedElementBase {
+  kind: "input" | "dropdown";
+  label: string | null;
+  placeholder: string | null;
+  hint: string | null;
+}
+
 interface SerializedFreeDrawElement extends SerializedElementBase {
   kind: "freedraw";
   /** JSON cannot represent Map; cells are stored as a plain object. */
@@ -126,6 +136,7 @@ type SerializedElement =
   | SerializedModalElement
   | SerializedTableElement
   | SerializedTabsElement
+  | SerializedFieldElement
   | SerializedFreeDrawElement;
 
 export interface SerializedDocument {
@@ -200,6 +211,15 @@ function serializeElement(element: Element): SerializedElement {
       active: element.active,
     };
   }
+  if (element instanceof InputElement || element instanceof DropdownElement) {
+    return {
+      ...base,
+      kind: element.kind,
+      label: element.label,
+      placeholder: element.placeholder,
+      hint: element.hint,
+    };
+  }
   if (element instanceof FreeDrawElement) {
     const cells: Record<string, string> = {};
     for (const [key, char] of element.cells) {
@@ -208,7 +228,7 @@ function serializeElement(element: Element): SerializedElement {
     return { ...base, kind: "freedraw", cells };
   }
   throw new Error(
-    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | freedraw`,
+    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw`,
   );
 }
 
@@ -274,6 +294,20 @@ function deserializeElement(data: SerializedElement): Element {
         tabs: data.tabs,
         active: data.active,
       });
+    case "input":
+      return InputElement.create({
+        ...base,
+        label: data.label,
+        placeholder: data.placeholder,
+        hint: data.hint,
+      });
+    case "dropdown":
+      return DropdownElement.create({
+        ...base,
+        label: data.label,
+        placeholder: data.placeholder,
+        hint: data.hint,
+      });
     case "freedraw": {
       const cells = new Map<string, CellChar>();
       for (const [key, value] of Object.entries(data.cells)) {
@@ -291,7 +325,7 @@ function deserializeElement(data: SerializedElement): Element {
     }
     default:
       throw new Error(
-        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | freedraw`,
+        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw`,
       );
   }
 }

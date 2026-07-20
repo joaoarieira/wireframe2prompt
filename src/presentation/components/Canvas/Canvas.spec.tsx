@@ -10,6 +10,22 @@ import { Canvas } from "./Canvas";
 import { editorStore } from "../../state/app-store/appStore";
 import { selectedElementOf } from "../../state/editor-store/editorStore";
 import { makeBox, makeDoc, makeText } from "../../../tests/fixtures";
+import { InputElement } from "../../../domain/entities/element/InputElement";
+import { Position } from "../../../domain/entities/position/Position";
+import { Size } from "../../../domain/entities/size/Size";
+
+function makeInput(id: string) {
+  return InputElement.create({
+    id,
+    position: Position.create(0, 0),
+    size: Size.create(22, 4),
+    zIndex: 0,
+    layerId: null,
+    label: "Label",
+    placeholder: "Placeholder",
+    hint: "Hint",
+  });
+}
 
 /** The rootRef div (wheel-zoom target) is the grid surface's parent. */
 function rootDiv() {
@@ -40,6 +56,7 @@ afterEach(() => {
     panDrag: null,
     textEditingElementId: null,
     canvasEditingElementId: null,
+    canvasEditingField: null,
     viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
   });
 });
@@ -208,6 +225,21 @@ describe("Canvas", () => {
     fireEvent.pointerDown(handle, { pointerId: 1, clientX: 5, clientY: 5 });
 
     expect(editorStore.getState().drag).not.toBeNull();
+  });
+
+  test("resize handle is a no-op when the paper has no measurable rect", () => {
+    openDoc();
+    editorStore.setState({ selectedElementIds: ["b1"] });
+    render(<Canvas />);
+
+    // No rect → cellFromPoint returns null → the overlay cannot start a drag.
+    rootDiv().getBoundingClientRect = () => undefined as unknown as DOMRect;
+
+    const handle = screen.getByRole("button", { name: "Resize element" });
+    handle.setPointerCapture = () => {};
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 5, clientY: 5 });
+
+    expect(editorStore.getState().drag).toBeNull();
   });
 
   test("with 2 elements selected, 2 selection overlays are shown without resize handle", () => {
@@ -432,6 +464,51 @@ describe("Canvas", () => {
     render(<Canvas />);
 
     expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
+  });
+
+  test("no editing overlay is shown when canvasEditingElementId is stale", () => {
+    editorStore.setState({
+      document: makeDoc(makeBox("b1")),
+      documentStatus: "ready",
+      canvasEditingElementId: "ghost",
+      canvasEditingField: "label",
+      textEditingElementId: "ghost",
+      selectedElementIds: [],
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
+    expect(screen.queryByTestId("field-edit-overlay")).toBeNull();
+  });
+
+  test("FieldEditOverlay appears for a field element with a targeted slot", () => {
+    editorStore.setState({
+      document: makeDoc(makeInput("in1")),
+      documentStatus: "ready",
+      canvasEditingElementId: "in1",
+      canvasEditingField: "label",
+      textEditingElementId: "in1",
+      selectedElementIds: ["in1"],
+    });
+    render(<Canvas />);
+
+    const overlay = screen.getByTestId("field-edit-overlay");
+    expect(overlay).toBeInTheDocument();
+    expect(overlay).toHaveAttribute("data-field", "label");
+  });
+
+  test("FieldEditOverlay does not appear for a field element without a slot", () => {
+    editorStore.setState({
+      document: makeDoc(makeInput("in1")),
+      documentStatus: "ready",
+      canvasEditingElementId: "in1",
+      canvasEditingField: null,
+      textEditingElementId: "in1",
+      selectedElementIds: ["in1"],
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("field-edit-overlay")).toBeNull();
   });
 
   test("primary-button click on canvas backdrop ends canvas text editing", () => {

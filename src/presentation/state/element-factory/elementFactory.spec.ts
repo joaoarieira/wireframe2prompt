@@ -8,6 +8,8 @@ import { CardElement } from "../../../domain/entities/element/CardElement";
 import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
+import { InputElement } from "../../../domain/entities/element/InputElement";
+import { DropdownElement } from "../../../domain/entities/element/DropdownElement";
 import { Position } from "../../../domain/entities/position/Position";
 
 const spec = { id: "el-1", position: Position.create(3, 2), zIndex: 5 };
@@ -88,5 +90,25 @@ describe("buildElement", () => {
     expect((element as TabsElement).active).toBe(0);
     expect(element.size.width).toBe(15);
     expect(element.size.height).toBe(2);
+  });
+
+  test("input: 22 wide with default slots, height fitted to the hint", () => {
+    const element = buildElement("input", spec);
+
+    expect(element).toBeInstanceOf(InputElement);
+    expect((element as InputElement).label).toBe("Label");
+    expect((element as InputElement).placeholder).toBe("Placeholder");
+    expect((element as InputElement).hint).toBe("Hint");
+    expect(element.size.width).toBe(22);
+    expect(element.size.height).toBe(4);
+  });
+
+  test("dropdown: 22 wide with default slots and an arrow", () => {
+    const element = buildElement("dropdown", spec);
+
+    expect(element).toBeInstanceOf(DropdownElement);
+    expect((element as DropdownElement).showsArrow).toBe(true);
+    expect(element.size.width).toBe(22);
+    expect(element.size.height).toBe(4);
   });
 });

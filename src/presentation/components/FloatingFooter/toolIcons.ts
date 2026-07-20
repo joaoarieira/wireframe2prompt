@@ -1,5 +1,6 @@
 import {
   AppWindow,
+  ChevronDownSquare,
   Eraser,
   Hand,
   MousePointer2,
@@ -10,6 +11,7 @@ import {
   Slash,
   Square,
   Table,
+  TextCursorInput,
   Type,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +29,8 @@ export const TOOL_ICONS: Record<string, LucideIcon> = {
   box: Square,
   line: Slash,
   arrow: MoveUpRight,
+  input: TextCursorInput,
+  dropdown: ChevronDownSquare,
   table: Table,
   modal: AppWindow,
   card: PanelTop,

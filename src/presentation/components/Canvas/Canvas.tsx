@@ -5,6 +5,7 @@ import { DomGridSurface } from "./DomGridSurface";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { MarqueeOverlay } from "./MarqueeOverlay";
 import { TextEditOverlay } from "./TextEditOverlay";
+import { FieldEditOverlay } from "./FieldEditOverlay";
 import { cellAtPoint } from "./cellGeometry";
 import type { PointLike } from "./cellGeometry";
 import { canvasCursor } from "./cursorGlyphs";
@@ -16,6 +17,7 @@ import {
 } from "../../state/editor-store/editorStore";
 import { editorActionForKey } from "../../state/keyboard/editorKeyAction";
 import { TextElement } from "../../../domain/entities/element/TextElement";
+import { FieldElement } from "../../../domain/entities/element/FieldElement";
 
 const CELL_SIZE_VARS = { "--cell-w": "10px", "--cell-h": "18px" };
 
@@ -66,6 +68,9 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const doubleClickOnCell = useEditorStore((state) => state.doubleClickOnCell);
   const canvasEditingElementId = useEditorStore(
     (state) => state.canvasEditingElementId,
+  );
+  const canvasEditingField = useEditorStore(
+    (state) => state.canvasEditingField,
   );
   const endTextEditing = useEditorStore((state) => state.endTextEditing);
   const zoomAtPoint = useEditorStore((state) => state.zoomAtPoint);
@@ -133,6 +138,10 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
       : null;
   const textEditElement =
     editingElement instanceof TextElement ? editingElement : null;
+  const fieldEditElement =
+    editingElement instanceof FieldElement && canvasEditingField !== null
+      ? editingElement
+      : null;
 
   const cellFromPoint = (point: PointLike) => {
     const rect = rootRef.current?.getBoundingClientRect();
@@ -286,6 +295,14 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
           {textEditElement !== null && (
             <TextEditOverlay
               element={textEditElement}
+              onEnd={endTextEditing}
+              canvasRef={rootRef}
+            />
+          )}
+          {fieldEditElement !== null && canvasEditingField !== null && (
+            <FieldEditOverlay
+              element={fieldEditElement}
+              field={canvasEditingField}
               onEnd={endTextEditing}
               canvasRef={rootRef}
             />

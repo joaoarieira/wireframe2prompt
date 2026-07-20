@@ -25,7 +25,7 @@ describe("i18n instance", () => {
     await i18n.changeLanguage("pt");
 
     expect(i18n.t("toolbar.undo")).toBe("Desfazer");
-    expect(i18n.t("elementKind.box")).toBe("quadrado");
+    expect(i18n.t("elementKind.box")).toBe("retângulo");
   });
 });
 

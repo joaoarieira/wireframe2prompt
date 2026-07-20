@@ -48,6 +48,8 @@ describe("ToolRegistry", () => {
       "arrow",
       "card",
       "modal",
+      "input",
+      "dropdown",
       "table",
       "tabs",
       "pencil",

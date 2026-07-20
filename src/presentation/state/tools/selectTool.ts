@@ -1,4 +1,5 @@
 import type { CanvasTool } from "./CanvasTool";
+import { FieldElement } from "../../../domain/entities/element/FieldElement";
 
 /**
  * Default tool: Figma-style multi-select with marquee and shift+click.
@@ -44,7 +45,19 @@ export const selectTool: CanvasTool = {
 
   onCellDoubleClick(context, cell) {
     const hit = context.elementAt(cell);
-    if (hit === null || hit.kind !== "text") {
+    if (hit === null) {
+      return;
+    }
+    if (hit instanceof FieldElement) {
+      const field = hit.fieldAtCell(cell);
+      if (field === null) {
+        return;
+      }
+      context.select(hit.id);
+      context.beginCanvasFieldEditing(hit.id, field);
+      return;
+    }
+    if (hit.kind !== "text") {
       return;
     }
     context.select(hit.id);

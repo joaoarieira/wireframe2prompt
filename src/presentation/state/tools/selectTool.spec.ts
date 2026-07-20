@@ -3,6 +3,19 @@ import { selectTool } from "./selectTool";
 import { FakeToolContext } from "../../../tests/doubles/FakeToolContext";
 import { Position } from "../../../domain/entities/position/Position";
 import { makeBox, makeText } from "../../../tests/fixtures";
+import { InputElement } from "../../../domain/entities/element/InputElement";
+import { Size } from "../../../domain/entities/size/Size";
+
+const inputEl = InputElement.create({
+  id: "in1",
+  position: Position.create(0, 0),
+  size: Size.create(22, 4),
+  zIndex: 0,
+  layerId: null,
+  label: "Label",
+  placeholder: "Placeholder",
+  hint: "Hint",
+});
 
 const cell = Position.create(1, 1);
 const noPoint = { clientX: 0, clientY: 0, button: 0, shiftKey: false };
@@ -120,5 +133,35 @@ describe("selectTool — double click", () => {
 
     expect(ctx.selectCalls).toEqual([]);
     expect(ctx.beginCanvasInlineEditingCalls).toEqual([]);
+  });
+
+  test.each([
+    [Position.create(5, 0), "label"],
+    [Position.create(5, 1), "placeholder"],
+    [Position.create(5, 3), "hint"],
+  ] as const)(
+    "double click on a field element at %o edits its %s slot",
+    (target, field) => {
+      const ctx = new FakeToolContext();
+      ctx.hit = inputEl;
+
+      selectTool.onCellDoubleClick!(ctx, target);
+
+      expect(ctx.selectCalls).toEqual(["in1"]);
+      expect(ctx.beginCanvasFieldEditingCalls).toEqual([
+        { elementId: "in1", field },
+      ]);
+    },
+  );
+
+  test("double click on a field element's borderless gap does nothing", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = inputEl;
+
+    // Row 2 is the bottom border — no editable slot there.
+    selectTool.onCellDoubleClick!(ctx, Position.create(5, 2));
+
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginCanvasFieldEditingCalls).toEqual([]);
   });
 });

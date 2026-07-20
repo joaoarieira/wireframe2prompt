@@ -1,4 +1,5 @@
 import type { Element } from "../../../domain/entities/element/Element";
+import type { FieldName } from "../../../domain/entities/element/FieldElement";
 import type { Position } from "../../../domain/entities/position/Position";
 import type { PlaceableKind } from "../element-factory/elementFactory";
 
@@ -33,6 +34,7 @@ export interface ToolContext {
   updatePan(point: SurfacePoint): void;
   endPan(): void;
   beginCanvasInlineEditing(elementId: string): void;
+  beginCanvasFieldEditing(elementId: string, field: FieldName): void;
   beginMarquee(cell: Position): void;
   updateMarquee(cell: Position): void;
   commitMarquee(additive: boolean): void;

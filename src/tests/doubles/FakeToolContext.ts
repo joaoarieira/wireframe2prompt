@@ -1,4 +1,5 @@
 import type { Element } from "../../domain/entities/element/Element";
+import type { FieldName } from "../../domain/entities/element/FieldElement";
 import type { Position } from "../../domain/entities/position/Position";
 import type { PlaceableKind } from "../../presentation/state/element-factory/elementFactory";
 import type {
@@ -28,6 +29,8 @@ export class FakeToolContext implements ToolContext {
   updatePanCalls: SurfacePoint[] = [];
   endPanCalls = 0;
   beginCanvasInlineEditingCalls: string[] = [];
+  beginCanvasFieldEditingCalls: Array<{ elementId: string; field: FieldName }> =
+    [];
   beginMarqueeCalls: Position[] = [];
   updateMarqueeCalls: Position[] = [];
   commitMarqueeCalls: boolean[] = [];
@@ -94,6 +97,10 @@ export class FakeToolContext implements ToolContext {
 
   beginCanvasInlineEditing(elementId: string): void {
     this.beginCanvasInlineEditingCalls.push(elementId);
+  }
+
+  beginCanvasFieldEditing(elementId: string, field: FieldName): void {
+    this.beginCanvasFieldEditingCalls.push({ elementId, field });
   }
 
   beginMarquee(cell: Position): void {

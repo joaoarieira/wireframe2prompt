@@ -34,6 +34,8 @@ export const en = {
     table: "Table",
     modal: "Modal",
     tabs: "Tabs",
+    input: "Input",
+    dropdown: "Dropdown",
     pencil: "Pencil",
     eraser: "Eraser",
     hand: "Hand",
@@ -74,6 +76,14 @@ export const en = {
     activeTab: "Active tab",
     activeTabField: "Active tab",
     textEditHint: "Double-click the element on the canvas to edit its text.",
+    label: "Label",
+    labelField: "Label text",
+    placeholder: "Placeholder",
+    placeholderField: "Placeholder text",
+    hint: "Hint",
+    hintField: "Hint text",
+    fieldEditHint:
+      "Double-click the label, placeholder, or hint on the canvas to edit it.",
   },
   layers: {
     empty: "No elements yet.",
@@ -92,6 +102,8 @@ export const en = {
     table: "table",
     modal: "modal",
     tabs: "tabs",
+    input: "input",
+    dropdown: "dropdown",
     freedraw: "drawing",
   },
   footer: {

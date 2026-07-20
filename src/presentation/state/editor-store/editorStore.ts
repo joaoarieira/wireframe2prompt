@@ -11,6 +11,7 @@ import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElemen
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import type { LineOrientation } from "../../../domain/entities/element/LineElement";
 import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
+import type { FieldName } from "../../../domain/entities/element/FieldElement";
 import type { CharBuffer } from "../../../domain/value-objects/char-buffer/CharBuffer";
 import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
@@ -172,6 +173,12 @@ export interface EditorState {
    */
   canvasEditingElementId: string | null;
   /**
+   * Which text slot of the canvas-edited element is being typed. Non-null only
+   * for field elements (input/dropdown), where a double-click targets a
+   * specific slot; null means the whole-element text overlay (TextElement).
+   */
+  canvasEditingField: FieldName | null;
+  /**
    * Whether the inspector panel is shown. Selecting or placing an element
    * opens it; the panel's ✕ closes it. The page only renders the panel when
    * this is true AND exactly one element is selected.
@@ -199,6 +206,7 @@ export interface EditorActions {
   closeInspector(): void;
   beginTextEditing(elementId: string): void;
   beginCanvasInlineEditing(elementId: string): void;
+  beginCanvasFieldEditing(elementId: string, field: FieldName): void;
   endTextEditing(): void;
   setActiveTool(toolId: string): void;
   listTools(): readonly CanvasTool[];
@@ -287,6 +295,7 @@ const initialState: EditorState = {
   saveStatus: "hidden",
   textEditingElementId: null,
   canvasEditingElementId: null,
+  canvasEditingField: null,
   inspectorOpen: false,
   clipboard: [],
   pastePreview: null,
@@ -386,6 +395,7 @@ export function createEditorStore(
         selectedElementIds: [element.id],
         textEditingElementId: drag.kind === "text" ? element.id : null,
         canvasEditingElementId: drag.kind === "text" ? element.id : null,
+        canvasEditingField: null,
         inspectorOpen: true,
       });
     };
@@ -409,6 +419,8 @@ export function createEditorStore(
       endPan: () => get().endPan(),
       beginCanvasInlineEditing: (elementId) =>
         get().beginCanvasInlineEditing(elementId),
+      beginCanvasFieldEditing: (elementId, field) =>
+        get().beginCanvasFieldEditing(elementId, field),
       beginMarquee: (cell) => get().beginMarquee(cell),
       updateMarquee: (cell) => get().updateMarquee(cell),
       commitMarquee: (additive) => get().commitMarquee(additive),
@@ -450,6 +462,7 @@ export function createEditorStore(
           panDrag: null,
           textEditingElementId: null,
           canvasEditingElementId: null,
+          canvasEditingField: null,
           inspectorOpen: false,
           pastePreview: null,
           contextMenu: null,
@@ -484,6 +497,10 @@ export function createEditorStore(
             textEditingElementId === elementId ? elementId : null,
           canvasEditingElementId:
             canvasEditingElementId === elementId ? elementId : null,
+          canvasEditingField:
+            canvasEditingElementId === elementId
+              ? get().canvasEditingField
+              : null,
           inspectorOpen: elementId === null ? false : get().inspectorOpen,
         });
       },
@@ -497,6 +514,7 @@ export function createEditorStore(
           selectedElementIds: newIds,
           textEditingElementId: null,
           canvasEditingElementId: null,
+          canvasEditingField: null,
           inspectorOpen: newIds.length !== 1 ? false : get().inspectorOpen,
         });
       },
@@ -507,6 +525,7 @@ export function createEditorStore(
           selectedElementIds: unique,
           textEditingElementId: null,
           canvasEditingElementId: null,
+          canvasEditingField: null,
           inspectorOpen: false,
         });
       },
@@ -526,18 +545,35 @@ export function createEditorStore(
 
       beginTextEditing: (elementId) => {
         // Inspector-driven editing: clear canvas overlay so they don't coexist.
-        set({ textEditingElementId: elementId, canvasEditingElementId: null });
+        set({
+          textEditingElementId: elementId,
+          canvasEditingElementId: null,
+          canvasEditingField: null,
+        });
       },
 
       beginCanvasInlineEditing: (elementId) => {
         set({
           textEditingElementId: elementId,
           canvasEditingElementId: elementId,
+          canvasEditingField: null,
+        });
+      },
+
+      beginCanvasFieldEditing: (elementId, field) => {
+        set({
+          textEditingElementId: elementId,
+          canvasEditingElementId: elementId,
+          canvasEditingField: field,
         });
       },
 
       endTextEditing: () => {
-        set({ textEditingElementId: null, canvasEditingElementId: null });
+        set({
+          textEditingElementId: null,
+          canvasEditingElementId: null,
+          canvasEditingField: null,
+        });
       },
 
       setActiveTool: (toolId) => {
@@ -570,6 +606,7 @@ export function createEditorStore(
           selectedElementIds: [element.id],
           textEditingElementId: kind === "text" ? element.id : null,
           canvasEditingElementId: kind === "text" ? element.id : null,
+          canvasEditingField: null,
           inspectorOpen: true,
         });
       },

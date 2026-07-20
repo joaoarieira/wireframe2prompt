@@ -11,6 +11,7 @@ import type { CardElement } from "../../../domain/entities/element/CardElement";
 import type { ModalElement } from "../../../domain/entities/element/ModalElement";
 import type { TableElement } from "../../../domain/entities/element/TableElement";
 import type { TabsElement } from "../../../domain/entities/element/TabsElement";
+import type { FieldElement } from "../../../domain/entities/element/FieldElement";
 import type { PlaceableKind } from "../../state/element-factory/elementFactory";
 
 async function openFreshDocumentWith(kind: PlaceableKind): Promise<string> {
@@ -347,5 +348,48 @@ describe("InspectorPanel kind-specific fields", () => {
     fireEvent.change(numberFieldIn("Rows"), { target: { value: "2.5" } });
     expect(selectedElement<TableElement>(elementId).columns).toBe(4);
     expect(selectedElement<TableElement>(elementId).rows).toBe(3);
+  });
+
+  test("the input slot fields edit label, placeholder and hint; empty clears them", async () => {
+    const elementId = await openFreshDocumentWith("input");
+    render(<InspectorPanel />);
+    const labelInput = screen.getByLabelText("Label text");
+    const placeholderInput = screen.getByLabelText("Placeholder text");
+    const hintInput = screen.getByLabelText("Hint text");
+
+    fireEvent.focus(labelInput);
+    expect(editorStore.getState().textEditingElementId).toBe(elementId);
+
+    fireEvent.change(labelInput, { target: { value: "Email" } });
+    expect(selectedElement<FieldElement>(elementId).label).toBe("Email");
+    fireEvent.change(labelInput, { target: { value: "" } });
+    expect(selectedElement<FieldElement>(elementId).label).toBeNull();
+
+    fireEvent.change(placeholderInput, { target: { value: "you@x.com" } });
+    expect(selectedElement<FieldElement>(elementId).placeholder).toBe(
+      "you@x.com",
+    );
+    fireEvent.change(placeholderInput, { target: { value: "" } });
+    expect(selectedElement<FieldElement>(elementId).placeholder).toBeNull();
+
+    fireEvent.focus(hintInput);
+    expect(editorStore.getState().textEditingElementId).toBe(elementId);
+    fireEvent.change(hintInput, { target: { value: "Required" } });
+    expect(selectedElement<FieldElement>(elementId).hint).toBe("Required");
+    fireEvent.change(hintInput, { target: { value: "" } });
+    expect(selectedElement<FieldElement>(elementId).hint).toBeNull();
+
+    fireEvent.blur(hintInput);
+    expect(editorStore.getState().textEditingElementId).toBeNull();
+  });
+
+  test("the dropdown exposes the same slot fields", async () => {
+    const elementId = await openFreshDocumentWith("dropdown");
+    render(<InspectorPanel />);
+
+    fireEvent.change(screen.getByLabelText("Label text"), {
+      target: { value: "Country" },
+    });
+    expect(selectedElement<FieldElement>(elementId).label).toBe("Country");
   });
 });

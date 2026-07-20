@@ -13,6 +13,8 @@ import { CardElement } from "../../../domain/entities/element/CardElement";
 import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
+import { FieldElement } from "../../../domain/entities/element/FieldElement";
+import type { FieldName } from "../../../domain/entities/element/FieldElement";
 import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
 import { Button } from "../../ui/button/Button";
 import { Field, FieldLabel } from "../../ui/field/Field";
@@ -205,7 +207,95 @@ function SelectedElementFields({ element }: { element: Element }) {
       {element instanceof TabsElement && (
         <TabsFields key={element.id} element={element} />
       )}
+      {element instanceof FieldElement && <FieldSlotsFields element={element} />}
     </>
+  );
+}
+
+/**
+ * Label / placeholder / hint editors for field elements (input, dropdown). The
+ * hint is a textarea (it wraps and may span lines); the other two are single
+ * line. Empty input clears the slot (stored as null).
+ */
+function FieldSlotsFields({ element }: { element: FieldElement }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <FieldSlotInput
+        element={element}
+        field="label"
+        legend={t("inspector.label")}
+        ariaLabel={t("inspector.labelField")}
+      />
+      <FieldSlotInput
+        element={element}
+        field="placeholder"
+        legend={t("inspector.placeholder")}
+        ariaLabel={t("inspector.placeholderField")}
+      />
+      <FieldSlotHint element={element} />
+      <p className="text-xs opacity-70">{t("inspector.fieldEditHint")}</p>
+    </>
+  );
+}
+
+function FieldSlotInput({
+  element,
+  field,
+  legend,
+  ariaLabel,
+}: {
+  element: FieldElement;
+  field: FieldName;
+  legend: string;
+  ariaLabel: string;
+}) {
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
+  const value = field === "label" ? element.label : element.placeholder;
+
+  return (
+    <Field legend={legend}>
+      <TextInput
+        type="text"
+        aria-label={ariaLabel}
+        className="w-full"
+        value={value ?? ""}
+        onChange={(event) =>
+          editElementProps(element.id, {
+            [field]: event.target.value === "" ? null : event.target.value,
+          })
+        }
+        onFocus={() => beginTextEditing(element.id)}
+        onBlur={endTextEditing}
+      />
+    </Field>
+  );
+}
+
+function FieldSlotHint({ element }: { element: FieldElement }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
+
+  return (
+    <Field legend={t("inspector.hint")}>
+      <TextArea
+        aria-label={t("inspector.hintField")}
+        className="w-full"
+        rows={2}
+        value={element.hint ?? ""}
+        onChange={(event) =>
+          editElementProps(element.id, {
+            hint: event.target.value === "" ? null : event.target.value,
+          })
+        }
+        onFocus={() => beginTextEditing(element.id)}
+        onBlur={endTextEditing}
+      />
+    </Field>
   );
 }
 
