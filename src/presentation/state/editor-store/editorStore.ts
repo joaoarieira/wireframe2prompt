@@ -145,6 +145,16 @@ export interface PastePreviewState {
   anchorCell: Position | null;
 }
 
+/**
+ * Placement-tool hover ghost: the default-size element that WOULD be placed,
+ * previewed under the cursor before any press. Non-null only while a placement
+ * tool is hovering with no drag/paste in progress.
+ */
+export interface PlacementHoverState {
+  kind: PlaceableKind;
+  cell: Position;
+}
+
 export interface ContextMenuState {
   clientX: number;
   clientY: number;
@@ -211,6 +221,8 @@ export interface EditorState {
   clipboard: readonly Element[];
   /** Active paste-preview ghost, or null when not in paste mode. */
   pastePreview: PastePreviewState | null;
+  /** Placement-tool hover ghost, or null when no placement tool is hovering. */
+  placementHover: PlacementHoverState | null;
   /** Active context menu position and source cell, or null when closed. */
   contextMenu: ContextMenuState | null;
   /** Active canvas-resize session (size selector open), or null when idle. */
@@ -237,6 +249,8 @@ export interface EditorActions {
   listTools(): readonly CanvasTool[];
   placeElement(kind: PlaceableKind, cell: Position): void;
   beginPlacement(kind: PlaceableKind, cell: Position): void;
+  previewPlacementHover(kind: PlaceableKind, cell: Position): void;
+  clearPlacementHover(): void;
   moveElementTo(elementId: string, position: Position): void;
   resizeElementTo(elementId: string, size: Size): void;
   nudgeSelection(deltaCol: number, deltaRow: number): void;
@@ -330,6 +344,7 @@ const initialState: EditorState = {
   inspectorOpen: false,
   clipboard: [],
   pastePreview: null,
+  placementHover: null,
   contextMenu: null,
   canvasResize: null,
 };
@@ -439,6 +454,8 @@ export function createEditorStore(
       selectionIds: () => get().selectedElementIds,
       toggleSelect: (elementId) => get().toggleElementSelection(elementId),
       beginPlacement: (kind, cell) => get().beginPlacement(kind, cell),
+      previewPlacementHover: (kind, cell) =>
+        get().previewPlacementHover(kind, cell),
       beginMove: (elementIds, cell) => get().beginMove(elementIds, cell),
       updateDrag: (cell) => get().updateDrag(cell),
       commitDrag: () => get().commitDrag(),
@@ -497,6 +514,7 @@ export function createEditorStore(
           canvasEditingField: null,
           inspectorOpen: false,
           pastePreview: null,
+          placementHover: null,
           contextMenu: null,
         });
         const document = await container.loadDocument.execute({
@@ -617,6 +635,7 @@ export function createEditorStore(
           stroke: null,
           panDrag: null,
           pastePreview: null,
+          placementHover: null,
           contextMenu: null,
         });
       },
@@ -649,6 +668,9 @@ export function createEditorStore(
       beginPlacement: (kind, cell) => {
         requireDocument("start a placement drag");
         set({
+          // The drag preview now owns the on-canvas ghost; drop the hover one
+          // so the two don't stack.
+          placementHover: null,
           drag: {
             mode: "place",
             kind,
@@ -657,6 +679,30 @@ export function createEditorStore(
             lastCell: cell,
           },
         });
+      },
+
+      // Shows the default-size ghost of a placement tool under the cursor while
+      // merely hovering. A live drag or paste already renders its own preview,
+      // so it yields to them. Same-cell moves are skipped to avoid re-renders.
+      previewPlacementHover: (kind, cell) => {
+        if (get().drag !== null || get().pastePreview !== null) {
+          return;
+        }
+        const { placementHover } = get();
+        if (
+          placementHover !== null &&
+          placementHover.kind === kind &&
+          placementHover.cell.equals(cell)
+        ) {
+          return;
+        }
+        set({ placementHover: { kind, cell } });
+      },
+
+      clearPlacementHover: () => {
+        if (get().placementHover !== null) {
+          set({ placementHover: null });
+        }
       },
 
       moveElementTo: (elementId, position) => {
@@ -1050,6 +1096,7 @@ export function createEditorStore(
             elements: normalizedClones(clipboard, generateId),
             anchorCell,
           },
+          placementHover: null,
           contextMenu: null,
         });
       },
@@ -1107,6 +1154,7 @@ export function createEditorStore(
           marquee: null,
           stroke: null,
           pastePreview: null,
+          placementHover: null,
           contextMenu: null,
         });
       },
@@ -1282,10 +1330,12 @@ export function previewedDocument(
   drag: DragState | null,
   stroke: StrokeState | null = null,
   pastePreview: PastePreviewState | null = null,
+  placementHover: PlacementHoverState | null = null,
 ): WireframeDocument {
   const withDrag = applyDragPreview(document, drag);
   const withStroke = applyStrokePreview(withDrag, stroke);
-  return applyPastePreviewGhost(withStroke, pastePreview);
+  const withPaste = applyPastePreviewGhost(withStroke, pastePreview);
+  return applyPlacementHoverGhost(withPaste, placementHover);
 }
 
 /** Selected element instance, or null when not exactly one element is selected. */
@@ -1485,6 +1535,38 @@ function pastedElementsAt(
   return normalized.map((el) =>
     el.translate(anchor.col, anchor.row).withZIndex(el.zIndex + lift),
   );
+}
+
+/** Stable id for the placement hover ghost; no real element ever uses it. */
+const PLACEMENT_PREVIEW_ID = "__placement_preview__";
+
+/**
+ * Renders the placement-tool hover ghost: the default-size element of the
+ * hovered kind, drawn on top at the cursor cell. Clamped away silently if the
+ * anchor would put it out of the document's bounds.
+ */
+function applyPlacementHoverGhost(
+  document: WireframeDocument,
+  placementHover: PlacementHoverState | null,
+): WireframeDocument {
+  if (placementHover === null) {
+    return document;
+  }
+  const ghost = buildElement(placementHover.kind, {
+    id: PLACEMENT_PREVIEW_ID,
+    position: placementHover.cell,
+    zIndex: topZIndex(document) + 1,
+  });
+  try {
+    return document.addElement(ghost);
+  } catch {
+    return document;
+  }
+}
+
+/** Highest z-index in the document, or 0 when it has no elements. */
+function topZIndex(document: WireframeDocument): number {
+  return document.elements.reduce((max, el) => Math.max(max, el.zIndex), 0);
 }
 
 /** Renders the paste-preview ghost into the document. */

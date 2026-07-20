@@ -2501,3 +2501,109 @@ describe("canvas resize", () => {
     expect(store.getState().canUndo).toBe(false);
   });
 });
+
+describe("placement hover ghost", () => {
+  test("previewPlacementHover parks a default-size ghost under the cursor", async () => {
+    await openFixtureDoc();
+
+    store.getState().previewPlacementHover("box", cell(2, 1));
+
+    expect(store.getState().placementHover).toEqual({
+      kind: "box",
+      cell: cell(2, 1),
+    });
+  });
+
+  test("previewedDocument renders the hover ghost on top of existing elements", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    const doc = store.getState().document!;
+
+    const preview = previewedDocument(doc, null, null, null, {
+      kind: "text",
+      cell: cell(3, 2),
+    });
+
+    const ghost = preview.getElement("__placement_preview__");
+    expect(ghost?.position.equals(cell(3, 2))).toBe(true);
+    expect(ghost!.zIndex).toBeGreaterThan(doc.getElement("b1")!.zIndex);
+  });
+
+  test("previewedDocument without a hover ghost returns the document untouched", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    const doc = store.getState().document!;
+
+    expect(previewedDocument(doc, null, null, null, null)).toBe(doc);
+  });
+
+  test("previewedDocument ignores a hover ghost whose id already exists", async () => {
+    await openFixtureDoc(makeBox("__placement_preview__"));
+    const doc = store.getState().document!;
+
+    const preview = previewedDocument(doc, null, null, null, {
+      kind: "box",
+      cell: cell(1, 1),
+    });
+
+    expect(preview.elements).toHaveLength(1);
+  });
+
+  test("previewPlacementHover yields to an active drag", async () => {
+    await openFixtureDoc();
+    store.getState().beginPlacement("box", cell(0, 0));
+
+    store.getState().previewPlacementHover("box", cell(2, 2));
+
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("previewPlacementHover yields to an active paste preview", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.setState({ clipboard: [makeBox("b1")] });
+    store.getState().beginPastePreview(cell(0, 0));
+
+    store.getState().previewPlacementHover("box", cell(2, 2));
+
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("previewPlacementHover skips a repeat of the same kind and cell", async () => {
+    await openFixtureDoc();
+    store.getState().previewPlacementHover("box", cell(2, 2));
+    const first = store.getState().placementHover;
+
+    store.getState().previewPlacementHover("box", cell(2, 2));
+
+    // Same ghost: no new object was published (would cause a needless render).
+    expect(store.getState().placementHover).toBe(first);
+  });
+
+  test("clearPlacementHover removes the ghost, and is a no-op when already clear", async () => {
+    await openFixtureDoc();
+    store.getState().previewPlacementHover("box", cell(2, 2));
+
+    store.getState().clearPlacementHover();
+    expect(store.getState().placementHover).toBeNull();
+
+    // Second call must not throw or publish state again.
+    store.getState().clearPlacementHover();
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("switching tools clears the hover ghost", async () => {
+    await openFixtureDoc();
+    store.getState().previewPlacementHover("box", cell(2, 2));
+
+    store.getState().setActiveTool("select");
+
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("opening the canvas-resize selector clears the hover ghost", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().previewPlacementHover("box", cell(2, 2));
+
+    store.getState().beginCanvasResize();
+
+    expect(store.getState().placementHover).toBeNull();
+  });
+});

@@ -15,6 +15,11 @@ export interface GridSurfaceProps {
   onCellPointerMove(cell: Position, point: SurfacePoint): void;
   onCellPointerUp(cell: Position, point: SurfacePoint): void;
   onCellDoubleClick(cell: Position): void;
+  /**
+   * Whether to draw the per-cell hover outline. Off for placement tools, which
+   * show a full element ghost under the cursor instead. Defaults to on.
+   */
+  showHoverHighlight?: boolean;
 }
 
 export type GridSurfaceComponent = ComponentType<GridSurfaceProps>;

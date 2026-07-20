@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildElement } from "./elementFactory";
+import { buildElement, isPlaceableKind } from "./elementFactory";
 import { BoxElement } from "../../../domain/entities/element/BoxElement";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { TextElement } from "../../../domain/entities/element/TextElement";
@@ -110,5 +110,17 @@ describe("buildElement", () => {
     expect((element as DropdownElement).showsArrow).toBe(true);
     expect(element.size.width).toBe(22);
     expect(element.size.height).toBe(4);
+  });
+});
+
+describe("isPlaceableKind", () => {
+  test("true for a placeable element kind", () => {
+    expect(isPlaceableKind("box")).toBe(true);
+    expect(isPlaceableKind("dropdown")).toBe(true);
+  });
+
+  test("false for non-placement tool ids", () => {
+    expect(isPlaceableKind("select")).toBe(false);
+    expect(isPlaceableKind("hand")).toBe(false);
   });
 });

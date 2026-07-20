@@ -6,7 +6,7 @@ import { GridSize } from "../../../domain/entities/grid-size/GridSize";
 import { Position } from "../../../domain/entities/position/Position";
 
 // 4 cols × 3 rows rendered at 40×54px → cells of 10×18px
-function renderSurface() {
+function renderSurface(showHoverHighlight?: boolean) {
   const buffer = CharBuffer.create(GridSize.create(4, 3));
   const onDown = vi.fn();
   const onMove = vi.fn();
@@ -19,6 +19,7 @@ function renderSurface() {
       onCellPointerMove={onMove}
       onCellPointerUp={onUp}
       onCellDoubleClick={onDoubleClick}
+      showHoverHighlight={showHoverHighlight}
     />,
   );
   const grid = screen.getByTestId("grid-surface");
@@ -221,5 +222,22 @@ describe("DomGridSurface", () => {
     fireEvent.dblClick(grid, { clientX: 100, clientY: 20 });
 
     expect(onDoubleClick).not.toHaveBeenCalled();
+  });
+
+  test("cells carry a native :hover outline by default", () => {
+    const { grid } = renderSurface();
+
+    // A CSS :hover outline needs no JS; assert the class contract instead.
+    const cell = grid.querySelector('[data-col="1"][data-row="1"]');
+    expect(cell?.className).toContain("hover:outline");
+    expect(cell?.className).toContain("hover:outline-base-content/50");
+  });
+
+  test("showHoverHighlight=false drops the hover outline class", () => {
+    // Placement tools pass this off: they show a full element ghost instead.
+    const { grid } = renderSurface(false);
+
+    const cell = grid.querySelector('[data-col="1"][data-row="1"]');
+    expect(cell?.className).not.toContain("hover:outline");
   });
 });

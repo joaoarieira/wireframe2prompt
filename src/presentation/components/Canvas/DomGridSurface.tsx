@@ -6,6 +6,18 @@ import type { Position } from "../../../domain/entities/position/Position";
 import type { SurfacePoint } from "../../state/tools/CanvasTool";
 
 /**
+ * Hover affordance: a one-cell outline drawn by the browser's native `:hover`
+ * (no JS, no re-render). `outline` rather than `border` so it never resizes the
+ * cell's content box, and a -1px offset keeps it inside the cell edge instead of
+ * bleeding onto neighbours.
+ */
+const HOVER_OUTLINE =
+  "hover:outline hover:outline-1 hover:outline-base-content/50 hover:-outline-offset-1";
+
+const CELL_CLASS =
+  "h-[var(--cell-h)] w-[var(--cell-w)] text-center leading-[var(--cell-h)] whitespace-pre";
+
+/**
  * DOM implementation of the grid surface: one `<span>` per cell laid out with
  * CSS grid. Pointer events are handled at the container and mapped to cells by
  * geometry (not per-span targets) so pointer capture keeps drags working when
@@ -21,6 +33,7 @@ export function DomGridSurface({
   onCellPointerMove,
   onCellPointerUp,
   onCellDoubleClick,
+  showHoverHighlight = true,
 }: GridSurfaceProps) {
   const dragging = useRef(false);
 
@@ -91,6 +104,11 @@ export function DomGridSurface({
   };
 
   const rows = buffer.toString().split("\n");
+  // Placement tools show a full element ghost under the cursor, so the per-cell
+  // outline would be redundant there.
+  const cellClass = showHoverHighlight
+    ? `${CELL_CLASS} ${HOVER_OUTLINE}`
+    : CELL_CLASS;
 
   return (
     <div
@@ -112,7 +130,7 @@ export function DomGridSurface({
             key={`${col},${row}`}
             data-col={col}
             data-row={row}
-            className="h-[var(--cell-h)] w-[var(--cell-w)] text-center leading-[var(--cell-h)] whitespace-pre"
+            className={cellClass}
           >
             {char}
           </span>

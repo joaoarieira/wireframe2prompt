@@ -148,3 +148,14 @@ export function buildElement(
 ): Element {
   return buildersByKind[kind](spec);
 }
+
+/**
+ * Whether a tool/element id names a placeable kind. Lets the editor tell a
+ * placement tool (which shows a hover ghost) from select/pencil/hand by id.
+ *
+ * @example
+ * if (isPlaceableKind(activeToolId)) showGhost();
+ */
+export function isPlaceableKind(id: string): id is PlaceableKind {
+  return id in buildersByKind;
+}

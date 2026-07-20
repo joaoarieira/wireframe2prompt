@@ -23,6 +23,8 @@ export interface ToolContext {
   selectionIds(): readonly string[];
   toggleSelect(elementId: string): void;
   beginPlacement(kind: PlaceableKind, cell: Position): void;
+  /** Preview the default-size ghost of a placement tool under the cursor. */
+  previewPlacementHover(kind: PlaceableKind, cell: Position): void;
   beginMove(elementIds: readonly string[], cell: Position): void;
   updateDrag(cell: Position): void;
   commitDrag(): void;

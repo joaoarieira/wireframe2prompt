@@ -20,6 +20,7 @@ import {
 import { editorActionForKey } from "../../state/keyboard/editorKeyAction";
 import { TextElement } from "../../../domain/entities/element/TextElement";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
+import { isPlaceableKind } from "../../state/element-factory/elementFactory";
 
 const CELL_SIZE_VARS = { "--cell-w": "10px", "--cell-h": "18px" };
 
@@ -55,6 +56,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const drag = useEditorStore((state) => state.drag);
   const stroke = useEditorStore((state) => state.stroke);
   const pastePreview = useEditorStore((state) => state.pastePreview);
+  const placementHover = useEditorStore((state) => state.placementHover);
   const marquee = useEditorStore((state) => state.marquee);
   const selectedElementIds = useEditorStore(
     (state) => state.selectedElementIds,
@@ -120,7 +122,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const previewed =
     document === null
       ? null
-      : previewedDocument(document, drag, stroke, pastePreview);
+      : previewedDocument(document, drag, stroke, pastePreview, placementHover);
   // While the size selector is open, the paper renders at the previewed grid
   // size so shrinking/growing is visible live; elements outside are clipped by
   // the compositor (kept, not deleted) and reappear when the grid grows again.
@@ -292,6 +294,9 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
             onCellPointerMove={pointerMoveOnCell}
             onCellPointerUp={pointerUpOnCell}
             onCellDoubleClick={doubleClickOnCell}
+            // Placement tools show a full element ghost under the cursor, so the
+            // per-cell hover outline would be redundant noise there.
+            showHoverHighlight={!isPlaceableKind(activeToolId)}
           />
           {selectedElements.map((el) => (
             <SelectionOverlay

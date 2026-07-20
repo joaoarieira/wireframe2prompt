@@ -59,6 +59,7 @@ afterEach(() => {
     canvasEditingElementId: null,
     canvasEditingField: null,
     canvasResize: null,
+    placementHover: null,
     viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
   });
 });
@@ -254,9 +255,7 @@ describe("Canvas", () => {
 
     const overlays = screen.getAllByTestId("selection-overlay");
     expect(overlays).toHaveLength(2);
-    expect(
-      screen.queryByRole("button", { name: "Resize element" }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Resize element" })).toBeNull();
   });
 
   test("with 1 element selected, 1 overlay with a resize handle is shown", () => {
@@ -293,8 +292,30 @@ describe("Canvas", () => {
     render(<Canvas />);
 
     // The paper recomposes at 4×3, clipping the fixture box outside it.
-    expect(screen.getByTestId("grid-surface").childElementCount).toBe(12);
+    expect(
+      screen.getByTestId("grid-surface").querySelectorAll("span"),
+    ).toHaveLength(12);
     expect(screen.getByTestId("canvas-resize-overlay")).toBeInTheDocument();
+  });
+
+  test("a placement tool suppresses the cell outline and previews the element ghost", () => {
+    openDoc();
+    act(() => {
+      editorStore.setState({
+        activeToolId: "box",
+        placementHover: { kind: "box", cell: Position.create(2, 1) },
+      });
+    });
+    render(<Canvas />);
+
+    // Placement tools show the full element ghost, not the per-cell outline:
+    // the cell spans drop the hover:outline class.
+    const grid = screen.getByTestId("grid-surface");
+    expect(grid.querySelector("span")?.className).not.toContain(
+      "hover:outline",
+    );
+    // The ghost's top border rasterises a run of '-' into the composed buffer.
+    expect(grid.textContent).toContain("-");
   });
 
   test("marquee overlay appears when marquee state is set", () => {

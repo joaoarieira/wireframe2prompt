@@ -25,7 +25,10 @@ export function createPlacementTool(
       context.beginPlacement(kind, cell);
     },
     onCellPointerMove(context, cell) {
+      // Advances an active placement drag; when merely hovering (no drag), the
+      // store instead parks a default-size ghost under the cursor.
       context.updateDrag(cell);
+      context.previewPlacementHover(kind, cell);
     },
     onCellPointerUp(context) {
       context.commitDrag();

@@ -34,4 +34,13 @@ describe("createPlacementTool", () => {
     expect(context.updateDragCalls).toEqual([cell]);
     expect(context.commitDragCalls).toBe(1);
   });
+
+  test("pointer move also parks a placement hover ghost of its kind", () => {
+    const tool = createPlacementTool("box", "tools.box");
+    const context = new FakeToolContext();
+
+    tool.onCellPointerMove(context, cell, noPoint);
+
+    expect(context.previewPlacementHoverCalls).toEqual([{ kind: "box", cell }]);
+  });
 });
