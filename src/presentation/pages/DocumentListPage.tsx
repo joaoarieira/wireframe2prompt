@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { LayersSidebarFooter } from "../components/LayersSidebar/LayersSidebarFooter";
 import { ButtonGroup } from "../ui/button-group/ButtonGroup";
 import { Button } from "../ui/button/Button";
 import { TextInput } from "../ui/text-input/TextInput";
@@ -17,6 +19,7 @@ export function DocumentListPage() {
   const deleteDocument = useEditorStore((state) => state.deleteDocument);
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  useDocumentTitle("wireframe2prompt");
 
   useEffect(() => {
     void refreshDocuments();
@@ -32,48 +35,57 @@ export function DocumentListPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6 p-8">
-      <h1 className="text-2xl font-bold">wireframe2prompt</h1>
-      <ButtonGroup>
-        <TextInput
-          type="text"
-          className="flex-1"
-          placeholder={t("documentList.namePlaceholder")}
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") void handleCreate();
-          }}
-        />
-        <Button variant="primary" size="sm" onClick={() => void handleCreate()}>
-          {t("documentList.create")}
-        </Button>
-      </ButtonGroup>
-      {summaries.length === 0 ? (
-        <p className="text-sm opacity-60">{t("documentList.empty")}</p>
-      ) : (
-        <List rounded className="bg-base-200">
-          {summaries.map((summary) => (
-            <ListRow key={summary.id} className="items-center">
-              <TextLink
-                to="/editor/$documentId"
-                params={{ documentId: summary.id }}
-                grow
-              >
-                {summary.name}
-              </TextLink>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label={t("documentList.delete", { name: summary.name })}
-                onClick={() => void deleteDocument(summary.id)}
-              >
-                ✕
-              </Button>
-            </ListRow>
-          ))}
-        </List>
-      )}
+    // Full-height column so the shared footer sits at the bottom of the page,
+    // not directly under the (short) document list.
+    <div className="flex min-h-screen flex-col">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 p-8">
+        <h1 className="text-2xl font-bold">wireframe2prompt</h1>
+        <ButtonGroup>
+          <TextInput
+            type="text"
+            className="flex-1"
+            placeholder={t("documentList.namePlaceholder")}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void handleCreate();
+            }}
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => void handleCreate()}
+          >
+            {t("documentList.create")}
+          </Button>
+        </ButtonGroup>
+        {summaries.length === 0 ? (
+          <p className="text-sm opacity-60">{t("documentList.empty")}</p>
+        ) : (
+          <List rounded className="bg-base-200">
+            {summaries.map((summary) => (
+              <ListRow key={summary.id} className="items-center">
+                <TextLink
+                  to="/editor/$documentId"
+                  params={{ documentId: summary.id }}
+                  grow
+                >
+                  {summary.name}
+                </TextLink>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={t("documentList.delete", { name: summary.name })}
+                  onClick={() => void deleteDocument(summary.id)}
+                >
+                  ✕
+                </Button>
+              </ListRow>
+            ))}
+          </List>
+        )}
+      </div>
+      <LayersSidebarFooter />
     </div>
   );
 }

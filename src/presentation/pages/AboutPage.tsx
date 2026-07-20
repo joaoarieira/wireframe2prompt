@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { ButtonLink } from "../ui/button-link/ButtonLink";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "@tanstack/react-router";
+import { Button } from "../ui/button/Button";
 
 /**
  * Static project description page at /about.
@@ -7,13 +9,23 @@ import { ButtonLink } from "../ui/button-link/ButtonLink";
  */
 export function AboutPage() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <div className="flex min-h-screen flex-col bg-base-100">
       <header className="flex items-center gap-3 border-b border-base-300 bg-base-200 px-4 py-2">
-        <ButtonLink to="/" variant="ghost" size="sm">
-          {t("about.backToHome")}
-        </ButtonLink>
+        {/* Back to wherever About was opened from — the editor (reopening the
+            document via its loader) or the document list — via history, not a
+            fixed `to`. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={t("about.back")}
+          title={t("about.back")}
+          onClick={() => router.history.back()}
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+        </Button>
         <span className="text-sm font-bold">wireframe2prompt</span>
       </header>
       <main className="flex-1 overflow-auto px-6 py-12">

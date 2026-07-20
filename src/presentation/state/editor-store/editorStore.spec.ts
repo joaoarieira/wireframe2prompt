@@ -2093,3 +2093,77 @@ describe("copy / paste / duplicate", () => {
     expect(store.getState().stroke).toBeNull();
   });
 });
+
+describe("same-cell pointer moves publish no new state", () => {
+  // Pointer moves fire per pixel; these guards keep the store (and therefore
+  // every subscribed component) quiet until the cursor crosses a cell boundary.
+
+  test("updateMarquee with the current lastCell keeps the same state object", async () => {
+    await openFixtureDoc();
+    store.getState().beginMarquee(cell(2, 2));
+    store.getState().updateMarquee(cell(5, 4));
+    const before = store.getState().marquee;
+
+    store.getState().updateMarquee(cell(5, 4));
+
+    expect(store.getState().marquee).toBe(before);
+  });
+
+  test("updateDrag (resize) with the current lastCell keeps the same state object", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginResize("b1", cell(3, 2));
+    store.getState().updateDrag(cell(6, 5));
+    const before = store.getState().drag;
+
+    store.getState().updateDrag(cell(6, 5));
+
+    expect(store.getState().drag).toBe(before);
+  });
+
+  test("updatePastePreview with the current anchorCell keeps the same state object", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    store.getState().copySelection();
+    store.getState().beginPastePreview(null);
+    store.getState().updatePastePreview(cell(4, 3)); // null anchor → still sets
+    const before = store.getState().pastePreview;
+
+    store.getState().updatePastePreview(cell(4, 3));
+
+    expect(store.getState().pastePreview).toBe(before);
+  });
+
+  test("extendStroke re-stamping the same char on the same cell keeps the same state object", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+    const before = store.getState().stroke;
+
+    store.getState().extendStroke(cell(1, 1));
+
+    expect(store.getState().stroke).toBe(before);
+  });
+
+  test("extendStroke with a different pencil char overwrites the same cell", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+    store.getState().setPencilChar("#");
+
+    store.getState().extendStroke(cell(1, 1));
+
+    const { stroke } = store.getState();
+    expect(stroke?.mode).toBe("draw");
+    if (stroke?.mode === "draw") {
+      expect(stroke.cells.get("1,1")?.value).toBe("#");
+    }
+  });
+
+  test("extendStroke re-erasing the same cell keeps the same state object", async () => {
+    await openFixtureDoc(makeFD("fd1"));
+    store.getState().beginEraseStroke(cell(0, 0));
+    const before = store.getState().stroke;
+
+    store.getState().extendStroke(cell(0, 0));
+
+    expect(store.getState().stroke).toBe(before);
+  });
+});

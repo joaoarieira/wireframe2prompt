@@ -130,7 +130,7 @@ export const pt: LocaleDictionary = {
     pt: "Português",
   },
   about: {
-    backToHome: "← Voltar",
+    back: "Voltar",
     title: "Sobre o wireframe2prompt",
     summary:
       "O wireframe2prompt é um editor de wireframes em ASCII que exporta seus layouts como texto puro, pronto para ser usado em qualquer LLM.",

@@ -130,7 +130,7 @@ export const en = {
     pt: "Português",
   },
   about: {
-    backToHome: "← Back",
+    back: "Back",
     title: "About wireframe2prompt",
     summary:
       "wireframe2prompt is an ASCII wireframe editor that exports your layouts as plain text, ready to feed to any LLM.",

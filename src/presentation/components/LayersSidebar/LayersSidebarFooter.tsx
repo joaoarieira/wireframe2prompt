@@ -36,7 +36,7 @@ export function LayersSidebarFooter() {
   const ActiveThemeIcon = THEME_ICONS[preference];
 
   return (
-    <div className="flex shrink-0 items-center gap-1 border-t border-base-300 p-1">
+    <div className="flex shrink-0 items-center justify-center gap-1 border-t border-base-300 p-1">
       <ButtonLink
         to="/about"
         variant="ghost"

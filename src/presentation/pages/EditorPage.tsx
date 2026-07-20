@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { Canvas } from "../components/Canvas/Canvas";
 import { LayersSidebar } from "../components/LayersSidebar/LayersSidebar";
 import { InspectorPanel } from "../components/InspectorPanel/InspectorPanel";
@@ -13,8 +14,12 @@ import { ButtonLink } from "../ui/button-link/ButtonLink";
 export function EditorPage() {
   const { t } = useTranslation();
   const documentStatus = useEditorStore((state) => state.documentStatus);
+  const documentName = useEditorStore((state) => state.document?.name);
   const inspectorVisible = useEditorStore(
     (state) => state.inspectorOpen && state.selectedElementIds.length === 1,
+  );
+  useDocumentTitle(
+    documentName ? `${documentName} - wireframe2prompt` : "wireframe2prompt",
   );
 
   if (documentStatus === "missing") {

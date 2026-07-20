@@ -739,6 +739,11 @@ export function createEditorStore(
         if (drag === null) {
           return;
         }
+        // Pointer moves fire per pixel; only a cell change alters the preview,
+        // so same-cell moves must not publish new state (and re-render).
+        if (cell.equals(drag.lastCell)) {
+          return;
+        }
         set({ drag: { ...drag, lastCell: cell } });
       },
 
@@ -774,6 +779,11 @@ export function createEditorStore(
       updateMarquee: (cell) => {
         const { marquee } = get();
         if (marquee === null) {
+          return;
+        }
+        // Same-cell moves don't change the marquee rect; skip the state update
+        // so the MarqueeOverlay only re-renders when the rect actually grows.
+        if (cell.equals(marquee.lastCell)) {
           return;
         }
         set({ marquee: { ...marquee, lastCell: cell } });
@@ -843,10 +853,18 @@ export function createEditorStore(
         if (stroke === null) return;
         const key = `${cell.col},${cell.row}`;
         if (stroke.mode === "draw") {
+          // Re-stamping the same char on the same cell changes nothing;
+          // skip so moving inside one cell doesn't recompose the canvas.
+          if (stroke.cells.get(key)?.equals(pencilChar) === true) {
+            return;
+          }
           const newCells = new Map(stroke.cells);
           newCells.set(key, pencilChar);
           set({ stroke: { ...stroke, cells: newCells } });
         } else {
+          if (stroke.cells.has(key)) {
+            return;
+          }
           const newCells = new Set(stroke.cells);
           newCells.add(key);
           set({ stroke: { ...stroke, cells: newCells } });
@@ -966,6 +984,14 @@ export function createEditorStore(
       updatePastePreview: (cell) => {
         const { pastePreview } = get();
         if (pastePreview === null) return;
+        // The ghost only moves when the anchor cell changes; same-cell moves
+        // would otherwise rebuild the preview document on every pixel.
+        if (
+          pastePreview.anchorCell !== null &&
+          cell.equals(pastePreview.anchorCell)
+        ) {
+          return;
+        }
         set({ pastePreview: { ...pastePreview, anchorCell: cell } });
       },
 

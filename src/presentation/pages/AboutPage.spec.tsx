@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import type { ComponentProps, ReactNode } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { AboutPage } from "./AboutPage";
 
+const back = vi.fn();
+
 vi.mock("@tanstack/react-router", () => ({
-  createLink:
-    (Anchor: (props: ComponentProps<"a">) => ReactNode) =>
-    ({ to, ...rest }: { to?: string } & ComponentProps<"a">) => (
-      <Anchor href={to} {...rest} />
-    ),
+  useRouter: () => ({ history: { back } }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 describe("AboutPage", () => {
   test("renders the product name in the header", () => {
@@ -19,12 +19,10 @@ describe("AboutPage", () => {
     expect(screen.getByText("wireframe2prompt")).toBeInTheDocument();
   });
 
-  test("back link points to the document list", () => {
+  test("the back button returns to the previous route via history", () => {
     render(<AboutPage />);
-    expect(screen.getByRole("link", { name: "← Back" })).toHaveAttribute(
-      "href",
-      "/",
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(back).toHaveBeenCalledOnce();
   });
 
   test("renders the section headings and the summary", () => {
