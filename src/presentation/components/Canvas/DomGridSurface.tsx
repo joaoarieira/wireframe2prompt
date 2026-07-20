@@ -94,7 +94,7 @@ export function DomGridSurface({
 
   return (
     <div
-      className="grid cursor-crosshair touch-none select-none"
+      className="grid touch-none select-none"
       style={{
         gridTemplateColumns: `repeat(${buffer.width}, var(--cell-w))`,
       }}

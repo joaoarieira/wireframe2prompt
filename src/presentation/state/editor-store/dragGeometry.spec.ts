@@ -1,32 +1,66 @@
 import { describe, expect, test } from "vitest";
 import {
   LINE_FLIP_THRESHOLD,
+  arrowDirectionForDrag,
+  arrowOrientationOf,
+  cellSpanRect,
   lineOrientationForDrag,
   lineSizeForOrientation,
-  placementDragSize,
 } from "./dragGeometry";
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 
 const at = (col: number, row: number) => Position.create(col, row);
 
-describe("placementDragSize", () => {
-  test("no drag keeps a 1×1 box on the anchor cell", () => {
-    expect(
-      placementDragSize(at(2, 3), at(2, 3)).equals(Size.create(1, 1)),
-    ).toBe(true);
+describe("cellSpanRect", () => {
+  test("no drag keeps a 1×1 rect on the anchor cell", () => {
+    const rect = cellSpanRect(at(2, 3), at(2, 3));
+    expect(rect.position.equals(at(2, 3))).toBe(true);
+    expect(rect.size.equals(Size.create(1, 1))).toBe(true);
   });
 
-  test("dragging 5 cells each way yields an inclusive 5×5 box", () => {
-    expect(
-      placementDragSize(at(0, 0), at(4, 4)).equals(Size.create(5, 5)),
-    ).toBe(true);
+  test("dragging 5 cells each way yields an inclusive 5×5 rect", () => {
+    const rect = cellSpanRect(at(0, 0), at(4, 4));
+    expect(rect.position.equals(at(0, 0))).toBe(true);
+    expect(rect.size.equals(Size.create(5, 5))).toBe(true);
   });
 
-  test("dragging up/left of the anchor clamps at 1", () => {
-    expect(
-      placementDragSize(at(5, 5), at(2, 1)).equals(Size.create(1, 1)),
-    ).toBe(true);
+  test("dragging up/left of the anchor moves the rect to the min corner", () => {
+    const rect = cellSpanRect(at(5, 5), at(2, 1));
+    expect(rect.position.equals(at(2, 1))).toBe(true);
+    expect(rect.size.equals(Size.create(4, 5))).toBe(true);
+  });
+});
+
+describe("arrowOrientationOf", () => {
+  test("left/right arrows lie on the horizontal axis", () => {
+    expect(arrowOrientationOf("left")).toBe("h");
+    expect(arrowOrientationOf("right")).toBe("h");
+  });
+
+  test("up/down arrows lie on the vertical axis", () => {
+    expect(arrowOrientationOf("up")).toBe("v");
+    expect(arrowOrientationOf("down")).toBe("v");
+  });
+});
+
+describe("arrowDirectionForDrag", () => {
+  test("horizontal axis points left on a negative column delta", () => {
+    expect(arrowDirectionForDrag("h", -3, 0)).toBe("left");
+  });
+
+  test("horizontal axis points right on a positive or zero column delta", () => {
+    expect(arrowDirectionForDrag("h", 3, 0)).toBe("right");
+    expect(arrowDirectionForDrag("h", 0, 1)).toBe("right");
+  });
+
+  test("vertical axis points up on a negative row delta", () => {
+    expect(arrowDirectionForDrag("v", 0, -2)).toBe("up");
+  });
+
+  test("vertical axis points down on a positive or zero row delta", () => {
+    expect(arrowDirectionForDrag("v", 0, 2)).toBe("down");
+    expect(arrowDirectionForDrag("v", 1, 0)).toBe("down");
   });
 });
 

@@ -7,6 +7,8 @@ import { MarqueeOverlay } from "./MarqueeOverlay";
 import { TextEditOverlay } from "./TextEditOverlay";
 import { cellAtPoint } from "./cellGeometry";
 import type { PointLike } from "./cellGeometry";
+import { canvasCursor } from "./cursorGlyphs";
+import { useColorScheme } from "../../hooks/useColorScheme";
 import { useEditorStore } from "../../state/app-store/appStore";
 import {
   previewedDocument,
@@ -72,6 +74,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const endPan = useEditorStore((state) => state.endPan);
   const panViewportBy = useEditorStore((state) => state.panViewportBy);
   const currentZoom = useEditorStore((state) => state.viewport.zoom);
+  const scheme = useColorScheme();
 
   // Wheel handling via a native (non-passive) listener so we can
   // preventDefault() and pre-empt the browser's page zoom/scroll:
@@ -225,24 +228,23 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     endPan();
   };
 
-  // Hand cursor feedback on the whole canvas (backdrop included), since the hand
-  // tool and middle-button pan work everywhere now — not just over the paper.
-  // It must live on this outer element because the pan gesture captures the
-  // pointer here, and a captured pointer shows the CAPTURING element's cursor;
-  // putting it deeper let the grab flip back to default mid-drag. `panDrag` is
-  // set while dragging with the hand tool or middle-button panning → "grabbing";
-  // an idle hand tool → an open "grab". The `[&_*]` variant forces it onto the
-  // grid too, which otherwise sets its own `cursor-crosshair`.
-  const cursorClass =
-    panDrag !== null
-      ? "cursor-grabbing [&_*]:cursor-grabbing"
-      : activeToolId === "hand"
-        ? "cursor-grab [&_*]:cursor-grab"
-        : "";
+  // A themed SVG cursor for the whole canvas (backdrop included), since the hand
+  // tool and middle-button pan work everywhere now — not just over the paper. It
+  // must live on this outer element because the pan gesture captures the pointer
+  // here, and a captured pointer shows the CAPTURING element's cursor; putting it
+  // deeper let it flip back mid-drag. `cursor` inherits, so descendants (the grid
+  // included) pick it up — no per-child override. `panDrag` set → the hand-grab
+  // glyph; an idle hand tool → an open hand; any other tool → the arrow.
+  const cursor = canvasCursor({
+    activeToolId,
+    panning: panDrag !== null,
+    scheme,
+  });
 
   return (
     <div
-      className={`grid h-full place-items-center overflow-hidden bg-base-300 p-8 outline-none ${cursorClass}`}
+      className="grid h-full place-items-center overflow-hidden bg-base-300 p-8 outline-none"
+      style={{ cursor }}
       tabIndex={0}
       data-testid="canvas"
       onKeyDown={handleKeyDown}

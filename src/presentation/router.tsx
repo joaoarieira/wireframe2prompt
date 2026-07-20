@@ -1,16 +1,16 @@
 import {
-  Outlet,
   createRootRoute,
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
 import { editorStore } from "./state/app-store/appStore";
+import { RootLayout } from "./RootLayout";
 import { DocumentListPage } from "./pages/DocumentListPage";
 import { EditorPage } from "./pages/EditorPage";
 import { AboutPage } from "./pages/AboutPage";
 
 const rootRoute = createRootRoute({
-  component: Outlet,
+  component: RootLayout,
 });
 
 const documentListRoute = createRoute({

@@ -23,6 +23,7 @@ import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNot
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import type { LineElement } from "../../../domain/entities/element/LineElement";
+import type { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import type { TextElement } from "../../../domain/entities/element/TextElement";
 import {
   FreeDrawElement,
@@ -996,6 +997,130 @@ describe("drag gestures", () => {
     const line = store.getState().document!.getElement("id-1") as LineElement;
     expect(line.orientation).toBe("v");
     expect(line.size.equals(Size.create(1, 5))).toBe(true);
+  });
+
+  test("a placement drag up-left of the anchor grows the box toward the mouse", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("box", cell(5, 5));
+    store.getState().updateDrag(cell(2, 1));
+    store.getState().commitDrag();
+
+    const placed = store.getState().document!.getElement("id-1")!;
+    expect(placed.position.equals(cell(2, 1))).toBe(true);
+    expect(placed.size.equals(Size.create(4, 5))).toBe(true);
+  });
+
+  test("a line placement drag to the left spans left on the anchor row", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("line", cell(5, 3));
+    store.getState().updateDrag(cell(1, 3));
+    store.getState().commitDrag();
+
+    const line = store.getState().document!.getElement("id-1") as LineElement;
+    expect(line.orientation).toBe("h");
+    expect(line.position.equals(cell(1, 3))).toBe(true);
+    expect(line.size.equals(Size.create(5, 1))).toBe(true);
+  });
+
+  test("a line placement drag upwards flips to vertical and grows up", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("line", cell(2, 5));
+    store.getState().updateDrag(cell(2, 1));
+    store.getState().commitDrag();
+
+    const line = store.getState().document!.getElement("id-1") as LineElement;
+    expect(line.orientation).toBe("v");
+    expect(line.position.equals(cell(2, 1))).toBe(true);
+    expect(line.size.equals(Size.create(1, 5))).toBe(true);
+  });
+
+  test("an arrow placement drag to the right points the head right", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("arrow", cell(0, 0));
+    store.getState().updateDrag(cell(4, 0));
+    store.getState().commitDrag();
+
+    const arrow = store.getState().document!.getElement("id-1") as ArrowElement;
+    expect(arrow.direction).toBe("right");
+    expect(arrow.position.equals(cell(0, 0))).toBe(true);
+    expect(arrow.size.equals(Size.create(5, 1))).toBe(true);
+  });
+
+  test("an arrow placement drag to the left points the head left", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("arrow", cell(6, 2));
+    store.getState().updateDrag(cell(2, 2));
+    store.getState().commitDrag();
+
+    const arrow = store.getState().document!.getElement("id-1") as ArrowElement;
+    expect(arrow.direction).toBe("left");
+    expect(arrow.position.equals(cell(2, 2))).toBe(true);
+    expect(arrow.size.equals(Size.create(5, 1))).toBe(true);
+  });
+
+  test("an arrow placement drag upwards flips vertical and points up", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("arrow", cell(3, 6));
+    store.getState().updateDrag(cell(3, 2));
+    store.getState().commitDrag();
+
+    const arrow = store.getState().document!.getElement("id-1") as ArrowElement;
+    expect(arrow.direction).toBe("up");
+    expect(arrow.position.equals(cell(3, 2))).toBe(true);
+    expect(arrow.size.equals(Size.create(1, 5))).toBe(true);
+  });
+
+  test("an arrow placement drag downwards flips vertical and points down", async () => {
+    await openFixtureDoc();
+
+    store.getState().beginPlacement("arrow", cell(1, 1));
+    store.getState().updateDrag(cell(1, 5));
+    store.getState().commitDrag();
+
+    const arrow = store.getState().document!.getElement("id-1") as ArrowElement;
+    expect(arrow.direction).toBe("down");
+    expect(arrow.position.equals(cell(1, 1))).toBe(true);
+    expect(arrow.size.equals(Size.create(1, 5))).toBe(true);
+  });
+
+  test("resizing a right arrow downwards flips it to a down arrow in one undo", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("arrow", cell(0, 0)); // id-1: 6×1 right
+
+    store.getState().beginResize("id-1", cell(5, 0));
+    store.getState().updateDrag(cell(5, 3)); // 3 cells down
+    store.getState().commitDrag();
+
+    const arrow = store.getState().document!.getElement("id-1") as ArrowElement;
+    expect(arrow.direction).toBe("down");
+    expect(arrow.size.equals(Size.create(1, 4))).toBe(true);
+
+    store.getState().undo(); // one snapshot restores size AND direction
+    const restored = store
+      .getState()
+      .document!.getElement("id-1") as ArrowElement;
+    expect(restored.direction).toBe("right");
+    expect(restored.size.equals(Size.create(6, 1))).toBe(true);
+  });
+
+  test("widening a right arrow one cell down keeps it pointing right", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("arrow", cell(0, 0)); // id-1: 6×1 right
+
+    store.getState().beginResize("id-1", cell(5, 0));
+    store.getState().updateDrag(cell(8, 1)); // +3 cols, +1 row
+    store.getState().commitDrag();
+
+    const arrow = store.getState().document!.getElement("id-1") as ArrowElement;
+    expect(arrow.direction).toBe("right");
+    // Height collapses to the arrow's canonical 1; width grows.
+    expect(arrow.size.equals(Size.create(9, 1))).toBe(true);
   });
 
   test("text placement enters inline editing only after pointer up", async () => {

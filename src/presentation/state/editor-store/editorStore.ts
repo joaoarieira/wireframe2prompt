@@ -10,6 +10,7 @@ import { CellChar } from "../../../domain/entities/cell-char/CellChar";
 import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import type { LineOrientation } from "../../../domain/entities/element/LineElement";
+import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import type { CharBuffer } from "../../../domain/value-objects/char-buffer/CharBuffer";
 import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
@@ -30,10 +31,13 @@ import type { EditorKeyAction } from "../keyboard/editorKeyAction";
 import { drawCellsOnDocument } from "../../../application/usecases/DrawFreeCharUseCase";
 import { eraseCellsOnDocument } from "../../../application/usecases/EraseCellUseCase";
 import {
+  arrowDirectionForDrag,
+  arrowOrientationOf,
+  cellSpanRect,
   lineOrientationForDrag,
   lineSizeForOrientation,
-  placementDragSize,
 } from "./dragGeometry";
+import type { CellRect } from "./dragGeometry";
 
 const DEFAULT_GRID_COLS = 80;
 const DEFAULT_GRID_ROWS = 24;
@@ -1177,18 +1181,8 @@ export function selectedElementsOf(
  * const rect = marqueeRect({ startCell: pos(5,3), lastCell: pos(2,1) });
  * // => { position: pos(2,1), size: size(4, 3) }
  */
-export function marqueeRect(marquee: MarqueeState): {
-  position: Position;
-  size: Size;
-} {
-  const minCol = Math.min(marquee.startCell.col, marquee.lastCell.col);
-  const minRow = Math.min(marquee.startCell.row, marquee.lastCell.row);
-  const maxCol = Math.max(marquee.startCell.col, marquee.lastCell.col);
-  const maxRow = Math.max(marquee.startCell.row, marquee.lastCell.row);
-  return {
-    position: Position.create(minCol, minRow),
-    size: Size.create(maxCol - minCol + 1, maxRow - minRow + 1),
-  };
+export function marqueeRect(marquee: MarqueeState): CellRect {
+  return cellSpanRect(marquee.startCell, marquee.lastCell);
 }
 
 function applyDragPreview(
@@ -1388,24 +1382,42 @@ interface ResizeOutcome {
 }
 
 /**
- * Size (and optional orientation flip) a resize drag produces. Only lines flip;
- * every other kind just grows to the drag target.
+ * Size (and optional prop patch) a resize drag produces. Lines and arrows flip
+ * their axis when the perpendicular travel wins; an arrow that flips also gets
+ * a new head direction. Every other kind just grows to the drag target.
  */
 function resizeOutcome(
   element: Element,
   drag: Extract<DragState, { mode: "resize" }>,
 ): ResizeOutcome {
   const target = dragTargetSize(drag);
-  if (!(element instanceof LineElement)) {
-    return { size: target };
+  if (element instanceof LineElement) {
+    const shape = lineDragShape(element.orientation, target, drag);
+    return shape.orientation === element.orientation
+      ? { size: shape.size }
+      : { size: shape.size, props: { orientation: shape.orientation } };
   }
-  const shape = lineDragShape(element.orientation, target, drag);
-  return shape.orientation === element.orientation
-    ? { size: shape.size }
-    : { size: shape.size, props: { orientation: shape.orientation } };
+  if (element instanceof ArrowElement) {
+    const orientation = arrowOrientationOf(element.direction);
+    const shape = lineDragShape(orientation, target, drag);
+    if (shape.orientation === orientation) {
+      return { size: shape.size };
+    }
+    const direction = arrowDirectionForDrag(
+      shape.orientation,
+      drag.lastCell.col - drag.startCell.col,
+      drag.lastCell.row - drag.startCell.row,
+    );
+    return { size: shape.size, props: { direction } };
+  }
+  return { size: target };
 }
 
-/** The element a placement drag produces: default size on a plain click, else the drag box. */
+/**
+ * The element a placement drag produces: default size on a plain click, else
+ * the rect spanned by the gesture — in any direction, so dragging up/left of
+ * the anchor grows the element toward the mouse instead of clamping at 1×1.
+ */
 function placedElement(drag: Extract<DragState, { mode: "place" }>): Element {
   const element = buildElement(drag.kind, {
     id: drag.elementId,
@@ -1415,22 +1427,71 @@ function placedElement(drag: Extract<DragState, { mode: "place" }>): Element {
   if (drag.lastCell.equals(drag.startCell)) {
     return element;
   }
-  const target = placementDragSize(drag.startCell, drag.lastCell);
-  if (!(element instanceof LineElement)) {
-    return element.resize(target);
+  const rect = cellSpanRect(drag.startCell, drag.lastCell);
+  if (element instanceof LineElement) {
+    const shape = lineDragShape(element.orientation, rect.size, drag);
+    return element
+      .withOrientation(shape.orientation)
+      .moveTo(axisAnchoredPosition(shape.orientation, drag.startCell, rect))
+      .resize(shape.size);
   }
-  const shape = lineDragShape(element.orientation, target, drag);
-  return element.withOrientation(shape.orientation).resize(shape.size);
+  if (element instanceof ArrowElement) {
+    return placedArrow(element, drag, rect);
+  }
+  return element.moveTo(rect.position).resize(rect.size);
 }
 
-/** Orientation + canonical line size for a resize/placement drag's target box. */
+/** Arrow placement: axis flips like a line; the head follows the mouse. */
+function placedArrow(
+  element: ArrowElement,
+  drag: Extract<DragState, { mode: "place" }>,
+  rect: CellRect,
+): Element {
+  const shape = lineDragShape(
+    arrowOrientationOf(element.direction),
+    rect.size,
+    drag,
+  );
+  const direction = arrowDirectionForDrag(
+    shape.orientation,
+    drag.lastCell.col - drag.startCell.col,
+    drag.lastCell.row - drag.startCell.row,
+  );
+  return element
+    .withDirection(direction)
+    .moveTo(axisAnchoredPosition(shape.orientation, drag.startCell, rect))
+    .resize(shape.size);
+}
+
+/**
+ * Where a placed line/arrow starts: it spans the rect along its axis but stays
+ * pinned to the anchor cell on the perpendicular axis, so a diagonal drag
+ * doesn't jump the element off the row/column where the gesture began.
+ */
+function axisAnchoredPosition(
+  orientation: LineOrientation,
+  startCell: Position,
+  rect: CellRect,
+): Position {
+  return orientation === "h"
+    ? Position.create(rect.position.col, startCell.row)
+    : Position.create(startCell.col, rect.position.row);
+}
+
+/**
+ * Orientation + canonical line size for a resize/placement drag's target box.
+ * Placement flips on travel in any direction (absolute deltas); resize keeps
+ * the bottom-right-handle semantics where negative deltas never flip.
+ */
 function lineDragShape(
   current: LineOrientation,
   target: Size,
   drag: Extract<DragState, { mode: "resize" | "place" }>,
 ): { orientation: LineOrientation; size: Size } {
-  const deltaCol = drag.lastCell.col - drag.startCell.col;
-  const deltaRow = drag.lastCell.row - drag.startCell.row;
+  const rawCol = drag.lastCell.col - drag.startCell.col;
+  const rawRow = drag.lastCell.row - drag.startCell.row;
+  const deltaCol = drag.mode === "place" ? Math.abs(rawCol) : rawCol;
+  const deltaRow = drag.mode === "place" ? Math.abs(rawRow) : rawRow;
   const orientation = lineOrientationForDrag(current, deltaCol, deltaRow);
   return { orientation, size: lineSizeForOrientation(orientation, target) };
 }

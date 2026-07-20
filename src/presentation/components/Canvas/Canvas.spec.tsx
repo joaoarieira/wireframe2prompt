@@ -360,17 +360,17 @@ describe("Canvas", () => {
     expect(editorStore.getState().panDrag).toBeNull();
   });
 
-  test("shows a grab cursor while the hand tool is idle", () => {
+  test("shows the open-hand cursor while the hand tool is idle", () => {
     openDoc();
     editorStore.setState({ activeToolId: "hand" });
     render(<Canvas />);
 
-    const { className } = screen.getByTestId("canvas");
-    expect(className).toContain("cursor-grab");
-    expect(className).not.toContain("cursor-grabbing");
+    const { cursor } = screen.getByTestId("canvas").style;
+    expect(cursor).toContain("data:image/svg+xml");
+    expect(cursor.endsWith("grab")).toBe(true);
   });
 
-  test("shows a grabbing cursor while a pan is in progress", () => {
+  test("shows the grabbing-hand cursor while a pan is in progress", () => {
     openDoc();
     editorStore.setState({
       activeToolId: "hand",
@@ -378,15 +378,19 @@ describe("Canvas", () => {
     });
     render(<Canvas />);
 
-    expect(screen.getByTestId("canvas").className).toContain("cursor-grabbing");
+    expect(screen.getByTestId("canvas").style.cursor.endsWith("grabbing")).toBe(
+      true,
+    );
   });
 
-  test("shows no hand cursor for a drawing tool", () => {
+  test("shows the pointer arrow for a drawing tool", () => {
     openDoc();
     editorStore.setState({ activeToolId: "box" });
     render(<Canvas />);
 
-    expect(screen.getByTestId("canvas").className).not.toContain("cursor-grab");
+    const { cursor } = screen.getByTestId("canvas").style;
+    expect(cursor).toContain("data:image/svg+xml");
+    expect(cursor.endsWith("default")).toBe(true);
   });
 
   test("TextEditOverlay appears when canvasEditingElementId is set to a TextElement", () => {

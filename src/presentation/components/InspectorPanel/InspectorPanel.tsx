@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
@@ -201,7 +202,9 @@ function SelectedElementFields({ element }: { element: Element }) {
       {element instanceof TableElement && (
         <TableShapeFields element={element} />
       )}
-      {element instanceof TabsElement && <TabsFields element={element} />}
+      {element instanceof TabsElement && (
+        <TabsFields key={element.id} element={element} />
+      )}
     </>
   );
 }
@@ -337,6 +340,11 @@ function TabsFields({ element }: { element: TabsElement }) {
   const editElementProps = useEditorStore((state) => state.editElementProps);
   const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
   const endTextEditing = useEditorStore((state) => state.endTextEditing);
+  // While focused, the textarea shows exactly what was typed. Binding it to
+  // element.tabs.join("\n") would swallow a trailing Shift+Enter line break
+  // (blank lines are filtered out of the committed tabs), snapping the caret
+  // back before the user can type the new tab's name.
+  const [draft, setDraft] = useState<string | null>(null);
 
   return (
     <>
@@ -345,8 +353,9 @@ function TabsFields({ element }: { element: TabsElement }) {
           aria-label={t("inspector.tabsField")}
           className="w-full"
           rows={3}
-          value={element.tabs.join("\n")}
+          value={draft ?? element.tabs.join("\n")}
           onChange={(event) => {
+            setDraft(event.target.value);
             const tabs = event.target.value
               .split("\n")
               .filter((s) => s.length > 0);
@@ -354,8 +363,14 @@ function TabsFields({ element }: { element: TabsElement }) {
               editElementProps(element.id, { tabs });
             }
           }}
-          onFocus={() => beginTextEditing(element.id)}
-          onBlur={endTextEditing}
+          onFocus={() => {
+            setDraft(element.tabs.join("\n"));
+            beginTextEditing(element.id);
+          }}
+          onBlur={() => {
+            setDraft(null);
+            endTextEditing();
+          }}
         />
       </Field>
       <Field legend={t("inspector.activeTab")}>

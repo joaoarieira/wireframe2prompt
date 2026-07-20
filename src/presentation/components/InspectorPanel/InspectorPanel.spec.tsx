@@ -1,21 +1,46 @@
 import { describe, expect, test } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { InspectorPanel } from "./InspectorPanel";
 import { editorStore } from "../../state/app-store/appStore";
 import { Position } from "../../../domain/entities/position/Position";
+import type { Element } from "../../../domain/entities/element/Element";
 import type { TextElement } from "../../../domain/entities/element/TextElement";
+import type { LineElement } from "../../../domain/entities/element/LineElement";
+import type { ArrowElement } from "../../../domain/entities/element/ArrowElement";
+import type { CardElement } from "../../../domain/entities/element/CardElement";
+import type { ModalElement } from "../../../domain/entities/element/ModalElement";
+import type { TableElement } from "../../../domain/entities/element/TableElement";
+import type { TabsElement } from "../../../domain/entities/element/TabsElement";
+import type { PlaceableKind } from "../../state/element-factory/elementFactory";
 
-async function openFreshDocumentWithText(): Promise<string> {
+async function openFreshDocumentWith(kind: PlaceableKind): Promise<string> {
   const id = await editorStore
     .getState()
     .createDocument(`inspector-spec-${Math.random()}`);
   await editorStore.getState().openDocument(id);
-  editorStore.getState().placeElement("text", Position.create(1, 1));
+  editorStore.getState().placeElement(kind, Position.create(1, 1));
   const elementId = editorStore.getState().selectedElementIds[0];
   if (elementId === undefined) {
-    throw new Error("expected placeElement to select the new text element");
+    throw new Error(`expected placeElement to select the new ${kind} element`);
   }
   return elementId;
+}
+
+const openFreshDocumentWithText = () => openFreshDocumentWith("text");
+
+function selectedElement<T extends Element>(elementId: string): T {
+  const element = editorStore.getState().document?.getElement(elementId);
+  if (element === undefined) {
+    throw new Error(`expected element "${elementId}" to exist`);
+  }
+  return element as T;
+}
+
+/** The spinbutton inside the fieldset captioned by the given legend. */
+function numberFieldIn(legend: string): HTMLElement {
+  return within(screen.getByRole("group", { name: legend })).getByRole(
+    "spinbutton",
+  );
 }
 
 describe("InspectorPanel text editing", () => {
@@ -116,5 +141,211 @@ describe("InspectorPanel text editing", () => {
         "Double-click the element on the canvas to edit its text.",
       ),
     ).toBeInTheDocument();
+  });
+});
+
+describe("InspectorPanel tabs editing", () => {
+  test("a trailing Shift+Enter line break survives while the field is focused", async () => {
+    const elementId = await openFreshDocumentWith("tabs");
+    render(<InspectorPanel />);
+    const textarea = screen.getByLabelText("One tab per line");
+
+    fireEvent.focus(textarea);
+    // Typing a line break after the last tab: the committed tabs drop the
+    // blank line, but the textarea must keep it so the next tab can be typed.
+    fireEvent.change(textarea, { target: { value: "Tab 1\nTab 2\n" } });
+
+    expect(textarea).toHaveValue("Tab 1\nTab 2\n");
+    const element = editorStore
+      .getState()
+      .document?.getElement(elementId) as TabsElement;
+    expect(element.tabs).toEqual(["Tab 1", "Tab 2"]);
+  });
+
+  test("blur snaps the field back to the committed tabs", async () => {
+    await openFreshDocumentWith("tabs");
+    render(<InspectorPanel />);
+    const textarea = screen.getByLabelText("One tab per line");
+
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "Tab 1\n" } });
+    fireEvent.blur(textarea);
+
+    expect(textarea).toHaveValue("Tab 1");
+    expect(editorStore.getState().textEditingElementId).toBeNull();
+  });
+
+  test("clearing the field keeps the last valid tabs on the element", async () => {
+    const elementId = await openFreshDocumentWith("tabs");
+    render(<InspectorPanel />);
+    const textarea = screen.getByLabelText("One tab per line");
+
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "" } });
+
+    expect(textarea).toHaveValue(""); // the user can start over from empty
+    const element = editorStore
+      .getState()
+      .document?.getElement(elementId) as TabsElement;
+    expect(element.tabs).toEqual(["Tab 1", "Tab 2"]); // default tabs untouched
+  });
+
+  test("the active tab select switches the active tab", async () => {
+    const elementId = await openFreshDocumentWith("tabs");
+    render(<InspectorPanel />);
+
+    fireEvent.change(screen.getByLabelText("Active tab"), {
+      target: { value: "1" },
+    });
+
+    expect(selectedElement<TabsElement>(elementId).active).toBe(1);
+  });
+});
+
+describe("InspectorPanel geometry fields", () => {
+  test("renders nothing when no element is selected", async () => {
+    await openFreshDocumentWithText();
+    editorStore.getState().selectElement(null);
+
+    const { container } = render(<InspectorPanel />);
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  test("col/row fields move the element; a non-integer value is ignored", async () => {
+    const elementId = await openFreshDocumentWithText();
+    render(<InspectorPanel />);
+
+    fireEvent.change(screen.getByLabelText("col"), { target: { value: "7" } });
+    fireEvent.change(screen.getByLabelText("row"), { target: { value: "5" } });
+    expect(
+      selectedElement(elementId).position.equals(Position.create(7, 5)),
+    ).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("col"), {
+      target: { value: "2.5" },
+    });
+    fireEvent.change(screen.getByLabelText("row"), {
+      target: { value: "2.5" },
+    });
+    expect(
+      selectedElement(elementId).position.equals(Position.create(7, 5)),
+    ).toBe(true);
+  });
+
+  test("w/h fields resize the element; zero and non-integer values are ignored", async () => {
+    const elementId = await openFreshDocumentWith("box");
+    render(<InspectorPanel />);
+
+    fireEvent.change(screen.getByLabelText("w"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("h"), { target: { value: "6" } });
+    expect(selectedElement(elementId).size.width).toBe(10);
+    expect(selectedElement(elementId).size.height).toBe(6);
+
+    fireEvent.change(screen.getByLabelText("w"), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText("h"), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText("w"), { target: { value: "2.5" } });
+    fireEvent.change(screen.getByLabelText("h"), { target: { value: "2.5" } });
+    expect(selectedElement(elementId).size.width).toBe(10);
+    expect(selectedElement(elementId).size.height).toBe(6);
+  });
+
+  test("the size field is hidden for a free-draw element", async () => {
+    await openFreshDocumentWithText();
+    editorStore.getState().beginDrawStroke(Position.create(2, 2));
+    editorStore.getState().commitStroke(); // creates + selects a free-draw
+    render(<InspectorPanel />);
+
+    expect(screen.queryByLabelText("w")).toBeNull();
+    expect(screen.queryByLabelText("h")).toBeNull();
+  });
+
+  test("focusing the name field holds the text-editing session until blur", async () => {
+    const elementId = await openFreshDocumentWithText();
+    render(<InspectorPanel />);
+    const nameInput = screen.getByLabelText("Element name");
+
+    fireEvent.focus(nameInput);
+    expect(editorStore.getState().textEditingElementId).toBe(elementId);
+
+    fireEvent.blur(nameInput);
+    expect(editorStore.getState().textEditingElementId).toBeNull();
+  });
+});
+
+describe("InspectorPanel kind-specific fields", () => {
+  test("the orientation select flips a line to vertical", async () => {
+    const elementId = await openFreshDocumentWith("line");
+    render(<InspectorPanel />);
+
+    fireEvent.change(screen.getByLabelText("Line orientation"), {
+      target: { value: "v" },
+    });
+
+    expect(selectedElement<LineElement>(elementId).orientation).toBe("v");
+  });
+
+  test("the direction select points an arrow up", async () => {
+    const elementId = await openFreshDocumentWith("arrow");
+    render(<InspectorPanel />);
+
+    fireEvent.change(screen.getByLabelText("Arrow direction"), {
+      target: { value: "up" },
+    });
+
+    expect(selectedElement<ArrowElement>(elementId).direction).toBe("up");
+  });
+
+  test("the card title field edits the title and empty clears it", async () => {
+    const elementId = await openFreshDocumentWith("card");
+    render(<InspectorPanel />);
+    const titleInput = screen.getByLabelText("Title text");
+
+    fireEvent.focus(titleInput);
+    expect(editorStore.getState().textEditingElementId).toBe(elementId);
+
+    fireEvent.change(titleInput, { target: { value: "Pricing" } });
+    expect(selectedElement<CardElement>(elementId).title).toBe("Pricing");
+
+    fireEvent.change(titleInput, { target: { value: "" } });
+    expect(selectedElement<CardElement>(elementId).title).toBeNull();
+
+    fireEvent.blur(titleInput);
+    expect(editorStore.getState().textEditingElementId).toBeNull();
+  });
+
+  test("the modal title field edits the title and empty clears it", async () => {
+    const elementId = await openFreshDocumentWith("modal");
+    render(<InspectorPanel />);
+    const titleInput = screen.getByLabelText("Title text");
+
+    fireEvent.focus(titleInput);
+    expect(editorStore.getState().textEditingElementId).toBe(elementId);
+
+    fireEvent.change(titleInput, { target: { value: "Confirm" } });
+    expect(selectedElement<ModalElement>(elementId).title).toBe("Confirm");
+
+    fireEvent.change(titleInput, { target: { value: "" } });
+    expect(selectedElement<ModalElement>(elementId).title).toBeNull();
+
+    fireEvent.blur(titleInput);
+    expect(editorStore.getState().textEditingElementId).toBeNull();
+  });
+
+  test("table columns/rows fields reshape the table; invalid values are ignored", async () => {
+    const elementId = await openFreshDocumentWith("table");
+    render(<InspectorPanel />);
+
+    fireEvent.change(numberFieldIn("Columns"), { target: { value: "4" } });
+    fireEvent.change(numberFieldIn("Rows"), { target: { value: "3" } });
+    expect(selectedElement<TableElement>(elementId).columns).toBe(4);
+    expect(selectedElement<TableElement>(elementId).rows).toBe(3);
+
+    fireEvent.change(numberFieldIn("Columns"), { target: { value: "0" } });
+    fireEvent.change(numberFieldIn("Rows"), { target: { value: "0" } });
+    fireEvent.change(numberFieldIn("Columns"), { target: { value: "2.5" } });
+    fireEvent.change(numberFieldIn("Rows"), { target: { value: "2.5" } });
+    expect(selectedElement<TableElement>(elementId).columns).toBe(4);
+    expect(selectedElement<TableElement>(elementId).rows).toBe(3);
   });
 });
