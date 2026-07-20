@@ -5,6 +5,8 @@ import type { Element } from "../../../domain/entities/element/Element";
 import type { PointLike } from "./cellGeometry";
 import type { Position } from "../../../domain/entities/position/Position";
 import { useEditorStore } from "../../state/app-store/appStore";
+import { useColorScheme } from "../../hooks/useColorScheme";
+import { resizeCursor } from "./cursorGlyphs";
 
 interface SelectionOverlayProps {
   /** Element bounds to highlight (already drag-previewed by the Canvas). */
@@ -26,6 +28,7 @@ export function SelectionOverlay({
   showResizeHandle,
 }: SelectionOverlayProps) {
   const { t } = useTranslation();
+  const scheme = useColorScheme();
   const beginResize = useEditorStore((state) => state.beginResize);
   const updateDrag = useEditorStore((state) => state.updateDrag);
   const commitDrag = useEditorStore((state) => state.commitDrag);
@@ -71,8 +74,13 @@ export function SelectionOverlay({
       {showResizeHandle && (
         <span
           role="button"
+          data-resize-handle
           aria-label={t("canvas.resize")}
-          className="pointer-events-auto absolute -right-1 -bottom-1 size-2 cursor-se-resize bg-primary"
+          // The themed `move-diagonal-2` glyph; the pointer is captured on this
+          // span during the drag, so a captured pointer keeps showing it start
+          // to finish instead of flipping to the element under the cursor.
+          className="pointer-events-auto absolute -right-1 -bottom-1 size-2 bg-primary"
+          style={{ cursor: resizeCursor(scheme) }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { canvasCursor, fingerCursor, pointerCursor } from "./cursorGlyphs";
+import {
+  canvasCursor,
+  fingerCursor,
+  pointerCursor,
+  resizeCursor,
+} from "./cursorGlyphs";
 
 describe("pointerCursor", () => {
   test("is a themed SVG data URI ending in the default fallback", () => {
@@ -34,6 +39,19 @@ describe("fingerCursor", () => {
     expect(value).toContain('url("data:image/svg+xml,');
     expect(value.endsWith(", pointer")).toBe(true);
     expect(value).toContain("%23383d45");
+  });
+});
+
+describe("resizeCursor", () => {
+  test("is a themed SVG data URI ending in the se-resize fallback", () => {
+    const value = resizeCursor("light");
+    expect(value).toContain('url("data:image/svg+xml,');
+    expect(value.endsWith(", se-resize")).toBe(true);
+    expect(value).toContain("%23383d45");
+  });
+
+  test("flips to the light glyph colour on the dark theme", () => {
+    expect(resizeCursor("dark")).toContain("%23e4e6e9");
   });
 });
 

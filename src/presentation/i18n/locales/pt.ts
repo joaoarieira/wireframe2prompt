@@ -91,6 +91,9 @@ export const pt: LocaleDictionary = {
   },
   canvas: {
     resize: "Redimensionar elemento",
+    resizeCanvas: "Redimensionar canvas",
+    saveSize: "Salvar tamanho do canvas",
+    cancelResize: "Cancelar redimensionamento do canvas",
   },
   elementKind: {
     box: "retângulo",

@@ -15,7 +15,10 @@ const CLICKABLE = [
   "select:not(:disabled)",
   "summary",
   "label[for]",
-  '[role="button"]',
+  // The canvas resize handle is a role=button but sets its own themed
+  // move-diagonal cursor inline; excluding it keeps this !important finger rule
+  // from overriding that.
+  '[role="button"]:not([data-resize-handle])',
   '[role="tab"]',
   '[role="menuitem"]',
   ".cursor-pointer",

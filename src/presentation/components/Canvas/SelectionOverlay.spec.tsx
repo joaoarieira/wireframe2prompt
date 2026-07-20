@@ -45,6 +45,16 @@ describe("SelectionOverlay", () => {
     ).toBeInTheDocument();
   });
 
+  test("resize handle shows the themed move-diagonal-2 cursor", () => {
+    const el = makeContext();
+    render(
+      <SelectionOverlay element={el} getCell={getCell} showResizeHandle />,
+    );
+    const handle = screen.getByRole("button", { name: "Resize element" });
+    expect(handle.style.cursor).toContain('url("data:image/svg+xml,');
+    expect(handle.style.cursor.endsWith(", se-resize")).toBe(true);
+  });
+
   test("resize handle is absent when showResizeHandle is false", () => {
     const el = makeContext();
     render(
@@ -54,9 +64,7 @@ describe("SelectionOverlay", () => {
         showResizeHandle={false}
       />,
     );
-    expect(
-      screen.queryByRole("button", { name: "Resize element" }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Resize element" })).toBeNull();
   });
 
   test("pointer-down on the handle starts a resize drag", () => {
@@ -75,11 +83,7 @@ describe("SelectionOverlay", () => {
   test("pointer-down when getCell returns null is a no-op (no drag started)", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay
-        element={el}
-        getCell={() => null}
-        showResizeHandle
-      />,
+      <SelectionOverlay element={el} getCell={() => null} showResizeHandle />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();

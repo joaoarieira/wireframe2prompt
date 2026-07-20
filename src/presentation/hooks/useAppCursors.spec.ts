@@ -21,6 +21,12 @@ describe("cursorStylesheet", () => {
     expect(css).toContain("button:not(:disabled)");
     expect(css).toContain(".cursor-pointer");
   });
+
+  test("excludes the canvas resize handle from the finger rule", () => {
+    expect(cursorStylesheet("light")).toContain(
+      '[role="button"]:not([data-resize-handle])',
+    );
+  });
 });
 
 describe("useAppCursors", () => {

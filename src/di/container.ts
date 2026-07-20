@@ -10,6 +10,7 @@ import { InMemoryHistory } from "../infrastructure/history/InMemoryHistory";
 import { AddElementUseCase } from "../application/usecases/AddElementUseCase";
 import { MoveElementUseCase } from "../application/usecases/MoveElementUseCase";
 import { ResizeElementUseCase } from "../application/usecases/ResizeElementUseCase";
+import { ResizeGridUseCase } from "../application/usecases/ResizeGridUseCase";
 import { RemoveElementUseCase } from "../application/usecases/RemoveElementUseCase";
 import { ReorderLayerUseCase } from "../application/usecases/ReorderLayerUseCase";
 import { EditElementPropsUseCase } from "../application/usecases/EditElementPropsUseCase";
@@ -34,6 +35,7 @@ export interface AppContainer {
   addElement: AddElementUseCase;
   moveElement: MoveElementUseCase;
   resizeElement: ResizeElementUseCase;
+  resizeGrid: ResizeGridUseCase;
   removeElement: RemoveElementUseCase;
   reorderLayer: ReorderLayerUseCase;
   editElementProps: EditElementPropsUseCase;
@@ -81,6 +83,7 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     addElement: new AddElementUseCase(history),
     moveElement: new MoveElementUseCase(history),
     resizeElement: new ResizeElementUseCase(history),
+    resizeGrid: new ResizeGridUseCase(history),
     removeElement: new RemoveElementUseCase(history),
     reorderLayer: new ReorderLayerUseCase(history),
     editElementProps: new EditElementPropsUseCase(history),

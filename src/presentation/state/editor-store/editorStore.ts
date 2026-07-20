@@ -115,6 +115,29 @@ export interface PanDragState {
   lastClientY: number;
 }
 
+/**
+ * Reference geometry captured when a canvas-resize handle drag begins: the
+ * paper's screen top-left and the on-screen px per cell (zoom already folded
+ * in). Sizing reads off this fixed frame, so the paper growing/shrinking during
+ * the drag never feeds back into the cell math.
+ */
+export interface CanvasResizeDragRef {
+  originLeft: number;
+  originTop: number;
+  cellWidthPx: number;
+  cellHeightPx: number;
+}
+
+/**
+ * Active canvas-resize session. `previewSize` drives a live-resized preview of
+ * the whole document; committing applies it via the resize-grid use case,
+ * cancelling discards it. Non-null only while the size selector is open.
+ */
+export interface CanvasResizeState {
+  previewSize: GridSize;
+  drag: CanvasResizeDragRef | null;
+}
+
 export interface PastePreviewState {
   /** Fresh-id clones, normalized so the set's bounding-box top-left is (0,0). */
   elements: readonly Element[];
@@ -190,6 +213,8 @@ export interface EditorState {
   pastePreview: PastePreviewState | null;
   /** Active context menu position and source cell, or null when closed. */
   contextMenu: ContextMenuState | null;
+  /** Active canvas-resize session (size selector open), or null when idle. */
+  canvasResize: CanvasResizeState | null;
 }
 
 export interface EditorActions {
@@ -250,6 +275,12 @@ export interface EditorActions {
   cancelPastePreview(): void;
   openContextMenu(anchor: ContextMenuState): void;
   closeContextMenu(): void;
+  beginCanvasResize(): void;
+  beginCanvasResizeDrag(ref: CanvasResizeDragRef): void;
+  updateCanvasResizeDrag(point: { clientX: number; clientY: number }): void;
+  endCanvasResizeDrag(): void;
+  commitCanvasResize(): void;
+  cancelCanvasResize(): void;
   pointerDownOnCell(cell: Position, point?: SurfacePoint): void;
   pointerMoveOnCell(cell: Position, point?: SurfacePoint): void;
   pointerUpOnCell(cell: Position, point?: SurfacePoint): void;
@@ -300,6 +331,7 @@ const initialState: EditorState = {
   clipboard: [],
   pastePreview: null,
   contextMenu: null,
+  canvasResize: null,
 };
 
 /**
@@ -1063,6 +1095,74 @@ export function createEditorStore(
         set({ contextMenu: null });
       },
 
+      // Opens the size selector: clears every other interaction so only the
+      // resize overlay is live, and seeds the preview at the current grid size.
+      beginCanvasResize: () => {
+        const document = requireDocument("resize the canvas");
+        set({
+          canvasResize: { previewSize: document.gridSize, drag: null },
+          selectedElementIds: [],
+          inspectorOpen: false,
+          drag: null,
+          marquee: null,
+          stroke: null,
+          pastePreview: null,
+          contextMenu: null,
+        });
+      },
+
+      beginCanvasResizeDrag: (ref) => {
+        const { canvasResize } = get();
+        if (canvasResize === null) {
+          return;
+        }
+        set({ canvasResize: { ...canvasResize, drag: ref } });
+      },
+
+      updateCanvasResizeDrag: (point) => {
+        const { canvasResize } = get();
+        if (canvasResize === null || canvasResize.drag === null) {
+          return;
+        }
+        const previewSize = gridSizeFromResizeDrag(canvasResize.drag, point);
+        // Same-size moves must not publish new state (and recompose the paper).
+        if (previewSize.equals(canvasResize.previewSize)) {
+          return;
+        }
+        set({ canvasResize: { ...canvasResize, previewSize } });
+      },
+
+      endCanvasResizeDrag: () => {
+        const { canvasResize } = get();
+        if (canvasResize === null) {
+          return;
+        }
+        set({ canvasResize: { ...canvasResize, drag: null } });
+      },
+
+      commitCanvasResize: () => {
+        const { canvasResize } = get();
+        if (canvasResize === null) {
+          return;
+        }
+        set({ canvasResize: null });
+        // beginCanvasResize requires an open document, so one is present here.
+        const document = requireDocument("commit a canvas resize");
+        if (canvasResize.previewSize.equals(document.gridSize)) {
+          return;
+        }
+        commitDocument(
+          container.resizeGrid.execute({
+            document,
+            gridSize: canvasResize.previewSize,
+          }),
+        );
+      },
+
+      cancelCanvasResize: () => {
+        set({ canvasResize: null });
+      },
+
       pointerDownOnCell: (cell, point = NO_POINT) => {
         if (get().contextMenu !== null) get().closeContextMenu();
         const { pastePreview } = get();
@@ -1556,6 +1656,26 @@ function executeDrag(
     size: outcome.size,
     props: outcome.props,
   });
+}
+
+/**
+ * Grid size a canvas-resize handle drag produces: the pointer position measured
+ * against the drag's fixed reference frame, rounded to whole cells and floored
+ * at 1×1 (an empty grid is not representable).
+ */
+function gridSizeFromResizeDrag(
+  drag: CanvasResizeDragRef,
+  point: { clientX: number; clientY: number },
+): GridSize {
+  const cols = Math.max(
+    1,
+    Math.round((point.clientX - drag.originLeft) / drag.cellWidthPx),
+  );
+  const rows = Math.max(
+    1,
+    Math.round((point.clientY - drag.originTop) / drag.cellHeightPx),
+  );
+  return GridSize.create(cols, rows);
 }
 
 function parseCellKeyToPosition(key: string): Position {

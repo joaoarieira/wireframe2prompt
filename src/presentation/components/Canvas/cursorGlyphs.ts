@@ -46,6 +46,9 @@ const POINTER = [
   "M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15",
 ];
 
+/** lucide `move-diagonal-2` — the cursor while resizing an element. */
+const MOVE_DIAGONAL_2 = ["M19 13v6h-6", "M5 11V5h6", "m5 5 14 14"];
+
 /** lucide `hand-grab` — the move (hand) tool while a pan is in progress. */
 const HAND_GRAB = [
   "M18 11.5V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1.4",
@@ -109,6 +112,24 @@ export function pointerCursor(scheme: ColorScheme): string {
  */
 export function fingerCursor(scheme: ColorScheme): string {
   return cursorValue(POINTER, false, 8, 3, "pointer", COLORS[scheme]);
+}
+
+/**
+ * The lucide `move-diagonal-2` arrow coloured for `scheme` — the cursor shown on
+ * (and while dragging) the bottom-right resize handle, replacing CSS
+ * `se-resize`. Centred hotspot so the glyph tracks the corner being dragged.
+ *
+ * @example resizeCursor("light")
+ */
+export function resizeCursor(scheme: ColorScheme): string {
+  return cursorValue(
+    MOVE_DIAGONAL_2,
+    false,
+    12,
+    12,
+    "se-resize",
+    COLORS[scheme],
+  );
 }
 
 /**

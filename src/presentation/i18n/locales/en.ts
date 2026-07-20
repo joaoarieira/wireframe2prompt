@@ -92,6 +92,9 @@ export const en = {
   },
   canvas: {
     resize: "Resize element",
+    resizeCanvas: "Resize canvas",
+    saveSize: "Save canvas size",
+    cancelResize: "Cancel canvas resize",
   },
   elementKind: {
     box: "box",

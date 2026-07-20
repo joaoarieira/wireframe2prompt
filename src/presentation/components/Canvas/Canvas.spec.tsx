@@ -13,6 +13,7 @@ import { makeBox, makeDoc, makeText } from "../../../tests/fixtures";
 import { InputElement } from "../../../domain/entities/element/InputElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
+import { GridSize } from "../../../domain/entities/grid-size/GridSize";
 
 function makeInput(id: string) {
   return InputElement.create({
@@ -57,6 +58,7 @@ afterEach(() => {
     textEditingElementId: null,
     canvasEditingElementId: null,
     canvasEditingField: null,
+    canvasResize: null,
     viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
   });
 });
@@ -266,6 +268,33 @@ describe("Canvas", () => {
     expect(
       screen.getByRole("button", { name: "Resize element" }),
     ).toBeInTheDocument();
+  });
+
+  test("the resize control ghost button is shown while a document is open", () => {
+    openDoc();
+    render(<Canvas />);
+
+    expect(
+      screen.getByRole("button", { name: "Resize canvas" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("canvas-resize-overlay")).toBeNull();
+  });
+
+  test("an open resize session renders the paper at the preview size with the overlay", () => {
+    openDoc();
+    act(() => {
+      editorStore.setState({
+        canvasResize: {
+          previewSize: GridSize.create(4, 3),
+          drag: null,
+        },
+      });
+    });
+    render(<Canvas />);
+
+    // The paper recomposes at 4×3, clipping the fixture box outside it.
+    expect(screen.getByTestId("grid-surface").childElementCount).toBe(12);
+    expect(screen.getByTestId("canvas-resize-overlay")).toBeInTheDocument();
   });
 
   test("marquee overlay appears when marquee state is set", () => {

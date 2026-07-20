@@ -73,6 +73,22 @@ describe("WireframeDocument", () => {
     expect(next.getElement("a")!.zIndex).toBe(9);
   });
 
+  test("resizeGrid returns a new document with the new grid size, keeping elements", () => {
+    const outside = box("far");
+    const doc = emptyDoc()
+      .addElement(outside)
+      .moveElement("far", Position.create(50, 50));
+    const next = doc.resizeGrid(GridSize.create(4, 3));
+
+    expect(next).not.toBe(doc);
+    expect(next.gridSize.equals(GridSize.create(4, 3))).toBe(true);
+    // The element sitting outside the shrunk grid is preserved, not dropped.
+    expect(next.getElement("far")!.position.equals(Position.create(50, 50))).toBe(
+      true,
+    );
+    expect(doc.gridSize.equals(GridSize.create(10, 10))).toBe(true);
+  });
+
   test("mutators must throw when the element does not exist", () => {
     const doc = emptyDoc();
     expect(() => doc.removeElement("nope")).toThrow(ElementNotFoundError);

@@ -118,4 +118,19 @@ export class WireframeDocument {
     const index = this.requireIndex(elementId);
     return this.replaceAt(index, this.elements[index].withZIndex(zIndex));
   }
+
+  /**
+   * Changes the grid dimensions, keeping every element as-is. Elements that
+   * fall outside a shrunk grid are preserved (never clamped here) so growing
+   * the grid again brings them back — the compositor clips on rasterization.
+   */
+  resizeGrid(gridSize: GridSize): WireframeDocument {
+    return new WireframeDocument({
+      id: this.id,
+      name: this.name,
+      gridSize,
+      elements: this.elements,
+      layers: this.layers,
+    });
+  }
 }

@@ -22,6 +22,7 @@ import { makeBox, makeDoc } from "../../../tests/fixtures";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
+import { GridSize } from "../../../domain/entities/grid-size/GridSize";
 import type { LineElement } from "../../../domain/entities/element/LineElement";
 import type { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import type { TextElement } from "../../../domain/entities/element/TextElement";
@@ -2336,5 +2337,167 @@ describe("same-cell pointer moves publish no new state", () => {
     store.getState().extendStroke(cell(0, 0));
 
     expect(store.getState().stroke).toBe(before);
+  });
+});
+
+describe("canvas resize", () => {
+  /** A reference frame of 200×180px paper over a 20×10 grid (10×18px cells). */
+  const fixtureDragRef = {
+    originLeft: 0,
+    originTop: 0,
+    cellWidthPx: 10,
+    cellHeightPx: 18,
+  };
+
+  test("beginCanvasResize opens the selector seeded at the current grid size", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    store.getState().openInspector();
+
+    store.getState().beginCanvasResize();
+
+    const { canvasResize } = store.getState();
+    expect(canvasResize).not.toBeNull();
+    expect(canvasResize!.previewSize.equals(GridSize.create(20, 10))).toBe(
+      true,
+    );
+    expect(canvasResize!.drag).toBeNull();
+    // Clears other interactions so only the resize overlay is live.
+    expect(store.getState().selectedElementIds).toEqual([]);
+    expect(store.getState().inspectorOpen).toBe(false);
+  });
+
+  test("beginCanvasResize throws when no document is open", () => {
+    expect(() => store.getState().beginCanvasResize()).toThrow(
+      NoOpenDocumentError,
+    );
+  });
+
+  test("a handle drag previews the new size against the fixed reference frame", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+
+    // Pointer at 300px → 30 cols; 90px → 5 rows.
+    store.getState().updateCanvasResizeDrag({ clientX: 300, clientY: 90 });
+
+    expect(
+      store.getState().canvasResize!.previewSize.equals(GridSize.create(30, 5)),
+    ).toBe(true);
+    // The document is untouched until commit.
+    expect(
+      store.getState().document!.gridSize.equals(GridSize.create(20, 10)),
+    ).toBe(true);
+  });
+
+  test("the previewed size floors at 1×1", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+
+    store.getState().updateCanvasResizeDrag({ clientX: -50, clientY: -50 });
+
+    expect(
+      store.getState().canvasResize!.previewSize.equals(GridSize.create(1, 1)),
+    ).toBe(true);
+  });
+
+  test("beginCanvasResizeDrag is a no-op when the selector is closed", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+    expect(store.getState().canvasResize).toBeNull();
+  });
+
+  test("updateCanvasResizeDrag is a no-op without an active handle drag", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    const before = store.getState().canvasResize;
+
+    store.getState().updateCanvasResizeDrag({ clientX: 300, clientY: 90 });
+
+    expect(store.getState().canvasResize).toBe(before);
+  });
+
+  test("updateCanvasResizeDrag on the same cell keeps the same state object", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+    // 200px / 10 = 20 cols, 180px / 18 = 10 rows → same as current preview.
+    store.getState().updateCanvasResizeDrag({ clientX: 200, clientY: 180 });
+    const before = store.getState().canvasResize;
+
+    store.getState().updateCanvasResizeDrag({ clientX: 200, clientY: 180 });
+
+    expect(store.getState().canvasResize).toBe(before);
+  });
+
+  test("endCanvasResizeDrag clears the handle drag but keeps the preview open", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+    store.getState().updateCanvasResizeDrag({ clientX: 300, clientY: 90 });
+
+    store.getState().endCanvasResizeDrag();
+
+    expect(store.getState().canvasResize!.drag).toBeNull();
+    expect(
+      store.getState().canvasResize!.previewSize.equals(GridSize.create(30, 5)),
+    ).toBe(true);
+  });
+
+  test("endCanvasResizeDrag is a no-op when the selector is closed", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().endCanvasResizeDrag();
+    expect(store.getState().canvasResize).toBeNull();
+  });
+
+  test("commitCanvasResize applies the previewed size with one undo snapshot", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+    store.getState().updateCanvasResizeDrag({ clientX: 300, clientY: 90 });
+
+    store.getState().commitCanvasResize();
+
+    expect(store.getState().canvasResize).toBeNull();
+    expect(
+      store.getState().document!.gridSize.equals(GridSize.create(30, 5)),
+    ).toBe(true);
+    expect(store.getState().canUndo).toBe(true);
+    store.getState().undo();
+    expect(
+      store.getState().document!.gridSize.equals(GridSize.create(20, 10)),
+    ).toBe(true);
+  });
+
+  test("commitCanvasResize with an unchanged size records no snapshot", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+
+    store.getState().commitCanvasResize();
+
+    expect(store.getState().canvasResize).toBeNull();
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("commitCanvasResize is a no-op when the selector is closed", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().commitCanvasResize();
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("cancelCanvasResize discards the preview, leaving the grid unchanged", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    store.getState().beginCanvasResizeDrag(fixtureDragRef);
+    store.getState().updateCanvasResizeDrag({ clientX: 300, clientY: 90 });
+
+    store.getState().cancelCanvasResize();
+
+    expect(store.getState().canvasResize).toBeNull();
+    expect(
+      store.getState().document!.gridSize.equals(GridSize.create(20, 10)),
+    ).toBe(true);
+    expect(store.getState().canUndo).toBe(false);
   });
 });

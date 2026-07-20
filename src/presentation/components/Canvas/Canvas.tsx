@@ -3,6 +3,8 @@ import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import type { GridSurfaceComponent } from "./GridSurface";
 import { DomGridSurface } from "./DomGridSurface";
 import { SelectionOverlay } from "./SelectionOverlay";
+import { CanvasResizeOverlay } from "./CanvasResizeOverlay";
+import { CanvasResizeControl } from "./CanvasResizeControl";
 import { MarqueeOverlay } from "./MarqueeOverlay";
 import { TextEditOverlay } from "./TextEditOverlay";
 import { FieldEditOverlay } from "./FieldEditOverlay";
@@ -60,6 +62,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const activeToolId = useEditorStore((state) => state.activeToolId);
   const panDrag = useEditorStore((state) => state.panDrag);
   const viewport = useEditorStore((state) => state.viewport);
+  const canvasResize = useEditorStore((state) => state.canvasResize);
   const composeBuffer = useEditorStore((state) => state.composeBuffer);
   const pointerDownOnCell = useEditorStore((state) => state.pointerDownOnCell);
   const pointerMoveOnCell = useEditorStore((state) => state.pointerMoveOnCell);
@@ -114,10 +117,17 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     return () => el.removeEventListener("wheel", handleWheel);
   }, [currentZoom, zoomAtPoint, panViewportBy]);
 
-  const visibleDocument =
+  const previewed =
     document === null
       ? null
       : previewedDocument(document, drag, stroke, pastePreview);
+  // While the size selector is open, the paper renders at the previewed grid
+  // size so shrinking/growing is visible live; elements outside are clipped by
+  // the compositor (kept, not deleted) and reappear when the grid grows again.
+  const visibleDocument =
+    previewed === null || canvasResize === null
+      ? previewed
+      : previewed.resizeGrid(canvasResize.previewSize);
   const buffer = useMemo(
     () => (visibleDocument === null ? null : composeBuffer(visibleDocument)),
     [visibleDocument, composeBuffer],
@@ -252,7 +262,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
 
   return (
     <div
-      className="grid h-full place-items-center overflow-hidden bg-base-300 p-8 outline-none"
+      className="relative grid h-full place-items-center overflow-hidden bg-base-300 p-8 outline-none"
       style={{ cursor }}
       tabIndex={0}
       data-testid="canvas"
@@ -291,6 +301,12 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
               showResizeHandle={selectedElements.length === 1}
             />
           ))}
+          {canvasResize !== null && (
+            <CanvasResizeOverlay
+              previewSize={canvasResize.previewSize}
+              canvasRef={rootRef}
+            />
+          )}
           {marquee !== null && <MarqueeOverlay marquee={marquee} />}
           {textEditElement !== null && (
             <TextEditOverlay
@@ -309,6 +325,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
           )}
         </div>
       </div>
+      <CanvasResizeControl />
     </div>
   );
 }
