@@ -2,14 +2,36 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { Button } from "../ui/button/Button";
+import { ButtonLink } from "../ui/button-link/ButtonLink";
+import { ExternalTextLink } from "../ui/text-link/TextLink";
+import { AboutExample } from "../components/AboutExample/AboutExample";
+import { AboutCardGrid } from "../components/AboutCardGrid/AboutCardGrid";
+import { GithubIcon } from "../components/icons/GithubIcon";
+import { GITHUB_URL } from "../githubUrl";
 
 /**
- * Static project description page at /about.
- * Content is intentionally brief for now; layout is ready for rich text.
+ * The product's About page at /about: how to use it, where to use it, the
+ * fast-prototyping philosophy, copyable ASCII examples, how to contribute, and
+ * a single "Start now" CTA back to the wireframe list.
  */
 export function AboutPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const steps = [
+    t("about.howToUseStep1"),
+    t("about.howToUseStep2"),
+    t("about.howToUseStep3"),
+  ];
+  const uses = [
+    t("about.whereToUse1"),
+    t("about.whereToUse2"),
+    t("about.whereToUse3"),
+  ];
+  const philosophy = [
+    t("about.philosophyBody1"),
+    t("about.philosophyBody2"),
+    t("about.philosophyBody3"),
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-base-100">
@@ -38,29 +60,68 @@ export function AboutPage() {
           </header>
 
           <section className="space-y-3">
-            <h2 className="text-xl font-semibold">{t("about.whatIsTitle")}</h2>
-            <p className="leading-relaxed opacity-80">
-              {t("about.whatIsBody")}
-            </p>
-          </section>
-
-          <section className="space-y-3">
             <h2 className="text-xl font-semibold">
               {t("about.howToUseTitle")}
             </h2>
             <p className="leading-relaxed opacity-80">
-              {t("about.howToUseBody")}
+              {t("about.howToUseIntro")}
             </p>
+            <AboutCardGrid numbered items={steps} />
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-semibold">
-              {t("about.techStackTitle")}
+              {t("about.whereToUseTitle")}
+            </h2>
+            <AboutCardGrid items={uses} />
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold">
+              {t("about.philosophyTitle")}
+            </h2>
+            <AboutCardGrid items={philosophy} />
+          </section>
+
+          <section className="space-y-6">
+            <h2 className="text-xl font-semibold">
+              {t("about.examplesTitle")}
+            </h2>
+            <AboutExample
+              title={t("about.exampleGoogleTitle")}
+              ascii={t("about.exampleGoogleAscii")}
+            />
+            <AboutExample
+              title={t("about.exampleSpotifyTitle")}
+              ascii={t("about.exampleSpotifyAscii")}
+            />
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold">
+              {t("about.contributeTitle")}
             </h2>
             <p className="leading-relaxed opacity-80">
-              {t("about.techStackBody")}
+              {t("about.contributeBody")}
+            </p>
+            <p className="leading-relaxed">
+              <ExternalTextLink
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2"
+              >
+                <GithubIcon className="size-4" aria-hidden />
+                {t("about.contributeLink")}
+              </ExternalTextLink>
             </p>
           </section>
+
+          <div className="flex">
+            <ButtonLink to="/" variant="primary">
+              {t("about.startNow")}
+            </ButtonLink>
+          </div>
         </article>
       </main>
     </div>

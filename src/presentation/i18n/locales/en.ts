@@ -150,15 +150,49 @@ export const en = {
     title: "About wireframe2prompt",
     summary:
       "wireframe2prompt is an ASCII wireframe editor that exports your layouts as plain text, ready to feed to any LLM.",
-    whatIsTitle: "What is wireframe2prompt?",
-    whatIsBody:
-      "A browser-based tool for designing low-fidelity wireframes using a character grid. Drag ready-made components onto the canvas, adjust their position and size, and export the result as a raw ASCII string to use as a prompt.",
     howToUseTitle: "How to use",
-    howToUseBody:
-      'Create a wireframe from the home screen, pick tools from the floating palette at the bottom of the canvas, and click "COPY OUTPUT" to grab the ASCII string for your LLM prompt.',
-    techStackTitle: "Tech stack",
-    techStackBody:
-      "React 19 · TypeScript · Vite · Zustand · TanStack Router · daisyUI · Tailwind CSS · Vitest.",
+    howToUseIntro: "Three steps, no learning curve:",
+    howToUseStep1: "Select a component from the palette.",
+    howToUseStep2: "Enrich its position, size, text.",
+    howToUseStep3: "Export everything as plain text.",
+    whereToUseTitle: "Where to use it",
+    whereToUse1: "As a prompt for an AI to build the real UI.",
+    whereToUse2: "Inside a GitHub issue to describe a layout.",
+    whereToUse3: "As a comment in your code, next to the implementation.",
+    philosophyTitle: "Fast prototyping first",
+    philosophyBody1: "The point is speed, not fidelity.",
+    philosophyBody2:
+      "An ASCII wireframe communicates structure in seconds and lives anywhere text lives.",
+    philosophyBody3: "No tools or exports required.",
+    examplesTitle: "Examples",
+    exampleGoogleTitle: "Google landing page",
+    exampleGoogleAscii: `                          Google
+
++----------------------------------------------------------+
+| +---+                                        +---+ +---+ |
+| | L |                                        | V | | I | |
+| +---+                                        +---+ +---+ |
++----------------------------------------------------------+
+           +---------------+  +-------------------+
+           | Google Search |  | I'm Feeling Lucky |
+           +---------------+  +-------------------+`,
+    exampleSpotifyTitle: "Spotify playlist card",
+    exampleSpotifyAscii: `+-----------------------------+
+| Create your first playlist. |
+|                             |
+| It's easy, we'll help you.  |
+|                             |
+| +-----------------+         |
+| | Create playlist |         |
+| +-----------------+         |
++-----------------------------+`,
+    copyExample: "Copy",
+    copied: "Copied!",
+    contributeTitle: "Contribute",
+    contributeBody:
+      "wireframe2prompt is open source. New languages, new components and tools, bug fixes, features, every contribution is welcome.",
+    contributeLink: "Open the repository on GitHub",
+    startNow: "Start now",
   },
 } as const;
 

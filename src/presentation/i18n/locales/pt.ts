@@ -150,14 +150,48 @@ export const pt: LocaleDictionary = {
     title: "Sobre o wireframe2prompt",
     summary:
       "O wireframe2prompt é um editor de wireframes em ASCII que exporta seus layouts como texto puro, pronto para ser usado em qualquer LLM.",
-    whatIsTitle: "O que é o wireframe2prompt?",
-    whatIsBody:
-      "Uma ferramenta web para criar wireframes de baixa fidelidade em uma grade de caracteres. Arraste componentes prontos para o canvas, ajuste posição e tamanho, e exporte o resultado como uma string ASCII para usar como prompt.",
     howToUseTitle: "Como usar",
-    howToUseBody:
-      'Crie um wireframe na tela inicial, escolha ferramentas na paleta flutuante na parte inferior do canvas e clique em "COPIAR RESULTADO" para copiar a string ASCII para o seu prompt.',
-    techStackTitle: "Tecnologias",
-    techStackBody:
-      "React 19 · TypeScript · Vite · Zustand · TanStack Router · daisyUI · Tailwind CSS · Vitest.",
+    howToUseIntro: "Três passos, sem curva de aprendizado:",
+    howToUseStep1: "Selecione um componente na paleta.",
+    howToUseStep2: "Enriqueça sua posição, tamanho, texto.",
+    howToUseStep3: "Exporte tudo como texto puro.",
+    whereToUseTitle: "Onde usar",
+    whereToUse1: "Como prompt para uma IA construir a UI de verdade.",
+    whereToUse2: "Dentro de uma issue do GitHub para descrever um layout.",
+    whereToUse3: "Como comentário no seu código, ao lado da implementação.",
+    philosophyTitle: "Prototipagem rápida em primeiro lugar",
+    philosophyBody1: "O foco é velocidade, não fidelidade.",
+    philosophyBody2:
+      "Um wireframe ASCII comunica a estrutura em segundos e vive em qualquer lugar onde texto vive.",
+    philosophyBody3: "Sem ferramentas nem exportações.",
+    examplesTitle: "Exemplos",
+    exampleGoogleTitle: "Página inicial do Google",
+    exampleGoogleAscii: `                          Google
+
++----------------------------------------------------------+
+| +---+                                        +---+ +---+ |
+| | L |                                        | V | | I | |
+| +---+                                        +---+ +---+ |
++----------------------------------------------------------+
+           +---------------+  +-------------------+
+           | Google Search |  | I'm Feeling Lucky |
+           +---------------+  +-------------------+`,
+    exampleSpotifyTitle: "Card de playlist do Spotify",
+    exampleSpotifyAscii: `+-----------------------------+
+| Crie sua primeira playlist. |
+|                             |
+| É fácil, vamos te ajudar.   |
+|                             |
+| +----------------+          |
+| | Criar playlist |          |
+| +----------------+          |
++-----------------------------+`,
+    copyExample: "Copiar",
+    copied: "Copiado!",
+    contributeTitle: "Contribua",
+    contributeBody:
+      "O wireframe2prompt é open source. Novos idiomas, novos componentes e ferramentas, correções, funcionalidades, toda contribuição é bem-vinda.",
+    contributeLink: "Abrir o repositório no GitHub",
+    startNow: "Começar agora",
   },
 };

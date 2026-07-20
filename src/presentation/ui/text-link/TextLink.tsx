@@ -33,3 +33,13 @@ const CreatedTextLink = createLink(TextLinkAnchor);
 export const TextLink: LinkComponent<typeof TextLinkAnchor> = (props) => (
   <CreatedTextLink {...props} />
 );
+
+/**
+ * An external inline link (a plain anchor, not router-owned) with the same
+ * styling as {@link TextLink} — for URLs outside the app, e.g. the GitHub repo.
+ *
+ * @example <ExternalTextLink href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</ExternalTextLink>
+ */
+export function ExternalTextLink(props: TextLinkAnchorProps) {
+  return <TextLinkAnchor {...props} />;
+}

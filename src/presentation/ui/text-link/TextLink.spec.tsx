@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
-import { TextLink } from "./TextLink";
+import { ExternalTextLink, TextLink } from "./TextLink";
 
 vi.mock("@tanstack/react-router", () => ({
   createLink:
@@ -32,5 +32,16 @@ describe("TextLink", () => {
     expect(screen.getByRole("link", { name: "Open" })).toHaveClass(
       "list-col-grow",
     );
+  });
+
+  test("ExternalTextLink is a plain styled anchor to an external href", () => {
+    render(
+      <ExternalTextLink href="https://example.com" target="_blank">
+        Repo
+      </ExternalTextLink>,
+    );
+    const link = screen.getByRole("link", { name: "Repo" });
+    expect(link).toHaveClass("link", "link-hover");
+    expect(link).toHaveAttribute("href", "https://example.com");
   });
 });

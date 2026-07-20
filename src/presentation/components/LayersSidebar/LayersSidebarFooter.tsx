@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import {
-  Code,
   Info,
   Languages,
   Monitor,
@@ -8,15 +7,15 @@ import {
   Sun,
   type LucideIcon,
 } from "lucide-react";
+import { GithubIcon } from "../icons/GithubIcon";
 import { ButtonLink } from "../../ui/button-link/ButtonLink";
 import { Button } from "../../ui/button/Button";
 import { Dropdown, DropdownItem } from "../../ui/dropdown/Dropdown";
 import { useTheme } from "../../hooks/useTheme";
 import { useLanguage } from "../../hooks/useLanguage";
 import { SUPPORTED_LANGUAGES } from "../../i18n/i18n";
+import { GITHUB_URL } from "../../githubUrl";
 import type { ThemePreference } from "../../theme/theme";
-
-const GITHUB_URL = "https://github.com/joaoarieira/wireframe2prompt";
 
 /** The theme options in display order, and the glyph for each. */
 const THEME_PREFERENCES: ThemePreference[] = ["system", "light", "dark"];
@@ -53,7 +52,7 @@ export function LayersSidebarFooter() {
         title={t("sidebar.github")}
         onClick={() => window.open(GITHUB_URL, "_blank", "noopener,noreferrer")}
       >
-        <Code className="size-4" aria-hidden />
+        <GithubIcon className="size-4" aria-hidden />
       </Button>
       <Dropdown
         trigger={<ActiveThemeIcon className="size-4" aria-hidden />}
