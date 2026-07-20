@@ -21,7 +21,8 @@ export const en = {
   toolbar: {
     undo: "Undo",
     redo: "Redo",
-    save: "Save",
+    saving: "Saving",
+    saved: "Saved",
   },
   tools: {
     select: "Select",

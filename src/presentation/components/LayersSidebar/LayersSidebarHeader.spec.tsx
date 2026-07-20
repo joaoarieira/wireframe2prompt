@@ -19,6 +19,7 @@ afterEach(() => {
   editorStore.setState({
     canUndo: false,
     canRedo: false,
+    saveStatus: "hidden",
   });
   vi.restoreAllMocks();
 });
@@ -61,12 +62,13 @@ describe("LayersSidebarHeader", () => {
     expect(redo).toHaveBeenCalledOnce();
   });
 
-  test("clicking save calls saveCurrentDocument", () => {
-    const saveCurrentDocument = vi.fn().mockResolvedValue(undefined);
-    editorStore.setState({ saveCurrentDocument });
+  test("has no manual save button — only the autosave indicator", () => {
+    editorStore.setState({ saveStatus: "saved" });
     render(<LayersSidebarHeader />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(saveCurrentDocument).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByRole("button", { name: "Save" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Saved")).toBeInTheDocument();
   });
 });

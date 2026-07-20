@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  AUTOSAVE_IDLE_MS,
+  AUTOSAVE_SAVING_DISPLAY_MS,
   createEditorStore,
   previewedDocument,
   selectedElementOf,
@@ -115,6 +117,84 @@ describe("documents", () => {
     expect(() => store.getState().exportAscii()).toThrow(
       'cannot export ASCII: no document is open (expected documentStatus "ready")',
     );
+  });
+});
+
+describe("autosave", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  test("a fresh document keeps the indicator hidden until the idle time passes", async () => {
+    await openFixtureDoc();
+    expect(store.getState().saveStatus).toBe("hidden");
+
+    store.getState().placeElement("box", cell(0, 0));
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_IDLE_MS - 1);
+
+    expect(store.getState().saveStatus).toBe("hidden");
+  });
+
+  test("5s after the last edit it saves, showing saving for 2s and then saved", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("box", cell(0, 0));
+
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_IDLE_MS);
+    expect(store.getState().saveStatus).toBe("saving");
+
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_SAVING_DISPLAY_MS - 1);
+    expect(store.getState().saveStatus).toBe("saving");
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(store.getState().saveStatus).toBe("saved");
+    const reloaded = await container.repository.load("doc1");
+    expect(reloaded?.elements).toHaveLength(1);
+  });
+
+  test("an edit during the countdown restarts the 5s idle timer", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("box", cell(0, 0));
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_IDLE_MS - 1);
+
+    store.getState().placeElement("box", cell(5, 5));
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_IDLE_MS - 1);
+    expect(store.getState().saveStatus).toBe("hidden");
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(store.getState().saveStatus).toBe("saving");
+  });
+
+  test("opening a document cancels the pending autosave and hides the indicator", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().placeElement("box", cell(0, 0));
+
+    await store.getState().openDocument("doc1");
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_IDLE_MS * 2);
+
+    expect(store.getState().saveStatus).toBe("hidden");
+    const reloaded = await container.repository.load("doc1");
+    expect(reloaded?.elements).toHaveLength(1);
+  });
+
+  test("a failed save hides the indicator instead of showing saved", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("box", cell(0, 0));
+    vi.spyOn(container.saveDocument, "execute").mockRejectedValue(
+      new Error("storage unavailable"),
+    );
+
+    // The rejection short-circuits Promise.all, so "saving" flips straight
+    // back to "hidden" without waiting out the 2s display window.
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_IDLE_MS);
+    expect(store.getState().saveStatus).toBe("hidden");
+
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_SAVING_DISPLAY_MS);
+    expect(store.getState().saveStatus).toBe("hidden");
   });
 });
 

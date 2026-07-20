@@ -14,4 +14,9 @@ describe("Spinner", () => {
     render(<Spinner size="lg" />);
     expect(screen.getByRole("status")).toHaveClass("loading-lg");
   });
+
+  test("adds loading-xs for the extra-small size", () => {
+    render(<Spinner size="xs" />);
+    expect(screen.getByRole("status")).toHaveClass("loading-xs");
+  });
 });

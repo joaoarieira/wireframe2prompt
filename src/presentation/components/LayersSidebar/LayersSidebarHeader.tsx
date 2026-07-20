@@ -1,13 +1,15 @@
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Redo, Save, Undo } from "lucide-react";
+import { ArrowLeft, Redo, Undo } from "lucide-react";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { ButtonLink } from "../../ui/button-link/ButtonLink";
 import { Button } from "../../ui/button/Button";
 import { ButtonGroup } from "../../ui/button-group/ButtonGroup";
+import { SaveStatusIndicator } from "./SaveStatusIndicator";
 
 /**
- * Top zone of the sidebar: back navigation + undo / redo / save.
- * Replaces the app-level `<header>` and `<Toolbar>` removed from EditorPage.
+ * Top zone of the sidebar: back navigation + undo / redo + the autosave
+ * status. Replaces the app-level `<header>` and `<Toolbar>` removed from
+ * EditorPage.
  */
 export function LayersSidebarHeader() {
   const { t } = useTranslation();
@@ -15,7 +17,6 @@ export function LayersSidebarHeader() {
   const canRedo = useEditorStore((s) => s.canRedo);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
-  const saveCurrentDocument = useEditorStore((s) => s.saveCurrentDocument);
 
   return (
     <div className="flex shrink-0 items-center gap-1 border-b border-base-300 px-1 py-1">
@@ -28,6 +29,7 @@ export function LayersSidebarHeader() {
       >
         <ArrowLeft className="size-4" aria-hidden />
       </ButtonLink>
+      <SaveStatusIndicator />
       <div className="flex-1" />
       <ButtonGroup>
         <Button
@@ -51,15 +53,6 @@ export function LayersSidebarHeader() {
           <Redo className="size-4" aria-hidden />
         </Button>
       </ButtonGroup>
-      <Button
-        size="sm"
-        variant="neutral"
-        aria-label={t("toolbar.save")}
-        title={t("toolbar.save")}
-        onClick={() => void saveCurrentDocument()}
-      >
-        <Save className="size-4" aria-hidden />
-      </Button>
     </div>
   );
 }

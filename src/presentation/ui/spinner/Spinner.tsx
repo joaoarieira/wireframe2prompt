@@ -1,9 +1,10 @@
 import type { ComponentProps } from "react";
 import { cx } from "../class-names/classNames";
 
-type SpinnerSize = "md" | "lg";
+type SpinnerSize = "xs" | "md" | "lg";
 
 const SIZE_CLASSES: Record<SpinnerSize, string> = {
+  xs: "loading-xs",
   md: "",
   lg: "loading-lg",
 };

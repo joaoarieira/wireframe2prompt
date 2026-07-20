@@ -33,6 +33,14 @@ const DEFAULT_GRID_ROWS = 24;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 
+/** Idle time after the last edit before the autosave runs. */
+export const AUTOSAVE_IDLE_MS = 2000;
+/**
+ * Minimum time the "saving" status stays visible. The actual save is nearly
+ * instant; holding the indicator briefly reassures the user it happened.
+ */
+export const AUTOSAVE_SAVING_DISPLAY_MS = 1000;
+
 const clampZoom = (zoom: number) =>
   Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
@@ -108,6 +116,13 @@ export interface ContextMenuState {
 
 export type DocumentStatus = "idle" | "loading" | "ready" | "missing";
 
+/**
+ * Autosave indicator lifecycle: "hidden" until the first edit settles, then
+ * "saving" (held for at least {@link AUTOSAVE_SAVING_DISPLAY_MS}) and finally
+ * "saved". A failed save returns to "hidden".
+ */
+export type SaveStatus = "hidden" | "saving" | "saved";
+
 export interface EditorState {
   document: WireframeDocument | null;
   documentStatus: DocumentStatus;
@@ -122,6 +137,8 @@ export interface EditorState {
   viewport: Viewport;
   canUndo: boolean;
   canRedo: boolean;
+  /** What the autosave indicator shows; see {@link SaveStatus}. */
+  saveStatus: SaveStatus;
   /**
    * Element whose text is being typed right now. While set, single-key
    * shortcuts (Delete, arrows, future V/H tool keys) are suspended so the
@@ -246,6 +263,7 @@ const initialState: EditorState = {
   viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
   canUndo: false,
   canRedo: false,
+  saveStatus: "hidden",
   textEditingElementId: null,
   canvasEditingElementId: null,
   inspectorOpen: false,
@@ -280,13 +298,52 @@ export function createEditorStore(
       return document;
     };
 
-    /** Applies a mutated document and refreshes the undo/redo button state. */
+    let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const cancelPendingAutosave = (): void => {
+      if (autosaveTimer !== null) {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+      }
+    };
+
+    /**
+     * Saves the open document while holding "saving" visible for at least
+     * {@link AUTOSAVE_SAVING_DISPLAY_MS}, then flips the indicator to "saved".
+     */
+    const runAutosave = async (): Promise<void> => {
+      set({ saveStatus: "saving" });
+      const minimumDisplay = new Promise<void>((resolve) => {
+        setTimeout(resolve, AUTOSAVE_SAVING_DISPLAY_MS);
+      });
+      try {
+        await Promise.all([get().saveCurrentDocument(), minimumDisplay]);
+        set({ saveStatus: "saved" });
+      } catch {
+        set({ saveStatus: "hidden" });
+      }
+    };
+
+    /** (Re)starts the idle countdown; every edit pushes the save back 5s. */
+    const scheduleAutosave = (): void => {
+      cancelPendingAutosave();
+      autosaveTimer = setTimeout(() => {
+        autosaveTimer = null;
+        void runAutosave();
+      }, AUTOSAVE_IDLE_MS);
+    };
+
+    /**
+     * Applies a mutated document, refreshes the undo/redo button state and
+     * restarts the autosave idle countdown.
+     */
     const commitDocument = (document: WireframeDocument): void => {
       set({
         document,
         canUndo: container.history.canUndo,
         canRedo: container.history.canRedo,
       });
+      scheduleAutosave();
     };
 
     const toolContext = (): ToolContext => ({
@@ -337,9 +394,11 @@ export function createEditorStore(
       },
 
       openDocument: async (documentId) => {
+        cancelPendingAutosave();
         set({
           documentStatus: "loading",
           document: null,
+          saveStatus: "hidden",
           selectedElementIds: [],
           drag: null,
           marquee: null,

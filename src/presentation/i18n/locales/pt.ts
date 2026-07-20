@@ -19,7 +19,8 @@ export const pt: LocaleDictionary = {
   toolbar: {
     undo: "Desfazer",
     redo: "Refazer",
-    save: "Salvar",
+    saving: "Salvando",
+    saved: "Salvo",
   },
   tools: {
     select: "Selecionar",
