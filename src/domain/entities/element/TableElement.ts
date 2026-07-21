@@ -23,6 +23,10 @@ export class TableElement extends Element {
   public readonly columns: number;
   public readonly rows: number;
 
+  get hasBorder(): boolean {
+    return true;
+  }
+
   private constructor(base: ElementBaseProps, columns: number, rows: number) {
     super(base);
     this.columns = columns;

@@ -33,22 +33,20 @@ export function CanvasResizeControl() {
 
   if (canvasResize === null) {
     return (
-      <div className="absolute right-2 bottom-2 z-10">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="font-mono tabular-nums"
-          aria-label={t("canvas.resizeCanvas")}
-          onClick={beginCanvasResize}
-        >
-          {formatGridSize(gridSize)}
-        </Button>
-      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="font-mono tabular-nums"
+        aria-label={t("canvas.resizeCanvas")}
+        onClick={beginCanvasResize}
+      >
+        {formatGridSize(gridSize)}
+      </Button>
     );
   }
 
   return (
-    <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1">
+    <div className="flex items-center gap-1">
       <span
         className="font-mono text-sm tabular-nums"
         data-testid="canvas-size-info"

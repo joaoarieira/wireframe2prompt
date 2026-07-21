@@ -6,7 +6,10 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-import { HORIZONTAL as DASH, VERTICAL as PIPE } from "./boxDrawing";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
+
+// Tab dividers/underline are always unicode, independent of any border style.
+const { horizontal: DASH, vertical: PIPE } = BorderStyle.square();
 
 export class TabsGlyphMapper implements IGlyphMapper {
   readonly kind = "tabs";

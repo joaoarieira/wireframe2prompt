@@ -13,6 +13,8 @@ import type { LineOrientation } from "../../../domain/entities/element/LineEleme
 import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import type { FieldName } from "../../../domain/entities/element/FieldElement";
 import type { CharBuffer } from "../../../domain/value-objects/char-buffer/CharBuffer";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
+import type { BorderStyleName } from "../../../domain/value-objects/border-style/BorderStyle";
 import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
 import { buildElement } from "../element-factory/elementFactory";
@@ -94,6 +96,8 @@ export type DragState =
       elementId: string;
       startCell: Position;
       lastCell: Position;
+      /** Default border captured when the gesture began; undefined → square. */
+      borderStyle?: BorderStyle;
     };
 
 export interface MarqueeState {
@@ -153,6 +157,8 @@ export interface PastePreviewState {
 export interface PlacementHoverState {
   kind: PlaceableKind;
   cell: Position;
+  /** Default border to preview on the ghost; undefined → square. */
+  borderStyle?: BorderStyle;
 }
 
 export interface ContextMenuState {
@@ -227,6 +233,8 @@ export interface EditorState {
   contextMenu: ContextMenuState | null;
   /** Active canvas-resize session (size selector open), or null when idle. */
   canvasResize: CanvasResizeState | null;
+  /** Border style applied to newly placed bordered elements. Default "square". */
+  defaultBorderStyleName: BorderStyleName;
 }
 
 export interface EditorActions {
@@ -248,6 +256,7 @@ export interface EditorActions {
   setActiveTool(toolId: string): void;
   listTools(): readonly CanvasTool[];
   placeElement(kind: PlaceableKind, cell: Position): void;
+  setDefaultBorderStyleName(name: BorderStyleName): void;
   beginPlacement(kind: PlaceableKind, cell: Position): void;
   previewPlacementHover(kind: PlaceableKind, cell: Position): void;
   clearPlacementHover(): void;
@@ -347,6 +356,7 @@ const initialState: EditorState = {
   placementHover: null,
   contextMenu: null,
   canvasResize: null,
+  defaultBorderStyleName: "square",
 };
 
 /**
@@ -642,13 +652,16 @@ export function createEditorStore(
 
       listTools: () => toolRegistry.list(),
 
+      setDefaultBorderStyleName: (name) =>
+        set({ defaultBorderStyleName: name }),
+
       placeElement: (kind, cell) => {
         const document = requireDocument("place an element");
-        const built = buildElement(kind, {
-          id: generateId(),
-          position: cell,
-          zIndex: 0,
-        });
+        const built = buildElement(
+          kind,
+          { id: generateId(), position: cell, zIndex: 0 },
+          BorderStyle.named(get().defaultBorderStyleName),
+        );
         const element = built.withZIndex(
           zIndexForPlacement(document, built.position, built.size),
         );
@@ -677,6 +690,7 @@ export function createEditorStore(
             elementId: generateId(),
             startCell: cell,
             lastCell: cell,
+            borderStyle: BorderStyle.named(get().defaultBorderStyleName),
           },
         });
       },
@@ -696,7 +710,13 @@ export function createEditorStore(
         ) {
           return;
         }
-        set({ placementHover: { kind, cell } });
+        set({
+          placementHover: {
+            kind,
+            cell,
+            borderStyle: BorderStyle.named(get().defaultBorderStyleName),
+          },
+        });
       },
 
       clearPlacementHover: () => {
@@ -1552,11 +1572,15 @@ function applyPlacementHoverGhost(
   if (placementHover === null) {
     return document;
   }
-  const ghost = buildElement(placementHover.kind, {
-    id: PLACEMENT_PREVIEW_ID,
-    position: placementHover.cell,
-    zIndex: topZIndex(document) + 1,
-  });
+  const ghost = buildElement(
+    placementHover.kind,
+    {
+      id: PLACEMENT_PREVIEW_ID,
+      position: placementHover.cell,
+      zIndex: topZIndex(document) + 1,
+    },
+    placementHover.borderStyle,
+  );
   try {
     return document.addElement(ghost);
   } catch {
@@ -1638,11 +1662,11 @@ function resizeOutcome(
  * the anchor grows the element toward the mouse instead of clamping at 1×1.
  */
 function placedElement(drag: Extract<DragState, { mode: "place" }>): Element {
-  const element = buildElement(drag.kind, {
-    id: drag.elementId,
-    position: drag.startCell,
-    zIndex: 0,
-  });
+  const element = buildElement(
+    drag.kind,
+    { id: drag.elementId, position: drag.startCell, zIndex: 0 },
+    drag.borderStyle,
+  );
   if (drag.lastCell.equals(drag.startCell)) {
     return element;
   }

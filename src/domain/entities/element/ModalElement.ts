@@ -9,6 +9,10 @@ export class ModalElement extends Element {
   readonly kind = "modal";
   public readonly title: string | null;
 
+  get hasBorder(): boolean {
+    return true;
+  }
+
   private constructor(base: ElementBaseProps, title: string | null) {
     super(base);
     this.title = title;

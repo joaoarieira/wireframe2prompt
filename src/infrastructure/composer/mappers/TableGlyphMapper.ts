@@ -6,19 +6,7 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { TableElement } from "../../../domain/entities/element/TableElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-import {
-  HORIZONTAL as DASH,
-  VERTICAL as PIPE,
-  TOP_LEFT,
-  TOP_RIGHT,
-  BOTTOM_LEFT,
-  BOTTOM_RIGHT,
-  TEE_RIGHT,
-  TEE_LEFT,
-  TEE_DOWN,
-  TEE_UP,
-  CROSS,
-} from "./boxDrawing";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 
 interface Bounds {
   left: number;
@@ -28,23 +16,29 @@ interface Bounds {
 }
 
 /**
- * Picks the box-drawing glyph for an intersection: corners for the four
- * outer angles, tees along each edge, and a cross in the interior.
+ * Picks the border glyph for an intersection: corners for the four outer
+ * angles, tees along each edge, and a cross in the interior — all taken from
+ * the element's border style so square/rounded/cross render consistently.
  */
-function intersectionGlyph(col: number, row: number, b: Bounds): CellChar {
+function intersectionGlyph(
+  col: number,
+  row: number,
+  b: Bounds,
+  style: BorderStyle,
+): CellChar {
   const atLeft = col === b.left;
   const atRight = col === b.right;
   const atTop = row === b.top;
   const atBottom = row === b.bottom;
-  if (atTop && atLeft) return TOP_LEFT;
-  if (atTop && atRight) return TOP_RIGHT;
-  if (atBottom && atLeft) return BOTTOM_LEFT;
-  if (atBottom && atRight) return BOTTOM_RIGHT;
-  if (atTop) return TEE_DOWN;
-  if (atBottom) return TEE_UP;
-  if (atLeft) return TEE_RIGHT;
-  if (atRight) return TEE_LEFT;
-  return CROSS;
+  if (atTop && atLeft) return style.topLeft;
+  if (atTop && atRight) return style.topRight;
+  if (atBottom && atLeft) return style.bottomLeft;
+  if (atBottom && atRight) return style.bottomRight;
+  if (atTop) return style.teeDown;
+  if (atBottom) return style.teeUp;
+  if (atLeft) return style.teeRight;
+  if (atRight) return style.teeLeft;
+  return style.cross;
 }
 
 /**
@@ -77,6 +71,7 @@ export class TableGlyphMapper implements IGlyphMapper {
     const table = element as TableElement;
     const { col: x, row: y } = table.position;
     const { width, height } = table.size;
+    const style = table.borderStyle;
     const cells: GlyphCell[] = [];
 
     const colLines = computeLines(x, width, table.columns);
@@ -93,12 +88,18 @@ export class TableGlyphMapper implements IGlyphMapper {
         const isCol = colLines.has(col);
         const isRow = rowLines.has(row);
         if (isCol && isRow) {
-          const char = intersectionGlyph(col, row, bounds);
+          const char = intersectionGlyph(col, row, bounds, style);
           cells.push({ position: Position.create(col, row), char });
         } else if (isRow) {
-          cells.push({ position: Position.create(col, row), char: DASH });
+          cells.push({
+            position: Position.create(col, row),
+            char: style.horizontal,
+          });
         } else if (isCol) {
-          cells.push({ position: Position.create(col, row), char: PIPE });
+          cells.push({
+            position: Position.create(col, row),
+            char: style.vertical,
+          });
         }
       }
     }

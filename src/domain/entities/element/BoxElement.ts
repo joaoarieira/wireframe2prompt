@@ -1,42 +1,23 @@
 import { Element } from "./Element";
 import type { ElementBaseProps } from "./Element";
-import { BorderStyle } from "../../value-objects/border-style/BorderStyle";
 
-export interface BoxElementProps extends ElementBaseProps {
-  borderStyle?: BorderStyle;
-}
-
+/** A plain bordered rectangle. Its only styling is the shared border style. */
 export class BoxElement extends Element {
   readonly kind = "box";
-  public readonly borderStyle: BorderStyle;
 
-  private constructor(base: ElementBaseProps, borderStyle: BorderStyle) {
-    super(base);
-    this.borderStyle = borderStyle;
+  get hasBorder(): boolean {
+    return true;
   }
 
-  static create(props: BoxElementProps): BoxElement {
-    const { borderStyle, ...base } = props;
-    return new BoxElement(base, borderStyle ?? BorderStyle.unicode());
+  static create(props: ElementBaseProps): BoxElement {
+    return new BoxElement(props);
   }
 
   protected cloneWith(overrides: Partial<ElementBaseProps>): BoxElement {
-    return new BoxElement(
-      { ...this.baseProps(), ...overrides },
-      this.borderStyle,
-    );
+    return new BoxElement({ ...this.baseProps(), ...overrides });
   }
 
-  withBorderStyle(borderStyle: BorderStyle): BoxElement {
-    return new BoxElement(this.baseProps(), borderStyle);
-  }
-
-  protected withKindProps(
-    patch: Readonly<Record<string, unknown>>,
-  ): BoxElement {
-    if (patch.borderStyle instanceof BorderStyle) {
-      return this.withBorderStyle(patch.borderStyle);
-    }
+  protected withKindProps(): BoxElement {
     return this;
   }
 }

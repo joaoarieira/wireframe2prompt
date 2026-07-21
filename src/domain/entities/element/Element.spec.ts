@@ -17,20 +17,13 @@ const base = {
   layerId: null,
 };
 
-const heavy = BorderStyle.create({
-  topLeft: "#",
-  topRight: "#",
-  bottomLeft: "#",
-  bottomRight: "#",
-  horizontal: "=",
-  vertical: "#",
-});
+const heavy = BorderStyle.cross();
 
 describe("Element", () => {
-  test("BoxElement defaults to the Unicode border style", () => {
+  test("BoxElement defaults to the square border style", () => {
     const box = BoxElement.create(base);
     expect(box.kind).toBe("box");
-    expect(box.borderStyle.equals(BorderStyle.unicode())).toBe(true);
+    expect(box.borderStyle.equals(BorderStyle.square())).toBe(true);
   });
 
   test("must reject a non-positive size (invariant lives in Size)", () => {
@@ -168,7 +161,7 @@ describe("Element", () => {
     const styled = box.withBorderStyle(heavy);
     expect(styled.borderStyle.equals(heavy)).toBe(true);
     expect(styled).not.toBe(box);
-    expect(box.borderStyle.equals(BorderStyle.unicode())).toBe(true);
+    expect(box.borderStyle.equals(BorderStyle.square())).toBe(true);
   });
 
   test("BoxElement withProps updates the border style and ignores other keys", () => {

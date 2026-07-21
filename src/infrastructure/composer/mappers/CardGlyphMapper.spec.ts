@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { CardGlyphMapper } from "./CardGlyphMapper";
 import { CardElement } from "../../../domain/entities/element/CardElement";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import { GlyphMapperRegistry } from "../GlyphMapperRegistry";
 import { ZIndexComposer } from "../ZIndexComposer";
 import { WireframeDocument } from "../../../domain/aggregates/wireframe-document/WireframeDocument";
@@ -70,6 +71,28 @@ describe("CardGlyphMapper (golden tests)", () => {
     const result = composer.compose(doc(8, 3, card(8, 3, "Hi")));
     expect(result.toString()).toBe(
       ["┌──────┐", "│ Hi   │", "└──────┘"].join("\n"),
+    );
+  });
+
+  test("rounded border style draws arc corners; the rest stays unicode", () => {
+    const rounded = CardElement.create({
+      id: "c",
+      position: Position.create(0, 0),
+      size: Size.create(10, 6),
+      zIndex: 0,
+      layerId: null,
+      title: "Card",
+      borderStyle: BorderStyle.rounded(),
+    });
+    expect(composer.compose(doc(10, 6, rounded)).toString()).toBe(
+      [
+        "╭────────╮",
+        "│ Card   │",
+        "├────────┤",
+        "│        │",
+        "│        │",
+        "╰────────╯",
+      ].join("\n"),
     );
   });
 });

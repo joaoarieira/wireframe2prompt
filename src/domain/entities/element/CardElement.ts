@@ -9,6 +9,10 @@ export class CardElement extends Element {
   readonly kind = "card";
   public readonly title: string | null;
 
+  get hasBorder(): boolean {
+    return true;
+  }
+
   private constructor(base: ElementBaseProps, title: string | null) {
     super(base);
     this.title = title;

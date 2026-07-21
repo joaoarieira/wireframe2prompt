@@ -71,6 +71,10 @@ export abstract class FieldElement extends Element {
     this.hint = hint;
   }
 
+  get hasBorder(): boolean {
+    return true;
+  }
+
   /** True when the field row reserves room for a `▼` dropdown indicator. */
   abstract get showsArrow(): boolean;
 

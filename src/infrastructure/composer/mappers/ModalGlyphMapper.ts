@@ -6,16 +6,6 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-import {
-  HORIZONTAL as DASH,
-  VERTICAL as PIPE,
-  TOP_LEFT,
-  TOP_RIGHT,
-  BOTTOM_LEFT,
-  BOTTOM_RIGHT,
-  TEE_RIGHT,
-  TEE_LEFT,
-} from "./boxDrawing";
 
 const X = CellChar.create("X");
 
@@ -26,6 +16,7 @@ export class ModalGlyphMapper implements IGlyphMapper {
     const modal = element as ModalElement;
     const { col: x, row: y } = modal.position;
     const { width, height } = modal.size;
+    const style = modal.borderStyle;
     const cells: GlyphCell[] = [];
 
     const put = (col: number, row: number, char: CellChar) => {
@@ -36,21 +27,21 @@ export class ModalGlyphMapper implements IGlyphMapper {
     const bottom = y + height - 1;
 
     // Corners
-    put(x, y, TOP_LEFT);
-    put(right, y, TOP_RIGHT);
-    put(x, bottom, BOTTOM_LEFT);
-    put(right, bottom, BOTTOM_RIGHT);
+    put(x, y, style.topLeft);
+    put(right, y, style.topRight);
+    put(x, bottom, style.bottomLeft);
+    put(right, bottom, style.bottomRight);
 
     // Top and bottom edges
     for (let col = x + 1; col < right; col++) {
-      put(col, y, DASH);
-      put(col, bottom, DASH);
+      put(col, y, style.horizontal);
+      put(col, bottom, style.horizontal);
     }
 
     // Left and right edges
     for (let row = y + 1; row < bottom; row++) {
-      put(x, row, PIPE);
-      put(right, row, PIPE);
+      put(x, row, style.vertical);
+      put(right, row, style.vertical);
     }
 
     // Title (at y+1, starting at x+2), truncated to max(0, width-6)
@@ -69,10 +60,10 @@ export class ModalGlyphMapper implements IGlyphMapper {
 
     // Separator at y+2
     if (height >= 4) {
-      put(x, y + 2, TEE_RIGHT);
-      put(right, y + 2, TEE_LEFT);
+      put(x, y + 2, style.teeRight);
+      put(right, y + 2, style.teeLeft);
       for (let col = x + 1; col < right; col++) {
-        put(col, y + 2, DASH);
+        put(col, y + 2, style.horizontal);
       }
     }
 

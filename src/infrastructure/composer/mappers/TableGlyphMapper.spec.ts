@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { TableGlyphMapper } from "./TableGlyphMapper";
 import { TableElement } from "../../../domain/entities/element/TableElement";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import { GlyphMapperRegistry } from "../GlyphMapperRegistry";
 import { ZIndexComposer } from "../ZIndexComposer";
 import { WireframeDocument } from "../../../domain/aggregates/wireframe-document/WireframeDocument";
@@ -45,6 +46,22 @@ describe("TableGlyphMapper (golden tests)", () => {
     const result = composer.compose(doc(8, 5, table(8, 5, 2, 2)));
     expect(result.toString()).toBe(
       ["┌───┬──┐", "│   │  │", "├───┼──┤", "│   │  │", "└───┴──┘"].join("\n"),
+    );
+  });
+
+  test("cross border style renders every junction as '+'", () => {
+    const crossTable = TableElement.create({
+      id: "t",
+      position: Position.create(0, 0),
+      size: Size.create(7, 5),
+      zIndex: 0,
+      layerId: null,
+      columns: 2,
+      rows: 2,
+      borderStyle: BorderStyle.cross(),
+    });
+    expect(composer.compose(doc(7, 5, crossTable)).toString()).toBe(
+      ["+--+--+", "|  |  |", "+--+--+", "|  |  |", "+--+--+"].join("\n"),
     );
   });
 

@@ -5,7 +5,10 @@ import type {
 import type { Element } from "../../../domain/entities/element/Element";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { Position } from "../../../domain/entities/position/Position";
-import { HORIZONTAL, VERTICAL } from "./boxDrawing";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
+
+// Lines are always unicode strokes, independent of any element border style.
+const { horizontal: HORIZONTAL, vertical: VERTICAL } = BorderStyle.square();
 
 export class LineGlyphMapper implements IGlyphMapper {
   readonly kind = "line";

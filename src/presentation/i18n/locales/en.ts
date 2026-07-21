@@ -84,6 +84,13 @@ export const en = {
     hintField: "Hint text",
     fieldEditHint:
       "Double-click the label, placeholder, or hint on the canvas to edit it.",
+    borderStyle: "Border style",
+    borderStyleField: "Element border style",
+  },
+  borderStyle: {
+    square: "Square",
+    rounded: "Rounded",
+    cross: "Cross",
   },
   layers: {
     empty: "No elements yet.",
@@ -95,6 +102,7 @@ export const en = {
     resizeCanvas: "Resize canvas",
     saveSize: "Save canvas size",
     cancelResize: "Cancel canvas resize",
+    defaultBorder: "Default border",
   },
   elementKind: {
     box: "box",

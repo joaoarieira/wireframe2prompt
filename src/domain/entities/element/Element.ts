@@ -1,5 +1,6 @@
 import type { Position } from "../position/Position";
 import type { Size } from "../size/Size";
+import { BorderStyle } from "../../value-objects/border-style/BorderStyle";
 
 export interface ElementBaseProps {
   id: string;
@@ -9,6 +10,12 @@ export interface ElementBaseProps {
   layerId: string | null;
   /** User-given nickname shown in the layers panel; null = unnamed. */
   name?: string | null;
+  /**
+   * Glyph set used to draw this element's border. Defaults to
+   * {@link BorderStyle.square}. Ignored by borderless kinds (see
+   * {@link Element.hasBorder}).
+   */
+  borderStyle?: BorderStyle;
 }
 
 /**
@@ -28,6 +35,7 @@ export abstract class Element {
   public readonly zIndex: number;
   public readonly layerId: string | null;
   public readonly name: string | null;
+  public readonly borderStyle: BorderStyle;
 
   protected constructor(props: ElementBaseProps) {
     this.id = props.id;
@@ -36,6 +44,15 @@ export abstract class Element {
     this.zIndex = props.zIndex;
     this.layerId = props.layerId;
     this.name = props.name ?? null;
+    this.borderStyle = props.borderStyle ?? BorderStyle.square();
+  }
+
+  /**
+   * Whether this kind draws a box border (so a border style is meaningful).
+   * False here; bordered kinds (box, card, modal, table, field) override it.
+   */
+  get hasBorder(): boolean {
+    return false;
   }
 
   protected baseProps(): ElementBaseProps {
@@ -46,6 +63,7 @@ export abstract class Element {
       zIndex: this.zIndex,
       layerId: this.layerId,
       name: this.name,
+      borderStyle: this.borderStyle,
     };
   }
 
@@ -72,7 +90,11 @@ export abstract class Element {
       typeof patch.name === "string" || patch.name === null
         ? this.withName(patch.name)
         : this;
-    return renamed.withKindProps(patch);
+    const restyled =
+      patch.borderStyle instanceof BorderStyle
+        ? renamed.withBorderStyle(patch.borderStyle)
+        : renamed;
+    return restyled.withKindProps(patch);
   }
 
   moveTo(position: Position): Element {
@@ -99,6 +121,11 @@ export abstract class Element {
 
   withName(name: string | null): Element {
     return this.cloneWith({ name });
+  }
+
+  /** New instance with a different border style (a no-op visually on borderless kinds). */
+  withBorderStyle(borderStyle: BorderStyle): Element {
+    return this.cloneWith({ borderStyle });
   }
 
   /** New identity for a structurally identical element (used by copy/duplicate). */

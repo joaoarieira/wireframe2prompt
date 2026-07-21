@@ -1,4 +1,5 @@
 import type { Element } from "../../../domain/entities/element/Element";
+import type { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import { BoxElement } from "../../../domain/entities/element/BoxElement";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { TextElement } from "../../../domain/entities/element/TextElement";
@@ -137,16 +138,22 @@ const buildersByKind: Record<PlaceableKind, ElementBuilder> = {
 };
 
 /**
- * Builds a new element of the given kind with its default size/props.
+ * Builds a new element of the given kind with its default size/props. When a
+ * `borderStyle` is given it is applied to bordered kinds only (others ignore
+ * it), so new elements adopt the editor's default border style.
  *
  * @example
- * const element = buildElement("box", { id, position: cell, zIndex: 3 });
+ * const element = buildElement("box", { id, position: cell, zIndex: 3 }, style);
  */
 export function buildElement(
   kind: PlaceableKind,
   spec: BuildElementSpec,
+  borderStyle?: BorderStyle,
 ): Element {
-  return buildersByKind[kind](spec);
+  const element = buildersByKind[kind](spec);
+  return borderStyle && element.hasBorder
+    ? element.withBorderStyle(borderStyle)
+    : element;
 }
 
 /**

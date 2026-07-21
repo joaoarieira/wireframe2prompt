@@ -16,6 +16,8 @@ import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
 import type { FieldName } from "../../../domain/entities/element/FieldElement";
 import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
+import type { BorderStyleName } from "../../../domain/value-objects/border-style/BorderStyle";
 import { Button } from "../../ui/button/Button";
 import { Field, FieldLabel } from "../../ui/field/Field";
 import { TextInput } from "../../ui/text-input/TextInput";
@@ -207,8 +209,40 @@ function SelectedElementFields({ element }: { element: Element }) {
       {element instanceof TabsElement && (
         <TabsFields key={element.id} element={element} />
       )}
-      {element instanceof FieldElement && <FieldSlotsFields element={element} />}
+      {element instanceof FieldElement && (
+        <FieldSlotsFields element={element} />
+      )}
+      {element.hasBorder && <BorderStyleField element={element} />}
     </>
+  );
+}
+
+/** Border-style picker shown for every bordered element (box, card, table, …). */
+function BorderStyleField({ element }: { element: Element }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const current: BorderStyleName =
+    BorderStyle.nameOf(element.borderStyle) ?? "square";
+
+  return (
+    <Field legend={t("inspector.borderStyle")}>
+      <Select
+        aria-label={t("inspector.borderStyleField")}
+        className="w-full"
+        value={current}
+        onChange={(event) =>
+          editElementProps(element.id, {
+            borderStyle: BorderStyle.named(
+              event.target.value as BorderStyleName,
+            ),
+          })
+        }
+      >
+        <option value="square">{t("borderStyle.square")}</option>
+        <option value="rounded">{t("borderStyle.rounded")}</option>
+        <option value="cross">{t("borderStyle.cross")}</option>
+      </Select>
+    </Field>
   );
 }
 

@@ -4,6 +4,7 @@ import { Position } from "../../domain/entities/position/Position";
 import { Size } from "../../domain/entities/size/Size";
 import { Layer } from "../../domain/entities/layer/Layer";
 import { BorderStyle } from "../../domain/value-objects/border-style/BorderStyle";
+import type { BorderStyleName } from "../../domain/value-objects/border-style/BorderStyle";
 import { CellChar } from "../../domain/entities/cell-char/CellChar";
 import { BoxElement } from "../../domain/entities/element/BoxElement";
 import { LineElement } from "../../domain/entities/element/LineElement";
@@ -44,15 +45,6 @@ interface SerializedSize {
   height: number;
 }
 
-interface SerializedBorderStyle {
-  topLeft: string;
-  topRight: string;
-  bottomLeft: string;
-  bottomRight: string;
-  horizontal: string;
-  vertical: string;
-}
-
 interface SerializedLayer {
   id: string;
   name: string;
@@ -69,11 +61,12 @@ interface SerializedElementBase {
   layerId: string | null;
   /** Optional: absent in payloads written before the field existed. */
   name?: string | null;
+  /** Border style name; present only for bordered kinds. Absent → square. */
+  borderStyle?: BorderStyleName;
 }
 
 interface SerializedBoxElement extends SerializedElementBase {
   kind: "box";
-  borderStyle: SerializedBorderStyle;
 }
 
 interface SerializedLineElement extends SerializedElementBase {
@@ -148,19 +141,8 @@ export interface SerializedDocument {
   layers: SerializedLayer[];
 }
 
-function serializeBorderStyle(style: BorderStyle): SerializedBorderStyle {
-  return {
-    topLeft: style.topLeft.value,
-    topRight: style.topRight.value,
-    bottomLeft: style.bottomLeft.value,
-    bottomRight: style.bottomRight.value,
-    horizontal: style.horizontal.value,
-    vertical: style.vertical.value,
-  };
-}
-
 function serializeBase(element: Element): SerializedElementBase {
-  return {
+  const base: SerializedElementBase = {
     id: element.id,
     kind: element.kind,
     position: { col: element.position.col, row: element.position.row },
@@ -169,16 +151,17 @@ function serializeBase(element: Element): SerializedElementBase {
     layerId: element.layerId,
     name: element.name,
   };
+  if (element.hasBorder) {
+    // Store the name; a hand-built custom style falls back to the default.
+    base.borderStyle = BorderStyle.nameOf(element.borderStyle) ?? "square";
+  }
+  return base;
 }
 
 function serializeElement(element: Element): SerializedElement {
   const base = serializeBase(element);
   if (element instanceof BoxElement) {
-    return {
-      ...base,
-      kind: "box",
-      borderStyle: serializeBorderStyle(element.borderStyle),
-    };
+    return { ...base, kind: "box" };
   }
   if (element instanceof LineElement) {
     return { ...base, kind: "line", orientation: element.orientation };
@@ -261,6 +244,12 @@ function deserializeBase(data: SerializedElementBase): ElementBaseProps {
     layerId: data.layerId,
     // ?? null keeps version-1 payloads written before `name` existed loadable.
     name: data.name ?? null,
+    // A string names one of the three styles; anything else (absent, or an old
+    // object-form borderStyle) leaves it undefined → the element defaults to square.
+    borderStyle:
+      typeof data.borderStyle === "string"
+        ? BorderStyle.named(data.borderStyle)
+        : undefined,
   };
 }
 
@@ -268,10 +257,7 @@ function deserializeElement(data: SerializedElement): Element {
   const base = deserializeBase(data);
   switch (data.kind) {
     case "box":
-      return BoxElement.create({
-        ...base,
-        borderStyle: BorderStyle.create(data.borderStyle),
-      });
+      return BoxElement.create(base);
     case "line":
       return LineElement.create({ ...base, orientation: data.orientation });
     case "text":

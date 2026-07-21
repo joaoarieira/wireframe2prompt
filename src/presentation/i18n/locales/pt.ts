@@ -83,6 +83,13 @@ export const pt: LocaleDictionary = {
     hintField: "Texto da dica",
     fieldEditHint:
       "Dê dois cliques no rótulo, no placeholder ou na dica no canvas para editá-los.",
+    borderStyle: "Estilo da borda",
+    borderStyleField: "Estilo da borda do elemento",
+  },
+  borderStyle: {
+    square: "Quadrada",
+    rounded: "Arredondada",
+    cross: "Cruz",
   },
   layers: {
     empty: "Nenhum elemento ainda.",
@@ -94,6 +101,7 @@ export const pt: LocaleDictionary = {
     resizeCanvas: "Redimensionar canvas",
     saveSize: "Salvar tamanho do canvas",
     cancelResize: "Cancelar redimensionamento do canvas",
+    defaultBorder: "Borda padrão",
   },
   elementKind: {
     box: "retângulo",

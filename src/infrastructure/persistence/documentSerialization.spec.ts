@@ -46,14 +46,7 @@ class UnmappedElement extends Element {
   }
 }
 
-const unicodeBorder = BorderStyle.create({
-  topLeft: "┌",
-  topRight: "┐",
-  bottomLeft: "└",
-  bottomRight: "┘",
-  horizontal: "─",
-  vertical: "│",
-});
+const roundedBorder = BorderStyle.rounded();
 
 function richDocument(): WireframeDocument {
   return WireframeDocument.create({
@@ -68,7 +61,7 @@ function richDocument(): WireframeDocument {
         zIndex: 0,
         layerId: "layer-1",
         name: "Frame",
-        borderStyle: unicodeBorder,
+        borderStyle: roundedBorder,
       }),
       LineElement.create({
         id: "line",
@@ -134,9 +127,55 @@ describe("documentSerialization", () => {
     const line = restored.getElement("line") as LineElement;
     const text = restored.getElement("text") as TextElement;
 
-    expect(box.borderStyle.equals(unicodeBorder)).toBe(true);
+    expect(box.borderStyle.equals(roundedBorder)).toBe(true);
     expect(line.orientation).toBe("h");
     expect(text.text).toBe("Hello");
+  });
+
+  test("stores the border style as its name only for bordered elements", () => {
+    const serialized = serializeDocument(richDocument());
+    const box = serialized.elements.find((el) => el.kind === "box");
+    const line = serialized.elements.find((el) => el.kind === "line");
+
+    expect(box?.borderStyle).toBe("rounded");
+    // Borderless kinds omit the field entirely.
+    expect(line?.borderStyle).toBeUndefined();
+  });
+
+  test("a hand-built custom border style falls back to the square name", () => {
+    const custom = BorderStyle.create({
+      topLeft: "#",
+      topRight: "#",
+      bottomLeft: "#",
+      bottomRight: "#",
+      horizontal: "=",
+      vertical: "#",
+      teeRight: "#",
+      teeLeft: "#",
+      teeDown: "#",
+      teeUp: "#",
+      cross: "#",
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(10, 6),
+      elements: [
+        BoxElement.create({
+          id: "b",
+          position: Position.create(0, 0),
+          size: Size.create(4, 3),
+          zIndex: 0,
+          layerId: null,
+          borderStyle: custom,
+        }),
+      ],
+    });
+
+    const serialized = serializeDocument(doc);
+    expect(serialized.elements[0].borderStyle).toBe("square");
+    const restored = roundTrip(doc).getElement("b") as BoxElement;
+    expect(restored.borderStyle.equals(BorderStyle.square())).toBe(true);
   });
 
   test("round-trips the element name and defaults it on legacy payloads", () => {

@@ -5,6 +5,7 @@ import { DomGridSurface } from "./DomGridSurface";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { CanvasResizeOverlay } from "./CanvasResizeOverlay";
 import { CanvasResizeControl } from "./CanvasResizeControl";
+import { DefaultBorderControl } from "./DefaultBorderControl";
 import { MarqueeOverlay } from "./MarqueeOverlay";
 import { TextEditOverlay } from "./TextEditOverlay";
 import { FieldEditOverlay } from "./FieldEditOverlay";
@@ -330,7 +331,10 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
           )}
         </div>
       </div>
-      <CanvasResizeControl />
+      <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1">
+        <DefaultBorderControl />
+        <CanvasResizeControl />
+      </div>
     </div>
   );
 }

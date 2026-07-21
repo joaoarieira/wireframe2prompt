@@ -28,6 +28,16 @@ describe("Dropdown", () => {
     );
   });
 
+  test("renders an optional menu-title header above the options", () => {
+    render(
+      <Dropdown trigger="▲" triggerLabel="Border" menuLabel="Default border">
+        <DropdownItem>Square</DropdownItem>
+      </Dropdown>,
+    );
+
+    expect(screen.getByText("Default border")).toHaveClass("menu-title");
+  });
+
   test("merges className onto the trigger so it can join a group", () => {
     render(
       <Dropdown trigger="▲" triggerLabel="More tools" className="join-item">

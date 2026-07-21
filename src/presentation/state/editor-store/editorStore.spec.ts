@@ -23,6 +23,7 @@ import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNot
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { GridSize } from "../../../domain/entities/grid-size/GridSize";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import type { LineElement } from "../../../domain/entities/element/LineElement";
 import type { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import type { TextElement } from "../../../domain/entities/element/TextElement";
@@ -2511,6 +2512,7 @@ describe("placement hover ghost", () => {
     expect(store.getState().placementHover).toEqual({
       kind: "box",
       cell: cell(2, 1),
+      borderStyle: BorderStyle.square(),
     });
   });
 
@@ -2605,5 +2607,51 @@ describe("placement hover ghost", () => {
     store.getState().beginCanvasResize();
 
     expect(store.getState().placementHover).toBeNull();
+  });
+});
+
+describe("default border style", () => {
+  const placedElement = () => {
+    const id = store.getState().selectedElementIds[0];
+    return store.getState().document!.getElement(id)!;
+  };
+
+  test("defaults to square and setDefaultBorderStyleName changes it", () => {
+    expect(store.getState().defaultBorderStyleName).toBe("square");
+    store.getState().setDefaultBorderStyleName("rounded");
+    expect(store.getState().defaultBorderStyleName).toBe("rounded");
+  });
+
+  test("placeElement stamps the current default onto a bordered element", async () => {
+    await openFixtureDoc();
+    store.getState().setDefaultBorderStyleName("cross");
+
+    store.getState().placeElement("card", cell(0, 0));
+
+    expect(placedElement().borderStyle.equals(BorderStyle.cross())).toBe(true);
+  });
+
+  test("a borderless element ignores the default and stays square", async () => {
+    await openFixtureDoc();
+    store.getState().setDefaultBorderStyleName("cross");
+
+    store.getState().placeElement("line", cell(0, 0));
+
+    const line = placedElement();
+    expect(line.hasBorder).toBe(false);
+    expect(line.borderStyle.equals(BorderStyle.square())).toBe(true);
+  });
+
+  test("a placement drag stamps the default onto the committed element", async () => {
+    await openFixtureDoc();
+    store.getState().setDefaultBorderStyleName("rounded");
+
+    store.getState().beginPlacement("table", cell(1, 1));
+    store.getState().updateDrag(cell(6, 5));
+    store.getState().commitDrag();
+
+    expect(placedElement().borderStyle.equals(BorderStyle.rounded())).toBe(
+      true,
+    );
   });
 });

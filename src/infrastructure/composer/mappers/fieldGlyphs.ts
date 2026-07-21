@@ -2,14 +2,6 @@ import type { GlyphCell } from "../../../domain/ports/IGlyphMapper";
 import type { FieldElement } from "../../../domain/entities/element/FieldElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-import {
-  HORIZONTAL as DASH,
-  VERTICAL as PIPE,
-  TOP_LEFT,
-  TOP_RIGHT,
-  BOTTOM_LEFT,
-  BOTTOM_RIGHT,
-} from "./boxDrawing";
 
 const ARROW = CellChar.create("▼");
 
@@ -28,15 +20,32 @@ export function mapFieldElement(field: FieldElement): GlyphCell[] {
   const { col: x, row: y } = field.position;
   const width = field.size.width;
   const right = x + width - 1;
+  const style = field.borderStyle;
   const cells: GlyphCell[] = [];
   const put = (col: number, row: number, char: CellChar) => {
     cells.push({ position: Position.create(col, row), char });
   };
 
-  putBorderRow(put, x, right, y, TOP_LEFT, TOP_RIGHT);
-  putBorderRow(put, x, right, y + 2, BOTTOM_LEFT, BOTTOM_RIGHT);
+  putBorderRow(
+    put,
+    x,
+    right,
+    y,
+    style.topLeft,
+    style.topRight,
+    style.horizontal,
+  );
+  putBorderRow(
+    put,
+    x,
+    right,
+    y + 2,
+    style.bottomLeft,
+    style.bottomRight,
+    style.horizontal,
+  );
   putLabel(put, field, x, y);
-  putFieldRow(put, field, x, right, y + 1);
+  putFieldRow(put, field, x, right, y + 1, style.vertical);
   putHint(put, field, x, y);
 
   return cells;
@@ -44,7 +53,7 @@ export function mapFieldElement(field: FieldElement): GlyphCell[] {
 
 type Put = (col: number, row: number, char: CellChar) => void;
 
-/** A `┌───┐`/`└───┘` border row spanning the box width, given its corners. */
+/** A `┌───┐`/`└───┘` border row spanning the box width, given its corners/edge. */
 function putBorderRow(
   put: Put,
   x: number,
@@ -52,11 +61,12 @@ function putBorderRow(
   row: number,
   leftCorner: CellChar,
   rightCorner: CellChar,
+  horizontal: CellChar,
 ): void {
   put(x, row, leftCorner);
   put(right, row, rightCorner);
   for (let col = x + 1; col < right; col++) {
-    put(col, row, DASH);
+    put(col, row, horizontal);
   }
 }
 
@@ -77,9 +87,10 @@ function putFieldRow(
   x: number,
   right: number,
   row: number,
+  vertical: CellChar,
 ): void {
-  put(x, row, PIPE);
-  put(right, row, PIPE);
+  put(x, row, vertical);
+  put(right, row, vertical);
   const region = field.placeholderRegion();
   const text = [...(field.placeholder ?? "").slice(0, region.size.width)];
   const rightEdge = region.position.col + region.size.width - 1;

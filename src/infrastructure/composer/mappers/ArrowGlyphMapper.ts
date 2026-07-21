@@ -6,7 +6,10 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-import { HORIZONTAL as DASH, VERTICAL as PIPE } from "./boxDrawing";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
+
+// Arrow shafts are always unicode strokes, independent of any border style.
+const { horizontal: DASH, vertical: PIPE } = BorderStyle.square();
 
 const HEAD_RIGHT = CellChar.create("→");
 const HEAD_LEFT = CellChar.create("←");

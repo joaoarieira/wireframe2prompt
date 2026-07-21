@@ -12,6 +12,8 @@ import type { ModalElement } from "../../../domain/entities/element/ModalElement
 import type { TableElement } from "../../../domain/entities/element/TableElement";
 import type { TabsElement } from "../../../domain/entities/element/TabsElement";
 import type { FieldElement } from "../../../domain/entities/element/FieldElement";
+import type { BoxElement } from "../../../domain/entities/element/BoxElement";
+import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import type { PlaceableKind } from "../../state/element-factory/elementFactory";
 
 async function openFreshDocumentWith(kind: PlaceableKind): Promise<string> {
@@ -391,5 +393,67 @@ describe("InspectorPanel kind-specific fields", () => {
       target: { value: "Country" },
     });
     expect(selectedElement<FieldElement>(elementId).label).toBe("Country");
+  });
+});
+
+describe("InspectorPanel border style", () => {
+  test("a bordered element exposes a picker that edits its border style", async () => {
+    const elementId = await openFreshDocumentWith("box");
+    render(<InspectorPanel />);
+
+    const select = screen.getByLabelText("Element border style");
+    expect((select as HTMLSelectElement).value).toBe("square");
+
+    fireEvent.change(select, { target: { value: "rounded" } });
+
+    expect(
+      selectedElement<BoxElement>(elementId).borderStyle.equals(
+        BorderStyle.rounded(),
+      ),
+    ).toBe(true);
+  });
+
+  test("the picker reflects the element's current style", async () => {
+    const elementId = await openFreshDocumentWith("card");
+    editorStore
+      .getState()
+      .editElementProps(elementId, { borderStyle: BorderStyle.cross() });
+    render(<InspectorPanel />);
+
+    expect(
+      (screen.getByLabelText("Element border style") as HTMLSelectElement)
+        .value,
+    ).toBe("cross");
+  });
+
+  test("a borderless element has no border-style picker", async () => {
+    await openFreshDocumentWithText();
+    render(<InspectorPanel />);
+
+    expect(screen.queryByLabelText("Element border style")).toBeNull();
+  });
+
+  test("the picker falls back to square for a custom, unnamed style", async () => {
+    const elementId = await openFreshDocumentWith("box");
+    const custom = BorderStyle.create({
+      topLeft: "#",
+      topRight: "#",
+      bottomLeft: "#",
+      bottomRight: "#",
+      horizontal: "=",
+      vertical: "#",
+      teeRight: "#",
+      teeLeft: "#",
+      teeDown: "#",
+      teeUp: "#",
+      cross: "#",
+    });
+    editorStore.getState().editElementProps(elementId, { borderStyle: custom });
+    render(<InspectorPanel />);
+
+    expect(
+      (screen.getByLabelText("Element border style") as HTMLSelectElement)
+        .value,
+    ).toBe("square");
   });
 });

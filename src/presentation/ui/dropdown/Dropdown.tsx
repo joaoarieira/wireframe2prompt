@@ -9,6 +9,8 @@ interface DropdownProps {
   triggerLabel: string;
   /** Highlights the trigger while one of its menu options is active. */
   triggerActive?: boolean;
+  /** Optional header shown above the options (daisyUI `menu-title`). */
+  menuLabel?: string;
   /** Menu options — compose {@link DropdownItem}. */
   children: ReactNode;
   /**
@@ -33,6 +35,7 @@ export function Dropdown({
   trigger,
   triggerLabel,
   triggerActive = false,
+  menuLabel,
   children,
   className,
 }: DropdownProps) {
@@ -55,6 +58,7 @@ export function Dropdown({
         tabIndex={0}
         className="dropdown-content menu z-10 mb-1 w-max rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
       >
+        {menuLabel !== undefined && <li className="menu-title">{menuLabel}</li>}
         {children}
       </ul>
     </div>
