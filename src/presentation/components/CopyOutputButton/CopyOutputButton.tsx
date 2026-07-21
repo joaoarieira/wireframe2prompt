@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Check, Copy } from "lucide-react";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { Button } from "../../ui/button/Button";
 
@@ -24,6 +25,11 @@ export function CopyOutputButton() {
 
   return (
     <Button variant="primary" onClick={() => void copyToClipboard()}>
+      {copied ? (
+        <Check className="size-4" aria-hidden />
+      ) : (
+        <Copy className="size-4" aria-hidden />
+      )}
       {copied ? t("copyOutput.copied") : t("copyOutput.idle")}
     </Button>
   );
