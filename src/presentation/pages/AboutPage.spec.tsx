@@ -38,7 +38,7 @@ describe("AboutPage", () => {
     render(<AboutPage />);
 
     for (const name of [
-      "About wireframe2prompt",
+      "About",
       "How to use",
       "Where to use it",
       "Fast prototyping first",
@@ -106,5 +106,12 @@ describe("AboutPage", () => {
   test("renders the Start now CTA", () => {
     render(<AboutPage />);
     expect(screen.getByRole("link", { name: "Start now" })).toBeInTheDocument();
+  });
+
+  test("renders the shared sidebar footer", () => {
+    render(<AboutPage />);
+    expect(
+      screen.getByRole("button", { name: "Change theme" }),
+    ).toBeInTheDocument();
   });
 });

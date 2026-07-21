@@ -6,6 +6,7 @@ import { ButtonLink } from "../ui/button-link/ButtonLink";
 import { ExternalTextLink } from "../ui/text-link/TextLink";
 import { AboutExample } from "../components/AboutExample/AboutExample";
 import { AboutCardGrid } from "../components/AboutCardGrid/AboutCardGrid";
+import { LayersSidebarFooter } from "../components/LayersSidebar/LayersSidebarFooter";
 import { GithubIcon } from "../components/icons/GithubIcon";
 import { GITHUB_URL } from "../githubUrl";
 
@@ -124,6 +125,7 @@ export function AboutPage() {
           </div>
         </article>
       </main>
+      <LayersSidebarFooter />
     </div>
   );
 }

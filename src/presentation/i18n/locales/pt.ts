@@ -155,7 +155,7 @@ export const pt: LocaleDictionary = {
   },
   about: {
     back: "Voltar",
-    title: "Sobre o wireframe2prompt",
+    title: "Sobre",
     summary:
       "O wireframe2prompt é um editor de wireframes em ASCII que exporta seus layouts como texto puro, pronto para ser usado em qualquer LLM.",
     howToUseTitle: "Como usar",
@@ -176,24 +176,24 @@ export const pt: LocaleDictionary = {
     exampleGoogleTitle: "Página inicial do Google",
     exampleGoogleAscii: `                          Google
 
-+----------------------------------------------------------+
-| +---+                                        +---+ +---+ |
-| | L |                                        | V | | I | |
-| +---+                                        +---+ +---+ |
-+----------------------------------------------------------+
-           +---------------+  +-------------------+
-           | Google Search |  | I'm Feeling Lucky |
-           +---------------+  +-------------------+`,
+┌──────────────────────────────────────────────────────────┐
+│ ┌───┐                                        ┌───┐ ┌───┐ │
+│ │ L │                                        │ V │ │ I │ │
+│ └───┘                                        └───┘ └───┘ │
+└──────────────────────────────────────────────────────────┘
+           ┌─────────────────┐  ┌─────────────────┐
+           │ Pesquisa Google │  │ Estou com sorte │
+           └─────────────────┘  └─────────────────┘`,
     exampleSpotifyTitle: "Card de playlist do Spotify",
-    exampleSpotifyAscii: `+-----------------------------+
-| Crie sua primeira playlist. |
-|                             |
-| É fácil, vamos te ajudar.   |
-|                             |
-| +----------------+          |
-| | Criar playlist |          |
-| +----------------+          |
-+-----------------------------+`,
+    exampleSpotifyAscii: `┌─────────────────────────────┐
+│ Crie sua primeira playlist. │
+│                             │
+│ É fácil, vamos te ajudar.   │
+│                             │
+│ ┌────────────────┐          │
+│ │ Criar playlist │          │
+│ └────────────────┘          │
+└─────────────────────────────┘`,
     copyExample: "Copiar",
     copied: "Copiado!",
     contributeTitle: "Contribua",

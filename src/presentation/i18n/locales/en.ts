@@ -155,7 +155,7 @@ export const en = {
   },
   about: {
     back: "Back",
-    title: "About wireframe2prompt",
+    title: "About",
     summary:
       "wireframe2prompt is an ASCII wireframe editor that exports your layouts as plain text, ready to feed to any LLM.",
     howToUseTitle: "How to use",
@@ -176,24 +176,24 @@ export const en = {
     exampleGoogleTitle: "Google landing page",
     exampleGoogleAscii: `                          Google
 
-+----------------------------------------------------------+
-| +---+                                        +---+ +---+ |
-| | L |                                        | V | | I | |
-| +---+                                        +---+ +---+ |
-+----------------------------------------------------------+
-           +---------------+  +-------------------+
-           | Google Search |  | I'm Feeling Lucky |
-           +---------------+  +-------------------+`,
+┌──────────────────────────────────────────────────────────┐
+│ ┌───┐                                        ┌───┐ ┌───┐ │
+│ │ L │                                        │ V │ │ I │ │
+│ └───┘                                        └───┘ └───┘ │
+└──────────────────────────────────────────────────────────┘
+           ┌───────────────┐  ┌───────────────────┐
+           │ Google Search │  │ I'm Feeling Lucky │
+           └───────────────┘  └───────────────────┘`,
     exampleSpotifyTitle: "Spotify playlist card",
-    exampleSpotifyAscii: `+-----------------------------+
-| Create your first playlist. |
-|                             |
-| It's easy, we'll help you.  |
-|                             |
-| +-----------------+         |
-| | Create playlist |         |
-| +-----------------+         |
-+-----------------------------+`,
+    exampleSpotifyAscii: `┌─────────────────────────────┐
+│ Create your first playlist. │
+│                             │
+│ It's easy, we'll help you.  │
+│                             │
+│ ┌─────────────────┐         │
+│ │ Create playlist │         │
+│ └─────────────────┘         │
+└─────────────────────────────┘`,
     copyExample: "Copy",
     copied: "Copied!",
     contributeTitle: "Contribute",
