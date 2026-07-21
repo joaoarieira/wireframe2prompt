@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { usePageMetadata } from "../seo/usePageMetadata";
 import { LayersSidebarFooter } from "../components/LayersSidebar/LayersSidebarFooter";
 import { ButtonGroup } from "../ui/button-group/ButtonGroup";
 import { Button } from "../ui/button/Button";
@@ -19,7 +19,10 @@ export function DocumentListPage() {
   const deleteDocument = useEditorStore((state) => state.deleteDocument);
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  useDocumentTitle("wireframe2prompt");
+  usePageMetadata({
+    titleKey: "seo.homeTitle",
+    descriptionKey: "seo.homeDescription",
+  });
 
   useEffect(() => {
     void refreshDocuments();
@@ -39,7 +42,15 @@ export function DocumentListPage() {
     // not directly under the (short) document list.
     <div className="flex min-h-screen flex-col">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 p-8">
-        <h1 className="text-2xl font-bold">wireframe2prompt</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold">wireframe2prompt</h1>
+          {/* One value sentence + link so the landing has indexable copy; the
+              long-form content lives on /about. */}
+          <p className="text-sm opacity-70">
+            {t("documentList.tagline")}{" "}
+            <TextLink to="/about">{t("documentList.taglineLink")}</TextLink>
+          </p>
+        </div>
         <ButtonGroup>
           <TextInput
             type="text"

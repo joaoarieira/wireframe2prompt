@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Only public routes: /editor/ is noindex. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://wireframe2prompt.com/</loc>
+    <lastmod>2026-07-21</lastmod>
+  </url>
+  <url>
+    <loc>https://wireframe2prompt.com/about</loc>
+    <lastmod>2026-07-21</lastmod>
+  </url>
+</urlset>

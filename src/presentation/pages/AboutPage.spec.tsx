@@ -28,6 +28,11 @@ describe("AboutPage", () => {
     expect(screen.getByText("wireframe2prompt")).toBeInTheDocument();
   });
 
+  test("sets the about tab title", () => {
+    render(<AboutPage />);
+    expect(document.title).toBe("About — wireframe2prompt");
+  });
+
   test("the back button returns to the previous route via history", () => {
     render(<AboutPage />);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));

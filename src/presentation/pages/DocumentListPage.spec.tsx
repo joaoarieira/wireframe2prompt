@@ -19,7 +19,7 @@ vi.mock("@tanstack/react-router", () => ({
     (Anchor: (props: ComponentProps<"a">) => ReactNode) =>
     ({
       to,
-      params,
+      params: _params,
       ...rest
     }: { to?: string; params?: unknown } & ComponentProps<"a">) => (
       <Anchor href={to} {...rest} />
@@ -53,7 +53,22 @@ describe("DocumentListPage", () => {
 
     expect(refreshDocuments).toHaveBeenCalled();
     expect(
-      screen.getByText("No wireframes yet — create one."),
+      screen.getByText("No wireframes yet. Create one."),
+    ).toBeInTheDocument();
+  });
+
+  test("sets the home tab title and renders the indexable tagline", () => {
+    setSummaries([]);
+    render(<DocumentListPage />);
+
+    expect(document.title).toBe(
+      "Draw ASCII wireframes for AI prompts — wireframe2prompt",
+    );
+    expect(
+      screen.getByText(/Sketch your screen on an ASCII grid/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Learn how it works" }),
     ).toBeInTheDocument();
   });
 

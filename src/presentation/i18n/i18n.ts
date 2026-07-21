@@ -41,4 +41,12 @@ void i18n.use(initReactI18next).init({
   react: { useSuspense: false },
 });
 
+// Keep <html lang> in sync with the active language so crawlers and screen
+// readers see the language the UI is actually rendered in (en/pt share a URL,
+// switched at runtime — so there is no hreflang, just this attribute).
+i18n.on("languageChanged", (lng) => {
+  document.documentElement.lang = lng;
+});
+document.documentElement.lang = i18n.language;
+
 export default i18n;

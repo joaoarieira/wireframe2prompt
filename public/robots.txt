@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /editor/
+
+Sitemap: https://wireframe2prompt.com/sitemap.xml

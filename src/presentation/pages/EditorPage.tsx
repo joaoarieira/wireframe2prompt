@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { usePageMetadata, useNoIndex } from "../seo/usePageMetadata";
 import { useToolShortcuts } from "../hooks/useToolShortcuts";
 import { Canvas } from "../components/Canvas/Canvas";
 import { LayersSidebar } from "../components/LayersSidebar/LayersSidebar";
@@ -15,13 +15,16 @@ import { ButtonLink } from "../ui/button-link/ButtonLink";
 export function EditorPage() {
   const { t } = useTranslation();
   const documentStatus = useEditorStore((state) => state.documentStatus);
-  const documentName = useEditorStore((state) => state.document?.name);
   const inspectorVisible = useEditorStore(
     (state) => state.inspectorOpen && state.selectedElementIds.length === 1,
   );
-  useDocumentTitle(
-    documentName ? `${documentName} - wireframe2prompt` : "wireframe2prompt",
-  );
+  usePageMetadata({
+    titleKey: "seo.editorTitle",
+    descriptionKey: "seo.editorDescription",
+  });
+  // The editor only ever shows the user's private local documents — keep it out
+  // of the index; navigating away drops the tag so home/about stay indexable.
+  useNoIndex();
   useToolShortcuts();
 
   if (documentStatus === "missing") {

@@ -61,6 +61,21 @@ describe("EditorPage", () => {
     expect(document.querySelector(".loading")).not.toBeNull();
   });
 
+  test("ready state sets the editor tab title and marks the route noindex", () => {
+    openReadyDocument();
+    const view = render(<EditorPage />);
+
+    expect(document.title).toBe("Editor — wireframe2prompt");
+    expect(
+      document.head
+        .querySelector('meta[name="robots"]')
+        ?.getAttribute("content"),
+    ).toBe("noindex");
+
+    view.unmount();
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull();
+  });
+
   test("ready state renders the canvas and the sidebar", () => {
     openReadyDocument();
     render(<EditorPage />);

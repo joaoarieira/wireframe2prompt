@@ -8,8 +8,11 @@ export const pt: LocaleDictionary = {
   documentList: {
     namePlaceholder: "Nome do novo wireframe",
     create: "Criar",
-    empty: "Nenhum wireframe ainda — crie um.",
+    empty: "Nenhum wireframe ainda. Crie um.",
     delete: "Excluir {{name}}",
+    tagline:
+      "Esboce sua tela numa grade ASCII e copie como prompt para qualquer IA — sem ferramentas de design.",
+    taglineLink: "Saiba como funciona",
   },
   editor: {
     notFound: "Wireframe não encontrado.",
@@ -152,6 +155,17 @@ export const pt: LocaleDictionary = {
   language: {
     en: "English",
     pt: "Português",
+  },
+  seo: {
+    homeTitle: "Desenhe wireframes ASCII para prompts de IA",
+    homeDescription:
+      "Editor online e gratuito de wireframes em ASCII. Arraste botões, inputs e cards para uma grade de texto e copie o resultado como prompt para uma IA construir sua interface — sem precisar saber design.",
+    aboutTitle: "Sobre",
+    aboutDescription:
+      "O que é o wireframe2prompt, como esboçar uma tela em segundos e como transformar o wireframe ASCII em um prompt de IA. Para devs, designers e qualquer pessoa com uma ideia.",
+    editorTitle: "Editor",
+    editorDescription:
+      "Esboce sua tela numa grade ASCII e copie como prompt para qualquer IA.",
   },
   about: {
     back: "Voltar",

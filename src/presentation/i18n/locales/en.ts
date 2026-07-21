@@ -10,8 +10,11 @@ export const en = {
   documentList: {
     namePlaceholder: "New wireframe name",
     create: "Create",
-    empty: "No wireframes yet — create one.",
+    empty: "No wireframes yet. Create one.",
     delete: "Delete {{name}}",
+    tagline:
+      "Sketch your screen on an ASCII grid and copy it as a prompt for any AI — no design tools required.",
+    taglineLink: "Learn how it works",
   },
   editor: {
     notFound: "Wireframe not found.",
@@ -152,6 +155,17 @@ export const en = {
   language: {
     en: "English",
     pt: "Português",
+  },
+  seo: {
+    homeTitle: "Draw ASCII wireframes for AI prompts",
+    homeDescription:
+      "Free online ASCII wireframe editor. Drag buttons, inputs and cards onto a text grid, then copy the result as a prompt so an AI can build your interface — no design skills needed.",
+    aboutTitle: "About",
+    aboutDescription:
+      "What wireframe2prompt is, how to sketch a screen in seconds and how to turn the ASCII wireframe into an AI prompt. For developers, designers and anyone with an idea.",
+    editorTitle: "Editor",
+    editorDescription:
+      "Sketch your screen on an ASCII grid and copy it as a prompt for any AI.",
   },
   about: {
     back: "Back",

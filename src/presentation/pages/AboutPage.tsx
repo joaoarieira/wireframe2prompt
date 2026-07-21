@@ -9,6 +9,7 @@ import { AboutCardGrid } from "../components/AboutCardGrid/AboutCardGrid";
 import { LayersSidebarFooter } from "../components/LayersSidebar/LayersSidebarFooter";
 import { GithubIcon } from "../components/icons/GithubIcon";
 import { GITHUB_URL } from "../githubUrl";
+import { usePageMetadata } from "../seo/usePageMetadata";
 
 /**
  * The product's About page at /about: how to use it, where to use it, the
@@ -18,6 +19,10 @@ import { GITHUB_URL } from "../githubUrl";
 export function AboutPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  usePageMetadata({
+    titleKey: "seo.aboutTitle",
+    descriptionKey: "seo.aboutDescription",
+  });
   const steps = [
     t("about.howToUseStep1"),
     t("about.howToUseStep2"),

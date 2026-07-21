@@ -27,6 +27,14 @@ describe("i18n instance", () => {
     expect(i18n.t("toolbar.undo")).toBe("Desfazer");
     expect(i18n.t("elementKind.box")).toBe("retângulo");
   });
+
+  test("keeps <html lang> in sync with the active language", async () => {
+    await i18n.changeLanguage("pt");
+    expect(document.documentElement.lang).toBe("pt");
+
+    await i18n.changeLanguage("en");
+    expect(document.documentElement.lang).toBe("en");
+  });
 });
 
 describe("language persistence", () => {

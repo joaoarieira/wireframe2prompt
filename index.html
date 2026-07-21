@@ -4,9 +4,60 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>wireframe2prompt</title>
+
+    <!-- Static English metadata: the pre-hydration default and what crawlers
+         read first. The per-route hook (usePageMetadata) refines it in the SPA;
+         these literals are not run through i18n. -->
+    <title>wireframe2prompt — Draw ASCII wireframes for AI prompts</title>
+    <meta
+      name="description"
+      content="Free online ASCII wireframe editor. Drag buttons, inputs and cards onto a text grid, then copy the result as a prompt so an AI can build your interface — no design skills needed."
+    />
+    <link rel="canonical" href="https://wireframe2prompt.com/" />
+    <!-- base-100 of the wireframe-light theme (src/index.css) -->
+    <meta name="theme-color" content="#fbfcfd" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://wireframe2prompt.com/" />
+    <meta property="og:site_name" content="wireframe2prompt" />
+    <meta
+      property="og:title"
+      content="wireframe2prompt — Draw ASCII wireframes for AI prompts"
+    />
+    <meta
+      property="og:description"
+      content="Free online ASCII wireframe editor. Drag buttons, inputs and cards onto a text grid, then copy the result as a prompt so an AI can build your interface — no design skills needed."
+    />
+    <meta name="twitter:card" content="summary" />
+    <!-- TODO(seo): og:image 1200x630 -->
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "wireframe2prompt",
+        "url": "https://wireframe2prompt.com/",
+        "description": "Free online ASCII wireframe editor. Drag buttons, inputs and cards onto a text grid, then copy the result as a prompt so an AI can build your interface — no design skills needed.",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "inLanguage": ["en", "pt"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
   </head>
   <body>
+    <noscript>
+      <p>
+        wireframe2prompt is a free online ASCII wireframe editor. Drag buttons,
+        inputs and cards onto a text grid, then copy the result as a prompt so
+        an AI can build your interface — no design skills needed. It needs
+        JavaScript to run;
+        <a href="https://github.com/joaoarieira/wireframe2prompt"
+          >see the project on GitHub</a
+        >.
+      </p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
