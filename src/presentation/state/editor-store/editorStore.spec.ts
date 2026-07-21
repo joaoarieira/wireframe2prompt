@@ -694,6 +694,21 @@ describe("inspector visibility", () => {
     expect(store.getState().inspectorOpen).toBe(true);
   });
 
+  test("layers panel starts closed and opens/closes/toggles", () => {
+    expect(store.getState().layersPanelOpen).toBe(false);
+
+    store.getState().openLayersPanel();
+    expect(store.getState().layersPanelOpen).toBe(true);
+
+    store.getState().closeLayersPanel();
+    expect(store.getState().layersPanelOpen).toBe(false);
+
+    store.getState().toggleLayersPanel();
+    expect(store.getState().layersPanelOpen).toBe(true);
+    store.getState().toggleLayersPanel();
+    expect(store.getState().layersPanelOpen).toBe(false);
+  });
+
   test("clicking empty space closes it; opening a document resets it", async () => {
     await openFixtureDoc(makeBox("b1"));
     store.getState().selectElement("b1");
@@ -1167,6 +1182,21 @@ describe("drag gestures", () => {
     expect(arrow.direction).toBe("right");
     // Height collapses to the arrow's canonical 1; width grows.
     expect(arrow.size.equals(Size.create(9, 1))).toBe(true);
+  });
+
+  test("starting a placement drag clears the previous selection until commit", async () => {
+    await openFixtureDoc();
+    store.getState().placeElement("box", cell(0, 0)); // id-1, selected
+    expect(store.getState().selectedElementIds).toEqual(["id-1"]);
+
+    store.getState().beginPlacement("box", cell(4, 4));
+    // Nothing stays selected mid-gesture: id-1's overlay must not linger
+    // over the canvas while the new box is being sized.
+    expect(store.getState().selectedElementIds).toEqual([]);
+
+    store.getState().updateDrag(cell(8, 7));
+    store.getState().commitDrag();
+    expect(store.getState().selectedElementIds).toEqual(["id-2"]);
   });
 
   test("text placement enters inline editing only after pointer up", async () => {

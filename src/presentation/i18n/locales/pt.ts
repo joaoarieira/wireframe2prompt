@@ -88,6 +88,7 @@ export const pt: LocaleDictionary = {
       "Dê dois cliques no rótulo, no placeholder ou na dica no canvas para editá-los.",
     borderStyle: "Estilo da borda",
     borderStyleField: "Estilo da borda do elemento",
+    sheetLabel: "Inspetor do elemento",
   },
   borderStyle: {
     square: "Quadrada",
@@ -98,6 +99,7 @@ export const pt: LocaleDictionary = {
     empty: "Nenhum elemento ainda.",
     bringForward: "Trazer {{name}} para frente",
     sendBackward: "Enviar {{name}} para trás",
+    panelTitle: "Camadas",
   },
   canvas: {
     resize: "Redimensionar elemento",
@@ -126,6 +128,7 @@ export const pt: LocaleDictionary = {
     draw: "Desenho",
     moreTools: "Mais ferramentas de {{name}}",
     toolWithShortcut: "{{name}} ({{shortcut}})",
+    layers: "Camadas",
   },
   contextMenu: {
     copy: "Copiar",

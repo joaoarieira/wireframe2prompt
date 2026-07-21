@@ -9,6 +9,11 @@ interface DropdownProps {
   triggerLabel: string;
   /** Highlights the trigger while one of its menu options is active. */
   triggerActive?: boolean;
+  /**
+   * Keeps the trigger's visual size on small (below `lg`) touch screens
+   * instead of inflating to the 44px tap floor — see `Button`'s `compact`.
+   */
+  triggerCompact?: boolean;
   /** Optional header shown above the options (daisyUI `menu-title`). */
   menuLabel?: string;
   /** Menu options — compose {@link DropdownItem}. */
@@ -35,12 +40,16 @@ export function Dropdown({
   trigger,
   triggerLabel,
   triggerActive = false,
+  triggerCompact = false,
   menuLabel,
   children,
   className,
 }: DropdownProps) {
   return (
-    <div className="dropdown dropdown-top dropdown-end">
+    // data-ui-dropdown lets scroll containers detect "a dropdown menu is open"
+    // via `has-[[data-ui-dropdown]:focus-within]` without referencing the
+    // daisyUI `dropdown` class outside ui/ (see FloatingFooter's tool strip).
+    <div data-ui-dropdown className="dropdown dropdown-top dropdown-end">
       <div
         tabIndex={0}
         role="button"
@@ -50,6 +59,7 @@ export function Dropdown({
           "sm",
           false,
           className,
+          triggerCompact,
         )}
       >
         {trigger}

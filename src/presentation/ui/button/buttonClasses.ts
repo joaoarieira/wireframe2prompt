@@ -29,6 +29,23 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 /**
+ * On coarse (touch) pointers every button meets the 44×44px minimum tap target,
+ * regardless of its visual `size`. Applied once here so features never have to
+ * remember it. Fine (mouse) pointers keep the compact size.
+ */
+const COARSE_TOUCH_TARGET =
+  "[@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11";
+
+/**
+ * Compact buttons skip that inflation below `lg`: in a crowded strip (the tool
+ * palette) the buttons keep their visual size on phones/tablets — `btn-sm`'s
+ * 32px still clears WCAG 2.5.8's 24px minimum — and the 44px floor returns on
+ * desktop widths, where space is not scarce.
+ */
+const COARSE_TOUCH_TARGET_COMPACT =
+  "lg:[@media(pointer:coarse)]:min-h-11 lg:[@media(pointer:coarse)]:min-w-11";
+
+/**
  * @example buttonClasses("danger", "sm", false) // "btn btn-outline btn-error btn-sm"
  */
 export function buttonClasses(
@@ -36,11 +53,13 @@ export function buttonClasses(
   size: ButtonSize,
   active: boolean,
   className?: string,
+  compact = false,
 ): string {
   return cx(
     "btn",
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
+    compact ? COARSE_TOUCH_TARGET_COMPACT : COARSE_TOUCH_TARGET,
     active && "btn-active",
     className,
   );

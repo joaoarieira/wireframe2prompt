@@ -20,6 +20,11 @@ export interface GridSurfaceProps {
    * show a full element ghost under the cursor instead. Defaults to on.
    */
   showHoverHighlight?: boolean;
+  /**
+   * While a two-finger pinch is active the Canvas sets this so the participating
+   * fingers' moves don't also drive the active tool. Defaults to off.
+   */
+  suppressCellEvents?: boolean;
 }
 
 export type GridSurfaceComponent = ComponentType<GridSurfaceProps>;

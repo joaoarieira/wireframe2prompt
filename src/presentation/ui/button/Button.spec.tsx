@@ -28,6 +28,24 @@ describe("Button", () => {
     );
   });
 
+  test("carries a 44px minimum tap target on coarse pointers", () => {
+    render(<Button>Tap</Button>);
+    expect(screen.getByRole("button", { name: "Tap" })).toHaveClass(
+      "[@media(pointer:coarse)]:min-h-11",
+      "[@media(pointer:coarse)]:min-w-11",
+    );
+  });
+
+  test("compact keeps the small-screen size, restoring the floor on lg", () => {
+    render(<Button compact>Tap</Button>);
+    const button = screen.getByRole("button", { name: "Tap" });
+    expect(button).toHaveClass(
+      "lg:[@media(pointer:coarse)]:min-h-11",
+      "lg:[@media(pointer:coarse)]:min-w-11",
+    );
+    expect(button).not.toHaveClass("[@media(pointer:coarse)]:min-h-11");
+  });
+
   test("forwards native props and layout className", () => {
     const onClick = vi.fn();
     render(

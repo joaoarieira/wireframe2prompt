@@ -90,3 +90,36 @@
   --depth: 1;
   --noise: 0;
 }
+
+/*
+ * Horizontal scroll-shadow affordance (Lea Verou's "scrolling shadows"): an
+ * inset shadow appears only on the edge(s) that still have content to scroll to,
+ * and fades out once that edge is reached. Pure CSS — the two `base-100` cover
+ * gradients scroll WITH the content (`background-attachment: local`) and mask
+ * the fixed (`scroll`) shadow gradients whenever the matching edge is flush.
+ * Applied to the footer's tool strip so users see there are more tools.
+ */
+@utility scroll-shadow-x {
+  background:
+    linear-gradient(to right, var(--color-base-100) 30%, transparent) 0 0,
+    linear-gradient(to left, var(--color-base-100) 30%, transparent) 100% 0,
+    radial-gradient(
+        farthest-side at 0 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      )
+      0 0,
+    radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      )
+      100% 0;
+  background-repeat: no-repeat;
+  background-size:
+    28px 100%,
+    28px 100%,
+    12px 100%,
+    12px 100%;
+  background-attachment: local, local, scroll, scroll;
+}

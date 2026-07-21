@@ -23,14 +23,24 @@ export function CopyOutputButton() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const label = copied ? t("copyOutput.copied") : t("copyOutput.idle");
   return (
-    <Button variant="primary" onClick={() => void copyToClipboard()}>
+    // On phones the label is dropped to save room in the scrolling footer; the
+    // aria-label keeps the accessible name (the visible text is display:none,
+    // which drops it from the a11y tree, so it can't carry the name there).
+    <Button
+      variant="primary"
+      aria-label={label}
+      title={label}
+      className="shrink-0"
+      onClick={() => void copyToClipboard()}
+    >
       {copied ? (
         <Check className="size-4" aria-hidden />
       ) : (
         <Copy className="size-4" aria-hidden />
       )}
-      {copied ? t("copyOutput.copied") : t("copyOutput.idle")}
+      <span className="hidden md:inline">{label}</span>
     </Button>
   );
 }

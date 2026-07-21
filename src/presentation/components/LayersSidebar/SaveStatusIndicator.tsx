@@ -3,6 +3,14 @@ import { Check } from "lucide-react";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { Spinner } from "../../ui/spinner/Spinner";
 
+interface SaveStatusIndicatorProps {
+  /**
+   * Icon-only mode for the tablet icon rail: drops the text label and moves it
+   * onto the `title` so the status still fits a ~48px column.
+   */
+  compact?: boolean;
+}
+
 /**
  * Passive autosave indicator replacing the old manual Save button: hidden for
  * an untouched wireframe, then "Saving" while the autosave runs and "Saved"
@@ -10,21 +18,37 @@ import { Spinner } from "../../ui/spinner/Spinner";
  *
  * @example <SaveStatusIndicator />
  */
-export function SaveStatusIndicator() {
+export function SaveStatusIndicator({
+  compact = false,
+}: SaveStatusIndicatorProps) {
   const { t } = useTranslation();
   const saveStatus = useEditorStore((s) => s.saveStatus);
 
   if (saveStatus === "hidden") {
     return null;
   }
+  const label = t(saveStatus === "saving" ? "toolbar.saving" : "toolbar.saved");
+  const icon =
+    saveStatus === "saving" ? (
+      <Spinner size="xs" />
+    ) : (
+      <Check className="size-3.5" aria-hidden />
+    );
+  if (compact) {
+    return (
+      <span
+        className="flex items-center justify-center text-base-content/70"
+        title={label}
+        aria-label={label}
+      >
+        {icon}
+      </span>
+    );
+  }
   return (
     <span className="flex items-center gap-1.5 px-2 text-xs text-base-content/70">
-      {saveStatus === "saving" ? (
-        <Spinner size="xs" />
-      ) : (
-        <Check className="size-3.5" aria-hidden />
-      )}
-      {t(saveStatus === "saving" ? "toolbar.saving" : "toolbar.saved")}
+      {icon}
+      {label}
     </span>
   );
 }

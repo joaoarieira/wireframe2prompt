@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import type { GridSurfaceComponent } from "./GridSurface";
 import { DomGridSurface } from "./DomGridSurface";
+import { usePinchZoomPan } from "./usePinchZoomPan";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { CanvasResizeOverlay } from "./CanvasResizeOverlay";
 import { CanvasResizeControl } from "./CanvasResizeControl";
@@ -49,6 +50,7 @@ export interface CanvasProps {
  */
 export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const outerRef = useRef<HTMLDivElement | null>(null);
   const panning = useRef(false);
   // Enables the eased transform, but only for wheel scrolling: zoom and pointer
   // drags below turn it off so they stay pixel-exact and lag-free.
@@ -84,8 +86,33 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const updatePan = useEditorStore((state) => state.updatePan);
   const endPan = useEditorStore((state) => state.endPan);
   const panViewportBy = useEditorStore((state) => state.panViewportBy);
+  const cancelDrag = useEditorStore((state) => state.cancelDrag);
+  const cancelStroke = useEditorStore((state) => state.cancelStroke);
+  const cancelMarquee = useEditorStore((state) => state.cancelMarquee);
   const currentZoom = useEditorStore((state) => state.viewport.zoom);
   const scheme = useColorScheme();
+
+  // Mirror the zoom in a ref so the pinch handler reads the latest committed
+  // value: the gesture mutates zoom and re-renders, and a value captured in the
+  // effect closure would go stale between the two-finger moves.
+  const zoomRef = useRef(currentZoom);
+  useEffect(() => {
+    zoomRef.current = currentZoom;
+  }, [currentZoom]);
+  const getZoom = useCallback(() => zoomRef.current, []);
+  const cancelGestures = useCallback(() => {
+    cancelDrag();
+    cancelStroke();
+    cancelMarquee();
+  }, [cancelDrag, cancelStroke, cancelMarquee]);
+  const { isPinching } = usePinchZoomPan({
+    outerRef,
+    anchorRectRef: rootRef,
+    getZoom,
+    zoomAtPoint,
+    panViewportBy,
+    cancelGestures,
+  });
 
   // Wheel handling via a native (non-passive) listener so we can
   // preventDefault() and pre-empt the browser's page zoom/scroll:
@@ -265,7 +292,8 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
 
   return (
     <div
-      className="relative grid h-full place-items-center overflow-hidden bg-base-300 p-8 outline-none"
+      ref={outerRef}
+      className="relative grid h-full place-items-center overflow-hidden bg-base-300 p-2 outline-none lg:p-8"
       style={{ cursor }}
       tabIndex={0}
       data-testid="canvas"
@@ -298,6 +326,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
             // Placement tools show a full element ghost under the cursor, so the
             // per-cell hover outline would be redundant noise there.
             showHoverHighlight={!isPlaceableKind(activeToolId)}
+            suppressCellEvents={isPinching}
           />
           {selectedElements.map((el) => (
             <SelectionOverlay
@@ -331,7 +360,9 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
           )}
         </div>
       </div>
-      <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1">
+      {/* Bottom-right on desktop; on phone/tablet the footer sits there, so the
+          controls move to the top-right corner instead. */}
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 lg:top-auto lg:bottom-2">
         <DefaultBorderControl />
         <CanvasResizeControl />
       </div>

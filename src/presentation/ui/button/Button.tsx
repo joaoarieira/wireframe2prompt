@@ -9,6 +9,11 @@ interface ButtonProps extends ComponentProps<"button"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   active?: boolean;
+  /**
+   * Keeps the visual size on small (below `lg`) touch screens instead of
+   * inflating to the 44px tap floor — for dense strips like the tool palette.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -22,6 +27,7 @@ export function Button({
   variant = "default",
   size = "md",
   active = false,
+  compact = false,
   type = "button",
   className,
   ...rest
@@ -29,7 +35,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={buttonClasses(variant, size, active, className)}
+      className={buttonClasses(variant, size, active, className, compact)}
       {...rest}
     />
   );

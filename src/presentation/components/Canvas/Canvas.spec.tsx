@@ -615,4 +615,26 @@ describe("Canvas", () => {
     // non-text element does nothing — but the action runs without throwing.
     expect(editorStore.getState().textEditingElementId).toBeNull();
   });
+
+  test("a two-finger touch gesture pinch-zooms the viewport", () => {
+    openDoc();
+    render(<Canvas />);
+    const canvas = screen.getByTestId("canvas");
+    const fire = (type: string, pointerId: number, clientX: number) => {
+      const event = new Event(type, { bubbles: true });
+      Object.assign(event, {
+        pointerId,
+        pointerType: "touch",
+        clientX,
+        clientY: 0,
+      });
+      act(() => {
+        canvas.dispatchEvent(event);
+      });
+    };
+    fire("pointerdown", 1, 0);
+    fire("pointerdown", 2, 10);
+    fire("pointermove", 2, 40); // fingers spread → scale up
+    expect(editorStore.getState().viewport.zoom).toBeGreaterThan(1);
+  });
 });

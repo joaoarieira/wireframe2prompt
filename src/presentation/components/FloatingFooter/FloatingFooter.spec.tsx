@@ -36,6 +36,7 @@ beforeEach(() => setTool("select"));
 
 afterEach(async () => {
   setTool("select");
+  editorStore.setState({ layersPanelOpen: false });
   // Toolbar-style guard: restore English if a test switched to Portuguese.
   await act(async () => {
     await i18n.changeLanguage("en");
@@ -148,6 +149,46 @@ describe("FloatingFooter tool palette", () => {
     // an empty value is ignored, keeping the previous character
     fireEvent.change(input, { target: { value: "" } });
     expect(editorStore.getState().pencilChar.value).toBe("b");
+  });
+
+  test("the scrolling tool strip lifts its clip only while a dropdown is open", () => {
+    render(<FloatingFooter />);
+    // The strip scrolls horizontally, which clips the Y axis and would cut off a
+    // group's upward menu; an open dropdown (focus inside it) restores visible
+    // overflow.
+    const strip = screen.getByRole("button", { name: "Select" }).parentElement;
+    expect(strip).toHaveClass(
+      "overflow-x-auto",
+      "has-[[data-ui-dropdown]:focus-within]:overflow-visible",
+      // the inset scroll-shadow that hints at more tools off-edge
+      "scroll-shadow-x",
+    );
+    // Regression (mobile): a bare `has-[:focus]` matched any tapped tool button
+    // — which keeps focus after the tap — leaving the strip permanently
+    // un-clipped: tools spilled over the canvas and horizontal scroll died.
+    expect(strip).not.toHaveClass("has-[:focus]:overflow-visible");
+  });
+
+  test("palette buttons are compact: no tap-floor inflation below lg", () => {
+    render(<FloatingFooter />);
+    // Tools and group triggers keep btn-sm's size on small touch screens so
+    // the strip stays short; the 44px floor only returns at desktop widths.
+    for (const name of ["Select", "More Shapes tools"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button).toHaveClass("lg:[@media(pointer:coarse)]:min-h-11");
+      expect(button).not.toHaveClass("[@media(pointer:coarse)]:min-h-11");
+    }
+  });
+
+  test("the Layers button toggles the layers panel state", () => {
+    render(<FloatingFooter />);
+    expect(editorStore.getState().layersPanelOpen).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Layers" }));
+    expect(editorStore.getState().layersPanelOpen).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Layers" }));
+    expect(editorStore.getState().layersPanelOpen).toBe(false);
   });
 
   test("group trigger and options translate with the active language", async () => {

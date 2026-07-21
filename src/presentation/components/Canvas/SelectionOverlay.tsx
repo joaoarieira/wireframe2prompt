@@ -78,8 +78,10 @@ export function SelectionOverlay({
           aria-label={t("canvas.resize")}
           // The themed `move-diagonal-2` glyph; the pointer is captured on this
           // span during the drag, so a captured pointer keeps showing it start
-          // to finish instead of flipping to the element under the cursor.
-          className="pointer-events-auto absolute -right-1 -bottom-1 size-2 bg-primary"
+          // to finish instead of flipping to the element under the cursor. The
+          // visible dot stays 8px, but a transparent `before:` pad grows the hit
+          // area to ≥44px on coarse (touch) pointers without moving the glyph.
+          className="pointer-events-auto absolute -right-1 -bottom-1 size-2 bg-primary before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 [@media(pointer:coarse)]:before:size-11"
           style={{ cursor: resizeCursor(scheme) }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}

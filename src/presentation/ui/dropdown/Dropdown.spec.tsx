@@ -14,6 +14,9 @@ describe("Dropdown", () => {
     expect(trigger).toHaveClass("btn", "btn-ghost", "btn-sm");
     expect(trigger).not.toHaveClass("btn-neutral");
     expect(screen.getByText("Box")).toBeInTheDocument();
+    // Scroll containers (the footer's tool strip) key off this marker to lift
+    // their overflow clip only while a dropdown menu is open.
+    expect(trigger.closest("[data-ui-dropdown]")).not.toBeNull();
   });
 
   test("active trigger swaps ghost for the neutral fill", () => {
@@ -36,6 +39,18 @@ describe("Dropdown", () => {
     );
 
     expect(screen.getByText("Default border")).toHaveClass("menu-title");
+  });
+
+  test("compact trigger defers the tap-target floor to lg screens", () => {
+    render(
+      <Dropdown trigger="▲" triggerLabel="More tools" triggerCompact>
+        <DropdownItem>Box</DropdownItem>
+      </Dropdown>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "More tools" });
+    expect(trigger).toHaveClass("lg:[@media(pointer:coarse)]:min-h-11");
+    expect(trigger).not.toHaveClass("[@media(pointer:coarse)]:min-h-11");
   });
 
   test("merges className onto the trigger so it can join a group", () => {

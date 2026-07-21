@@ -223,6 +223,12 @@ export interface EditorState {
    * this is true AND exactly one element is selected.
    */
   inspectorOpen: boolean;
+  /**
+   * Whether the Layers panel is shown as an overlay: a bottom-sheet on phones,
+   * a left overlay on tablets. Desktop shows the sidebar permanently and ignores
+   * this. Presentation state, like {@link inspectorOpen}.
+   */
+  layersPanelOpen: boolean;
   /** Internal clipboard — not the OS clipboard. Survives document switches. */
   clipboard: readonly Element[];
   /** Active paste-preview ghost, or null when not in paste mode. */
@@ -249,6 +255,9 @@ export interface EditorActions {
   selectAllElements(): void;
   openInspector(): void;
   closeInspector(): void;
+  openLayersPanel(): void;
+  closeLayersPanel(): void;
+  toggleLayersPanel(): void;
   beginTextEditing(elementId: string): void;
   beginCanvasInlineEditing(elementId: string): void;
   beginCanvasFieldEditing(elementId: string, field: FieldName): void;
@@ -351,6 +360,7 @@ const initialState: EditorState = {
   canvasEditingElementId: null,
   canvasEditingField: null,
   inspectorOpen: false,
+  layersPanelOpen: false,
   clipboard: [],
   pastePreview: null,
   placementHover: null,
@@ -603,6 +613,18 @@ export function createEditorStore(
         set({ inspectorOpen: false });
       },
 
+      openLayersPanel: () => {
+        set({ layersPanelOpen: true });
+      },
+
+      closeLayersPanel: () => {
+        set({ layersPanelOpen: false });
+      },
+
+      toggleLayersPanel: () => {
+        set({ layersPanelOpen: !get().layersPanelOpen });
+      },
+
       beginTextEditing: (elementId) => {
         // Inspector-driven editing: clear canvas overlay so they don't coexist.
         set({
@@ -681,6 +703,10 @@ export function createEditorStore(
       beginPlacement: (kind, cell) => {
         requireDocument("start a placement drag");
         set({
+          // Drop any previous selection: its overlay would linger over the
+          // canvas during the whole drag. The new element is selected on
+          // commit (commitPlacementDrag).
+          selectedElementIds: [],
           // The drag preview now owns the on-canvas ghost; drop the hover one
           // so the two don't stack.
           placementHover: null,

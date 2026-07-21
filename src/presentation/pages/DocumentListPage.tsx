@@ -41,7 +41,7 @@ export function DocumentListPage() {
     // Full-height column so the shared footer sits at the bottom of the page,
     // not directly under the (short) document list.
     <div className="flex min-h-screen flex-col">
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 p-8">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 p-4 sm:p-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold">wireframe2prompt</h1>
           {/* One value sentence + link so the landing has indexable copy; the

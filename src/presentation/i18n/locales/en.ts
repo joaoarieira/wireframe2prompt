@@ -89,6 +89,7 @@ export const en = {
       "Double-click the label, placeholder, or hint on the canvas to edit it.",
     borderStyle: "Border style",
     borderStyleField: "Element border style",
+    sheetLabel: "Element inspector",
   },
   borderStyle: {
     square: "Square",
@@ -99,6 +100,7 @@ export const en = {
     empty: "No elements yet.",
     bringForward: "Bring {{name}} forward",
     sendBackward: "Send {{name}} backward",
+    panelTitle: "Layers",
   },
   canvas: {
     resize: "Resize element",
@@ -127,6 +129,7 @@ export const en = {
     draw: "Draw",
     moreTools: "More {{name}} tools",
     toolWithShortcut: "{{name}} ({{shortcut}})",
+    layers: "Layers",
   },
   contextMenu: {
     copy: "Copy",

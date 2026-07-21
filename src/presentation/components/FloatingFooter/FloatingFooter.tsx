@@ -1,4 +1,4 @@
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { CopyOutputButton } from "../CopyOutputButton/CopyOutputButton";
@@ -25,10 +25,23 @@ export function FloatingFooter() {
   const setActiveTool = useEditorStore((state) => state.setActiveTool);
   const pencilChar = useEditorStore((state) => state.pencilChar);
   const setPencilChar = useEditorStore((state) => state.setPencilChar);
+  const toggleLayersPanel = useEditorStore((state) => state.toggleLayersPanel);
 
   return (
-    <FloatingBar className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-10 px-4 py-2">
-      <div className="flex items-center gap-2">
+    // Capped at the viewport so it never overflows a phone screen; the tool
+    // strip scrolls horizontally while ☰ (Layers) and Copy stay pinned at the
+    // end. gap tightens on small screens, widening back out on desktop.
+    <FloatingBar className="absolute bottom-4 left-1/2 z-10 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-3 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:gap-10">
+      {/* `overflow-x-auto` lets the tools scroll, but it also clips the Y axis
+          (CSS forces overflow-y to auto), which would cut off a grouped tool's
+          upward menu. While a group's dropdown is open its trigger (or menu)
+          holds focus, so `has-[[data-ui-dropdown]:focus-within]` lifts the clip
+          for that moment and the menu shows in full. It must NOT be a bare
+          `has-[:focus]`: a tapped tool button keeps focus after the tap, which
+          left the strip un-clipped for good — tools spilling over the canvas
+          and no more horizontal scroll (mobile bug). `scroll-shadow-x` fades an
+          inset shadow onto whichever edge still has hidden tools. */}
+      <div className="scroll-shadow-x flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto has-[[data-ui-dropdown]:focus-within]:overflow-visible">
         {FOOTER_LAYOUT.map((slot) => (
           <ToolSlot
             key={slotKey(slot)}
@@ -41,7 +54,7 @@ export function FloatingFooter() {
           <TextInput
             type="text"
             aria-label={t("footer.pencilChar")}
-            className="w-10 text-center"
+            className="w-10 shrink-0 text-center"
             maxLength={1}
             value={pencilChar.value}
             onChange={(event) => {
@@ -52,7 +65,21 @@ export function FloatingFooter() {
           />
         )}
       </div>
-      <CopyOutputButton />
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Layers toggle: only where there is no permanent sidebar (below lg). */}
+        <div className="h-6 w-px bg-base-300 lg:hidden" aria-hidden />
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={t("footer.layers")}
+          title={t("footer.layers")}
+          className="lg:hidden"
+          onClick={toggleLayersPanel}
+        >
+          <Menu className="size-4" aria-hidden />
+        </Button>
+        <CopyOutputButton />
+      </div>
     </FloatingBar>
   );
 }
@@ -98,9 +125,12 @@ function ToolButton({ toolId, active, onSelect, className }: ToolButtonProps) {
     ? t("footer.toolWithShortcut", { name: label, shortcut })
     : label;
   return (
+    // compact: in the dense palette strip the buttons keep their btn-sm size on
+    // small touch screens instead of inflating to the 44px tap floor.
     <Button
       variant={active ? "neutral" : "ghost"}
       size="sm"
+      compact
       aria-pressed={active}
       aria-label={label}
       title={title}
@@ -141,6 +171,7 @@ function ToolGroup({ slot, activeToolId, onSelect }: ToolGroupProps) {
         trigger={<ChevronUp className="size-3" aria-hidden />}
         triggerLabel={t("footer.moreTools", { name: t(slot.labelKey) })}
         triggerActive={activeInGroup}
+        triggerCompact
         className="px-1"
       >
         {slot.toolIds.map((toolId) => (

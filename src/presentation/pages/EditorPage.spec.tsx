@@ -10,6 +10,7 @@ import {
 import { EditorPage } from "./EditorPage";
 import { editorStore } from "../state/app-store/appStore";
 import { makeDoc, makeText } from "../../tests/fixtures";
+import type { ViewportBreakpoint } from "../hooks/useViewportBreakpoint";
 
 // The router Link needs a RouterProvider; here only ButtonLink touches the
 // router, so createLink is mocked to a styled anchor (same as ButtonLink.spec).
@@ -21,6 +22,12 @@ vi.mock("@tanstack/react-router", () => ({
     ),
 }));
 
+// The layout branches on the viewport breakpoint; each test pins it explicitly.
+let breakpoint: ViewportBreakpoint = "desktop";
+vi.mock("../hooks/useViewportBreakpoint", () => ({
+  useViewportBreakpoint: () => breakpoint,
+}));
+
 function openReadyDocument() {
   editorStore.setState({
     document: makeDoc(makeText("t1", "hello")),
@@ -30,6 +37,7 @@ function openReadyDocument() {
 
 afterEach(() => {
   cleanup();
+  breakpoint = "desktop";
   act(() => {
     editorStore.getState().setActiveTool("select");
   });
@@ -38,6 +46,7 @@ afterEach(() => {
     documentStatus: "idle",
     selectedElementIds: [],
     inspectorOpen: false,
+    layersPanelOpen: false,
     canvasEditingElementId: null,
   });
 });
@@ -115,5 +124,76 @@ describe("EditorPage", () => {
     // double click's target moves between the first and second click.
     expect(aside).toHaveClass("absolute", "right-0");
     expect(aside.className).not.toContain("shrink-0");
+  });
+
+  test("phone layout drops the sidebar for a top bar and the canvas", () => {
+    breakpoint = "phone";
+    openReadyDocument();
+    render(<EditorPage />);
+
+    // No permanent sidebar aside; the back action lives in the top bar instead.
+    expect(screen.queryByTestId("inspector-aside")).toBeNull();
+    expect(screen.getByTestId("canvas")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Back to wireframes" }),
+    ).toBeInTheDocument();
+  });
+
+  test("phone layout shows the Layers bottom sheet only when open", () => {
+    breakpoint = "phone";
+    openReadyDocument();
+    const view = render(<EditorPage />);
+    expect(screen.queryByRole("dialog", { name: "Layers" })).toBeNull();
+
+    act(() => {
+      editorStore.getState().openLayersPanel();
+    });
+    expect(screen.getByRole("dialog", { name: "Layers" })).toBeInTheDocument();
+    view.unmount();
+  });
+
+  test("phone layout shows the inspector as a bottom sheet when one element is selected", () => {
+    breakpoint = "phone";
+    openReadyDocument();
+    editorStore.setState({ selectedElementIds: ["t1"], inspectorOpen: true });
+    render(<EditorPage />);
+
+    expect(
+      screen.getByRole("dialog", { name: "Element inspector" }),
+    ).toBeInTheDocument();
+  });
+
+  test("tablet layout uses the icon rail and toggles the Layers overlay", () => {
+    breakpoint = "tablet";
+    openReadyDocument();
+    render(<EditorPage />);
+
+    // The rail replaces the sidebar; Layers overlay hidden until toggled.
+    expect(screen.getByTestId("canvas")).toBeInTheDocument();
+    expect(screen.queryByTestId("layers-aside")).toBeNull();
+
+    act(() => {
+      editorStore.getState().openLayersPanel();
+    });
+    expect(screen.getByTestId("layers-aside")).toBeInTheDocument();
+
+    // The transparent backdrop over the canvas closes the overlay.
+    const backdrop = screen
+      .getAllByRole("button", { name: "Layers" })
+      .find((button) => button.className.includes("inset-y-0"));
+    fireEvent.click(backdrop!);
+    expect(editorStore.getState().layersPanelOpen).toBe(false);
+  });
+
+  test("tablet layout overlays the inspector on the right when one element is selected", () => {
+    breakpoint = "tablet";
+    openReadyDocument();
+    editorStore.setState({ selectedElementIds: ["t1"], inspectorOpen: true });
+    render(<EditorPage />);
+
+    expect(screen.getByTestId("inspector-aside")).toHaveClass(
+      "absolute",
+      "right-0",
+    );
   });
 });

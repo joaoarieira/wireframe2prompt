@@ -1,12 +1,15 @@
-import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { DomGridSurface } from "./DomGridSurface";
 import { CharBuffer } from "../../../domain/value-objects/char-buffer/CharBuffer";
 import { GridSize } from "../../../domain/entities/grid-size/GridSize";
 import { Position } from "../../../domain/entities/position/Position";
 
 // 4 cols × 3 rows rendered at 40×54px → cells of 10×18px
-function renderSurface(showHoverHighlight?: boolean) {
+function renderSurface(
+  showHoverHighlight?: boolean,
+  suppressCellEvents?: boolean,
+) {
   const buffer = CharBuffer.create(GridSize.create(4, 3));
   const onDown = vi.fn();
   const onMove = vi.fn();
@@ -20,6 +23,7 @@ function renderSurface(showHoverHighlight?: boolean) {
       onCellPointerUp={onUp}
       onCellDoubleClick={onDoubleClick}
       showHoverHighlight={showHoverHighlight}
+      suppressCellEvents={suppressCellEvents}
     />,
   );
   const grid = screen.getByTestId("grid-surface");
@@ -208,6 +212,28 @@ describe("DomGridSurface", () => {
     expect(onUp).not.toHaveBeenCalled();
   });
 
+  test("suppressCellEvents drops pointer down/move/up so a pinch does not drive the tool", () => {
+    const { grid, onDown, onMove, onUp } = renderSurface(true, true);
+
+    fireEvent.pointerDown(grid, {
+      pointerId: 1,
+      button: 0,
+      clientX: 15,
+      clientY: 20,
+    });
+    fireEvent.pointerMove(grid, { pointerId: 1, clientX: 25, clientY: 20 });
+    fireEvent.pointerUp(grid, {
+      pointerId: 1,
+      button: 0,
+      clientX: 25,
+      clientY: 20,
+    });
+
+    expect(onDown).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onUp).not.toHaveBeenCalled();
+  });
+
   test("double click within the grid fires onCellDoubleClick with the right cell", () => {
     const { grid, onDoubleClick } = renderSurface();
 
@@ -239,5 +265,103 @@ describe("DomGridSurface", () => {
 
     const cell = grid.querySelector('[data-col="1"][data-row="1"]');
     expect(cell?.className).not.toContain("hover:outline");
+  });
+
+  test("hover outline is gated behind a real hover pointer (not touch)", () => {
+    const { grid } = renderSurface();
+    const cell = grid.querySelector('[data-col="1"][data-row="1"]');
+    expect(cell?.className).toContain("[@media(hover:hover)]:hover:outline");
+  });
+
+  describe("touch gestures", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const touchDown = (grid: HTMLElement, clientX: number, clientY: number) =>
+      fireEvent.pointerDown(grid, {
+        pointerId: 1,
+        button: 0,
+        pointerType: "touch",
+        clientX,
+        clientY,
+      });
+    const touchUp = (grid: HTMLElement, clientX: number, clientY: number) =>
+      fireEvent.pointerUp(grid, {
+        pointerId: 1,
+        button: 0,
+        pointerType: "touch",
+        clientX,
+        clientY,
+      });
+
+    test("a resting long-press opens the context menu via the button-2 path", () => {
+      vi.useFakeTimers();
+      const { grid, onDown } = renderSurface();
+      touchDown(grid, 15, 20);
+      // A tiny jitter within tolerance must not cancel the press.
+      fireEvent.pointerMove(grid, {
+        pointerId: 1,
+        pointerType: "touch",
+        clientX: 16,
+        clientY: 20,
+      });
+      act(() => vi.advanceTimersByTime(500));
+      expect(onDown).toHaveBeenCalledTimes(2);
+      expect(onDown.mock.calls[1][1].button).toBe(2);
+    });
+
+    test("dragging the finger away cancels the long-press", () => {
+      vi.useFakeTimers();
+      const { grid, onDown } = renderSurface();
+      touchDown(grid, 15, 20);
+      fireEvent.pointerMove(grid, {
+        pointerId: 1,
+        pointerType: "touch",
+        clientX: 35,
+        clientY: 50,
+      });
+      act(() => vi.advanceTimersByTime(500));
+      expect(onDown).toHaveBeenCalledTimes(1);
+    });
+
+    test("lifting before the delay cancels the long-press", () => {
+      vi.useFakeTimers();
+      const { grid, onDown } = renderSurface();
+      touchDown(grid, 15, 20);
+      touchUp(grid, 15, 20);
+      act(() => vi.advanceTimersByTime(500));
+      expect(onDown).toHaveBeenCalledTimes(1);
+    });
+
+    test("the up that ends a fired long-press is swallowed (no tool commit)", () => {
+      vi.useFakeTimers();
+      const { grid, onUp } = renderSurface();
+      touchDown(grid, 15, 20);
+      act(() => vi.advanceTimersByTime(500));
+      touchUp(grid, 15, 20);
+      expect(onUp).not.toHaveBeenCalled();
+    });
+
+    test("two quick taps on the same cell synthesize a double-tap", () => {
+      vi.useFakeTimers();
+      const { grid, onDoubleClick } = renderSurface();
+      touchDown(grid, 15, 20);
+      touchUp(grid, 15, 20);
+      touchDown(grid, 15, 20);
+      touchUp(grid, 15, 20);
+      expect(onDoubleClick).toHaveBeenCalledWith(Position.create(1, 1));
+    });
+
+    test("taps spaced beyond the window are not a double-tap", () => {
+      vi.useFakeTimers();
+      const { grid, onDoubleClick } = renderSurface();
+      touchDown(grid, 15, 20);
+      touchUp(grid, 15, 20);
+      act(() => vi.advanceTimersByTime(400));
+      touchDown(grid, 15, 20);
+      touchUp(grid, 15, 20);
+      expect(onDoubleClick).not.toHaveBeenCalled();
+    });
   });
 });
