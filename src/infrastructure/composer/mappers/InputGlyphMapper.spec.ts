@@ -52,9 +52,9 @@ describe("InputGlyphMapper (golden tests)", () => {
     expect(result).toBe(
       pad(
         [
-          "+-Label--------------+",
-          "|        Placeholder |",
-          "+--------------------+",
+          "┌─Label──────────────┐",
+          "│        Placeholder │",
+          "└────────────────────┘",
           " Hint",
         ],
         22,
@@ -68,9 +68,9 @@ describe("InputGlyphMapper (golden tests)", () => {
     expect(result).toBe(
       pad(
         [
-          "+-Abcdefghijklmnopqr-+",
-          "| Abcdefghijklmnopqr |",
-          "+--------------------+",
+          "┌─Abcdefghijklmnopqr─┐",
+          "│ Abcdefghijklmnopqr │",
+          "└────────────────────┘",
           " Abcdefghijklmnopqrst",
           " uvwxyz",
         ],
@@ -84,9 +84,9 @@ describe("InputGlyphMapper (golden tests)", () => {
     expect(result).toBe(
       pad(
         [
-          "+--------------------+",
-          "|                    |",
-          "+--------------------+",
+          "┌────────────────────┐",
+          "│                    │",
+          "└────────────────────┘",
           "",
         ],
         22,

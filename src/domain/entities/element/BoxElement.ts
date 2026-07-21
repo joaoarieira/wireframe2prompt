@@ -17,7 +17,7 @@ export class BoxElement extends Element {
 
   static create(props: BoxElementProps): BoxElement {
     const { borderStyle, ...base } = props;
-    return new BoxElement(base, borderStyle ?? BorderStyle.ascii());
+    return new BoxElement(base, borderStyle ?? BorderStyle.unicode());
   }
 
   protected cloneWith(overrides: Partial<ElementBaseProps>): BoxElement {

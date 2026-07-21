@@ -10,9 +10,9 @@ export interface BorderStyleParts {
 }
 
 /**
- * Style used to draw box borders. Default is pure ASCII (`+ - |`), kept behind
- * this abstraction so Unicode box-drawing characters can be plugged in later
- * without touching the mappers.
+ * Style used to draw box borders. The default is Unicode box-drawing
+ * (`┌ ┐ └ ┘ ─ │`) via `unicode()`; pure ASCII (`+ - |`) stays available via
+ * `ascii()`. Both sit behind this abstraction so mappers never hardcode glyphs.
  */
 export class BorderStyle {
   public readonly topLeft: CellChar;
@@ -43,6 +43,23 @@ export class BorderStyle {
       bottomRight: "+",
       horizontal: "-",
       vertical: "|",
+    });
+  }
+
+  /**
+   * The default border style: Unicode box-drawing characters.
+   *
+   * @example
+   * BoxElement.create(props); // borders render as ┌──┐ │  │ └──┘
+   */
+  static unicode(): BorderStyle {
+    return new BorderStyle({
+      topLeft: "┌",
+      topRight: "┐",
+      bottomLeft: "└",
+      bottomRight: "┘",
+      horizontal: "─",
+      vertical: "│",
     });
   }
 

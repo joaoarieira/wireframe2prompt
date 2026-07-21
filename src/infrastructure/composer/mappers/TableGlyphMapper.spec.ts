@@ -37,14 +37,14 @@ describe("TableGlyphMapper (golden tests)", () => {
   test("7×5, 2 columns, 2 rows (even split)", () => {
     const result = composer.compose(doc(7, 5, table(7, 5, 2, 2)));
     expect(result.toString()).toBe(
-      ["+--+--+", "|  |  |", "+--+--+", "|  |  |", "+--+--+"].join("\n"),
+      ["┌──┬──┐", "│  │  │", "├──┼──┤", "│  │  │", "└──┴──┘"].join("\n"),
     );
   });
 
   test("8×5, 2 columns, 2 rows (remainder to first column)", () => {
     const result = composer.compose(doc(8, 5, table(8, 5, 2, 2)));
     expect(result.toString()).toBe(
-      ["+---+--+", "|   |  |", "+---+--+", "|   |  |", "+---+--+"].join("\n"),
+      ["┌───┬──┐", "│   │  │", "├───┼──┤", "│   │  │", "└───┴──┘"].join("\n"),
     );
   });
 

@@ -43,9 +43,9 @@ describe("DropdownGlyphMapper (golden tests)", () => {
     expect(result).toBe(
       pad(
         [
-          "+-Label--------------+",
-          "|      Placeholder ▼ |",
-          "+--------------------+",
+          "┌─Label──────────────┐",
+          "│      Placeholder ▼ │",
+          "└────────────────────┘",
           " Hint",
         ],
         22,

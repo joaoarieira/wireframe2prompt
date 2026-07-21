@@ -5,10 +5,7 @@ import type {
 import type { Element } from "../../../domain/entities/element/Element";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { Position } from "../../../domain/entities/position/Position";
-import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-
-const HORIZONTAL = CellChar.create("-");
-const VERTICAL = CellChar.create("|");
+import { HORIZONTAL, VERTICAL } from "./boxDrawing";
 
 export class LineGlyphMapper implements IGlyphMapper {
   readonly kind = "line";

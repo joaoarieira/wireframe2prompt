@@ -37,12 +37,12 @@ describe("CardGlyphMapper (golden tests)", () => {
     const result = composer.compose(doc(10, 6, card(10, 6, "Card")));
     expect(result.toString()).toBe(
       [
-        "+--------+",
-        "| Card   |",
-        "+--------+",
-        "|        |",
-        "|        |",
-        "+--------+",
+        "┌────────┐",
+        "│ Card   │",
+        "├────────┤",
+        "│        │",
+        "│        │",
+        "└────────┘",
       ].join("\n"),
     );
   });
@@ -50,26 +50,26 @@ describe("CardGlyphMapper (golden tests)", () => {
   test("6×5 with title 'Longtitle' (truncated to 2 chars)", () => {
     const result = composer.compose(doc(6, 5, card(6, 5, "Longtitle")));
     expect(result.toString()).toBe(
-      ["+----+", "| Lo |", "+----+", "|    |", "+----+"].join("\n"),
+      ["┌────┐", "│ Lo │", "├────┤", "│    │", "└────┘"].join("\n"),
     );
   });
 
   test("null title → plain box", () => {
     const result = composer.compose(doc(6, 4, card(6, 4, null)));
     expect(result.toString()).toBe(
-      ["+----+", "|    |", "+----+", "+----+"].join("\n"),
+      ["┌────┐", "│    │", "├────┤", "└────┘"].join("\n"),
     );
   });
 
   test("height < 3 → no title or separator", () => {
     const result = composer.compose(doc(6, 2, card(6, 2, "Title")));
-    expect(result.toString()).toBe(["+----+", "+----+"].join("\n"));
+    expect(result.toString()).toBe(["┌────┐", "└────┘"].join("\n"));
   });
 
   test("height == 3 → title but no separator", () => {
     const result = composer.compose(doc(8, 3, card(8, 3, "Hi")));
     expect(result.toString()).toBe(
-      ["+------+", "| Hi   |", "+------+"].join("\n"),
+      ["┌──────┐", "│ Hi   │", "└──────┘"].join("\n"),
     );
   });
 });

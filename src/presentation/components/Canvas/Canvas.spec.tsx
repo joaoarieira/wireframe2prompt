@@ -314,8 +314,8 @@ describe("Canvas", () => {
     expect(grid.querySelector("span")?.className).not.toContain(
       "hover:outline",
     );
-    // The ghost's top border rasterises a run of '-' into the composed buffer.
-    expect(grid.textContent).toContain("-");
+    // The ghost's top border rasterises a run of '─' into the composed buffer.
+    expect(grid.textContent).toContain("─");
   });
 
   test("marquee overlay appears when marquee state is set", () => {

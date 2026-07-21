@@ -27,10 +27,10 @@ const heavy = BorderStyle.create({
 });
 
 describe("Element", () => {
-  test("BoxElement defaults to the ASCII border style", () => {
+  test("BoxElement defaults to the Unicode border style", () => {
     const box = BoxElement.create(base);
     expect(box.kind).toBe("box");
-    expect(box.borderStyle.equals(BorderStyle.ascii())).toBe(true);
+    expect(box.borderStyle.equals(BorderStyle.unicode())).toBe(true);
   });
 
   test("must reject a non-positive size (invariant lives in Size)", () => {
@@ -168,7 +168,7 @@ describe("Element", () => {
     const styled = box.withBorderStyle(heavy);
     expect(styled.borderStyle.equals(heavy)).toBe(true);
     expect(styled).not.toBe(box);
-    expect(box.borderStyle.equals(BorderStyle.ascii())).toBe(true);
+    expect(box.borderStyle.equals(BorderStyle.unicode())).toBe(true);
   });
 
   test("BoxElement withProps updates the border style and ignores other keys", () => {

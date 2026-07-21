@@ -6,9 +6,7 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-
-const PIPE = CellChar.create("|");
-const DASH = CellChar.create("-");
+import { HORIZONTAL as DASH, VERTICAL as PIPE } from "./boxDrawing";
 
 export class TabsGlyphMapper implements IGlyphMapper {
   readonly kind = "tabs";

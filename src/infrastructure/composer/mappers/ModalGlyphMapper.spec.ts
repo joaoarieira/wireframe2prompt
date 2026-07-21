@@ -37,11 +37,11 @@ describe("ModalGlyphMapper (golden tests)", () => {
     const result = composer.compose(doc(12, 5, modal(12, 5, "Hi")));
     expect(result.toString()).toBe(
       [
-        "+----------+",
-        "| Hi     X |",
-        "+----------+",
-        "|          |",
-        "+----------+",
+        "┌──────────┐",
+        "│ Hi     X │",
+        "├──────────┤",
+        "│          │",
+        "└──────────┘",
       ].join("\n"),
     );
   });
@@ -50,22 +50,22 @@ describe("ModalGlyphMapper (golden tests)", () => {
     const result = composer.compose(doc(12, 5, modal(12, 5, null)));
     expect(result.toString()).toBe(
       [
-        "+----------+",
-        "|        X |",
-        "+----------+",
-        "|          |",
-        "+----------+",
+        "┌──────────┐",
+        "│        X │",
+        "├──────────┤",
+        "│          │",
+        "└──────────┘",
       ].join("\n"),
     );
   });
 
   test("height < 3 → no close button or separator", () => {
     const result = composer.compose(doc(8, 2, modal(8, 2, "Hi")));
-    expect(result.toString()).toBe(["+------+", "+------+"].join("\n"));
+    expect(result.toString()).toBe(["┌──────┐", "└──────┘"].join("\n"));
   });
 
   test("width < 5 → no close button", () => {
     const result = composer.compose(doc(4, 4, modal(4, 4, "Hi")));
-    expect(result.toString()).toBe(["+--+", "|  |", "+--+", "+--+"].join("\n"));
+    expect(result.toString()).toBe(["┌──┐", "│  │", "├──┤", "└──┘"].join("\n"));
   });
 });

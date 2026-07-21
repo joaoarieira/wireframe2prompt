@@ -13,6 +13,16 @@ describe("BorderStyle", () => {
     expect(style.vertical.value).toBe("|");
   });
 
+  test("unicode() must use box-drawing corners, horizontal and vertical", () => {
+    const style = BorderStyle.unicode();
+    expect(style.topLeft.value).toBe("┌");
+    expect(style.topRight.value).toBe("┐");
+    expect(style.bottomLeft.value).toBe("└");
+    expect(style.bottomRight.value).toBe("┘");
+    expect(style.horizontal.value).toBe("─");
+    expect(style.vertical.value).toBe("│");
+  });
+
   test("create must accept custom (e.g. Unicode) characters", () => {
     const style = BorderStyle.create({
       topLeft: "┌",

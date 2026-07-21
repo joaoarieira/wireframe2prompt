@@ -30,7 +30,7 @@ describe("ZIndexComposer (golden tests)", () => {
       layerId: null,
     });
     const result = composer.compose(doc(GridSize.create(4, 3), box));
-    expect(result.toString()).toBe(["+--+", "|  |", "+--+"].join("\n"));
+    expect(result.toString()).toBe(["┌──┐", "│  │", "└──┘"].join("\n"));
   });
 
   test("draws a box offset inside a larger grid", () => {
@@ -43,7 +43,7 @@ describe("ZIndexComposer (golden tests)", () => {
     });
     const result = composer.compose(doc(GridSize.create(6, 5), box));
     expect(result.toString()).toBe(
-      ["      ", " +-+  ", " | |  ", " +-+  ", "      "].join("\n"),
+      ["      ", " ┌─┐  ", " │ │  ", " └─┘  ", "      "].join("\n"),
     );
   });
 
@@ -65,10 +65,10 @@ describe("ZIndexComposer (golden tests)", () => {
       orientation: "v",
     });
     expect(composer.compose(doc(GridSize.create(4, 1), hLine)).toString()).toBe(
-      "----",
+      "────",
     );
     expect(composer.compose(doc(GridSize.create(1, 3), vLine)).toString()).toBe(
-      ["|", "|", "|"].join("\n"),
+      ["│", "│", "│"].join("\n"),
     );
   });
 
@@ -110,7 +110,7 @@ describe("ZIndexComposer (golden tests)", () => {
     // the right edge at col 1 row 0, the bottom edge at col 0 row 1, and the
     // bottom-right corner at (1, 1).
     const result = composer.compose(doc(GridSize.create(2, 2), box));
-    expect(result.toString()).toBe([" |", "-+"].join("\n"));
+    expect(result.toString()).toBe([" │", "─┘"].join("\n"));
   });
 
   test("higher z-index wins overlapping cells", () => {
@@ -132,6 +132,6 @@ describe("ZIndexComposer (golden tests)", () => {
     // Text (z=5) overwrites the box's top corners (z=0); insertion order of the
     // two elements is intentionally box-first to prove ordering is by z-index.
     const result = composer.compose(doc(GridSize.create(2, 2), box, text));
-    expect(result.toString()).toBe(["XY", "++"].join("\n"));
+    expect(result.toString()).toBe(["XY", "└┘"].join("\n"));
   });
 });

@@ -36,8 +36,8 @@ describe("createContainer", () => {
     const rows = ascii.split("\n");
 
     expect(rows).toHaveLength(10); // makeDoc grid is 20×10
-    expect(rows[0].startsWith("++")).toBe(true);
-    expect(rows[1].startsWith("++")).toBe(true);
+    expect(rows[0].startsWith("┌┐")).toBe(true);
+    expect(rows[1].startsWith("└┘")).toBe(true);
   });
 
   test("save then load round-trips through the wired repository", async () => {

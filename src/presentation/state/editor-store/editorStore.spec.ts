@@ -878,7 +878,7 @@ describe("drag gestures", () => {
     const preview = state.composeBuffer(
       previewedDocument(state.document!, state.drag),
     );
-    expect(preview.charAt(cell(3, 2))).toBe("+");
+    expect(preview.charAt(cell(3, 2))).toBe("┌");
     expect(preview.charAt(cell(0, 0))).toBe(" ");
     expect(
       store.getState().document?.getElement("b1")?.position.equals(cell(0, 0)),
@@ -913,7 +913,7 @@ describe("drag gestures", () => {
     const preview = state.composeBuffer(
       previewedDocument(state.document!, state.drag),
     );
-    expect(preview.charAt(cell(4, 0))).toBe("+"); // widened to 5 columns
+    expect(preview.charAt(cell(4, 0))).toBe("┐"); // widened to 5 columns
     expect(
       store
         .getState()
@@ -1371,8 +1371,8 @@ describe("output", () => {
     const state = store.getState();
     const buffer = state.composeBuffer(state.document!);
 
-    expect(buffer.charAt(cell(0, 0))).toBe("+");
-    expect(buffer.charAt(cell(1, 1))).toBe("+");
+    expect(buffer.charAt(cell(0, 0))).toBe("┌");
+    expect(buffer.charAt(cell(1, 1))).toBe("┘");
   });
 
   test("exportAscii returns the exact raw string", async () => {
@@ -1382,7 +1382,7 @@ describe("output", () => {
     const lines = ascii.split("\n");
 
     expect(lines).toHaveLength(10);
-    expect(lines[0].startsWith("++")).toBe(true);
+    expect(lines[0].startsWith("┌┐")).toBe(true);
     expect(lines[0]).toHaveLength(20);
   });
 });

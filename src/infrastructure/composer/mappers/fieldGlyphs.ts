@@ -2,10 +2,15 @@ import type { GlyphCell } from "../../../domain/ports/IGlyphMapper";
 import type { FieldElement } from "../../../domain/entities/element/FieldElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
+import {
+  HORIZONTAL as DASH,
+  VERTICAL as PIPE,
+  TOP_LEFT,
+  TOP_RIGHT,
+  BOTTOM_LEFT,
+  BOTTOM_RIGHT,
+} from "./boxDrawing";
 
-const PLUS = CellChar.create("+");
-const DASH = CellChar.create("-");
-const PIPE = CellChar.create("|");
 const ARROW = CellChar.create("▼");
 
 /**
@@ -14,9 +19,9 @@ const ARROW = CellChar.create("▼");
  * {@link FieldElement.showsArrow}.
  *
  * Layout for a W-wide box at (x, y):
- * - row y   : `+-<label>-…-+`  (label left-anchored, truncated to fit)
- * - row y+1 : `| … <placeholder> [▼ ]|`  (placeholder right-anchored, prefix kept)
- * - row y+2 : `+---…---+`
+ * - row y   : `┌─<label>─…─┐`  (label left-anchored, truncated to fit)
+ * - row y+1 : `│ … <placeholder> [▼ ]│`  (placeholder right-anchored, prefix kept)
+ * - row y+2 : `└───…───┘`
  * - row y+3…: the hint, left-anchored and wrapped one grid line per {@link FieldElement.hintLines}.
  */
 export function mapFieldElement(field: FieldElement): GlyphCell[] {
@@ -28,8 +33,8 @@ export function mapFieldElement(field: FieldElement): GlyphCell[] {
     cells.push({ position: Position.create(col, row), char });
   };
 
-  putBorderRow(put, x, right, y);
-  putBorderRow(put, x, right, y + 2);
+  putBorderRow(put, x, right, y, TOP_LEFT, TOP_RIGHT);
+  putBorderRow(put, x, right, y + 2, BOTTOM_LEFT, BOTTOM_RIGHT);
   putLabel(put, field, x, y);
   putFieldRow(put, field, x, right, y + 1);
   putHint(put, field, x, y);
@@ -39,10 +44,17 @@ export function mapFieldElement(field: FieldElement): GlyphCell[] {
 
 type Put = (col: number, row: number, char: CellChar) => void;
 
-/** A `+---+` border row spanning the box width. */
-function putBorderRow(put: Put, x: number, right: number, row: number): void {
-  put(x, row, PLUS);
-  put(right, row, PLUS);
+/** A `┌───┐`/`└───┘` border row spanning the box width, given its corners. */
+function putBorderRow(
+  put: Put,
+  x: number,
+  right: number,
+  row: number,
+  leftCorner: CellChar,
+  rightCorner: CellChar,
+): void {
+  put(x, row, leftCorner);
+  put(right, row, rightCorner);
   for (let col = x + 1; col < right; col++) {
     put(col, row, DASH);
   }

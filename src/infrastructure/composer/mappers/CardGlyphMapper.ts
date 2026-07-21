@@ -6,10 +6,16 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { CardElement } from "../../../domain/entities/element/CardElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
-
-const PLUS = CellChar.create("+");
-const DASH = CellChar.create("-");
-const PIPE = CellChar.create("|");
+import {
+  HORIZONTAL as DASH,
+  VERTICAL as PIPE,
+  TOP_LEFT,
+  TOP_RIGHT,
+  BOTTOM_LEFT,
+  BOTTOM_RIGHT,
+  TEE_RIGHT,
+  TEE_LEFT,
+} from "./boxDrawing";
 
 export class CardGlyphMapper implements IGlyphMapper {
   readonly kind = "card";
@@ -28,10 +34,10 @@ export class CardGlyphMapper implements IGlyphMapper {
     const bottom = y + height - 1;
 
     // Corners
-    put(x, y, PLUS);
-    put(right, y, PLUS);
-    put(x, bottom, PLUS);
-    put(right, bottom, PLUS);
+    put(x, y, TOP_LEFT);
+    put(right, y, TOP_RIGHT);
+    put(x, bottom, BOTTOM_LEFT);
+    put(right, bottom, BOTTOM_RIGHT);
 
     // Top and bottom edges
     for (let col = x + 1; col < right; col++) {
@@ -56,8 +62,8 @@ export class CardGlyphMapper implements IGlyphMapper {
 
     // Separator at y+2
     if (height >= 4) {
-      put(x, y + 2, PLUS);
-      put(right, y + 2, PLUS);
+      put(x, y + 2, TEE_RIGHT);
+      put(right, y + 2, TEE_LEFT);
       for (let col = x + 1; col < right; col++) {
         put(col, y + 2, DASH);
       }

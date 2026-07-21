@@ -6,13 +6,12 @@ import type { Element } from "../../../domain/entities/element/Element";
 import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
+import { HORIZONTAL as DASH, VERTICAL as PIPE } from "./boxDrawing";
 
-const HEAD_RIGHT = CellChar.create(">");
-const HEAD_LEFT = CellChar.create("<");
-const HEAD_DOWN = CellChar.create("v");
-const HEAD_UP = CellChar.create("^");
-const DASH = CellChar.create("-");
-const PIPE = CellChar.create("|");
+const HEAD_RIGHT = CellChar.create("→");
+const HEAD_LEFT = CellChar.create("←");
+const HEAD_DOWN = CellChar.create("↓");
+const HEAD_UP = CellChar.create("↑");
 
 export class ArrowGlyphMapper implements IGlyphMapper {
   readonly kind = "arrow";

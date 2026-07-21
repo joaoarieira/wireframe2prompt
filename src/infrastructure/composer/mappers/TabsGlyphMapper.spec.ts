@@ -41,16 +41,23 @@ function tabs(
 describe("TabsGlyphMapper (golden tests)", () => {
   test("['One','Two'], active 1, 11×2", () => {
     const result = composer.compose(doc(11, 2, tabs(11, 2, ["One", "Two"], 1)));
-    expect(result.toString()).toBe([" One |[Two]", "-----------"].join("\n"));
+    expect(result.toString()).toBe([" One │[Two]", "───────────"].join("\n"));
   });
 
   test("['One','Two'], active 0, 4×2 (truncation)", () => {
     const result = composer.compose(doc(4, 2, tabs(4, 2, ["One", "Two"], 0)));
-    expect(result.toString()).toBe(["[One", "----"].join("\n"));
+    expect(result.toString()).toBe(["[One", "────"].join("\n"));
   });
 
   test("single tab active, height 1", () => {
     const result = composer.compose(doc(5, 1, tabs(5, 1, ["Tab"], 0)));
     expect(result.toString()).toBe("[Tab]");
+  });
+
+  test("stops when a tab separator lands on the last column", () => {
+    // '[A]' fills cols 0-2; the '│' separator lands on col 3 (the last), so the
+    // second tab's label is never drawn.
+    const result = composer.compose(doc(4, 1, tabs(4, 1, ["A", "B"], 0)));
+    expect(result.toString()).toBe("[A]│");
   });
 });
