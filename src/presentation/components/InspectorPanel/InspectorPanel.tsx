@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
+import { MoveRight, MoveDown, MoveHorizontal, MoveVertical } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { selectedElementOf } from "../../state/editor-store/editorStore";
@@ -108,66 +109,6 @@ function SelectedElementFields({ element }: { element: Element }) {
           onBlur={endTextEditing}
         />
       </Field>
-      <Field legend={t("inspector.position")}>
-        <div className="flex items-center gap-2">
-          <FieldLabel htmlFor="inspector-col">{t("inspector.col")}</FieldLabel>
-          <TextInput
-            id="inspector-col"
-            type="number"
-            className="w-16"
-            value={element.position.col}
-            onChange={(event) => {
-              const col = integerFrom(event);
-              if (col !== null) moveTo(col, element.position.row);
-            }}
-          />
-          <FieldLabel htmlFor="inspector-row">{t("inspector.row")}</FieldLabel>
-          <TextInput
-            id="inspector-row"
-            type="number"
-            className="w-16"
-            value={element.position.row}
-            onChange={(event) => {
-              const row = integerFrom(event);
-              if (row !== null) moveTo(element.position.col, row);
-            }}
-          />
-        </div>
-      </Field>
-      {!(element instanceof FreeDrawElement) && (
-        <Field legend={t("inspector.size")}>
-          <div className="flex items-center gap-2">
-            <FieldLabel htmlFor="inspector-width">
-              {t("inspector.width")}
-            </FieldLabel>
-            <TextInput
-              id="inspector-width"
-              type="number"
-              min={1}
-              className="w-16"
-              value={element.size.width}
-              onChange={(event) => {
-                const width = integerFrom(event);
-                if (width !== null) resizeTo(width, element.size.height);
-              }}
-            />
-            <FieldLabel htmlFor="inspector-height">
-              {t("inspector.height")}
-            </FieldLabel>
-            <TextInput
-              id="inspector-height"
-              type="number"
-              min={1}
-              className="w-16"
-              value={element.size.height}
-              onChange={(event) => {
-                const height = integerFrom(event);
-                if (height !== null) resizeTo(element.size.width, height);
-              }}
-            />
-          </div>
-        </Field>
-      )}
       {element instanceof TextElement && <TextContentField element={element} />}
       {element instanceof LineElement && (
         <Field legend={t("inspector.orientation")}>
@@ -213,6 +154,74 @@ function SelectedElementFields({ element }: { element: Element }) {
         <FieldSlotsFields element={element} />
       )}
       {element.hasBorder && <BorderStyleField element={element} />}
+      <Field legend={t("inspector.position")}>
+        <div className="flex items-center gap-2">
+          <FieldLabel htmlFor="inspector-col">
+            <MoveRight className="size-4" aria-hidden="true" />
+          </FieldLabel>
+          <TextInput
+            id="inspector-col"
+            type="number"
+            aria-label={t("inspector.col")}
+            className="w-16"
+            value={element.position.col}
+            onChange={(event) => {
+              const col = integerFrom(event);
+              if (col !== null) moveTo(col, element.position.row);
+            }}
+          />
+          <FieldLabel htmlFor="inspector-row">
+            <MoveDown className="size-4" aria-hidden="true" />
+          </FieldLabel>
+          <TextInput
+            id="inspector-row"
+            type="number"
+            aria-label={t("inspector.row")}
+            className="w-16"
+            value={element.position.row}
+            onChange={(event) => {
+              const row = integerFrom(event);
+              if (row !== null) moveTo(element.position.col, row);
+            }}
+          />
+        </div>
+      </Field>
+      {!(element instanceof FreeDrawElement) && (
+        <Field legend={t("inspector.size")}>
+          <div className="flex items-center gap-2">
+            <FieldLabel htmlFor="inspector-width">
+              <MoveHorizontal className="size-4" aria-hidden="true" />
+            </FieldLabel>
+            <TextInput
+              id="inspector-width"
+              type="number"
+              min={1}
+              aria-label={t("inspector.width")}
+              className="w-16"
+              value={element.size.width}
+              onChange={(event) => {
+                const width = integerFrom(event);
+                if (width !== null) resizeTo(width, element.size.height);
+              }}
+            />
+            <FieldLabel htmlFor="inspector-height">
+              <MoveVertical className="size-4" aria-hidden="true" />
+            </FieldLabel>
+            <TextInput
+              id="inspector-height"
+              type="number"
+              min={1}
+              aria-label={t("inspector.height")}
+              className="w-16"
+              value={element.size.height}
+              onChange={(event) => {
+                const height = integerFrom(event);
+                if (height !== null) resizeTo(element.size.width, height);
+              }}
+            />
+          </div>
+        </Field>
+      )}
     </>
   );
 }
