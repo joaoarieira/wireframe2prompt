@@ -117,6 +117,8 @@ export const pt: LocaleDictionary = {
     resizeCanvas: "Redimensionar canvas",
     saveSize: "Salvar tamanho do canvas",
     cancelResize: "Cancelar redimensionamento do canvas",
+    width: "Largura do canvas em colunas",
+    height: "Altura do canvas em linhas",
     defaultBorder: "Borda padrão",
     editElement: "Editar elemento",
     deleteElement: "Excluir elemento",

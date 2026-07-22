@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { CanvasResizeControl } from "./CanvasResizeControl";
 import { editorStore } from "../../state/app-store/appStore";
 import { makeBox, makeDoc } from "../../../tests/fixtures";
@@ -42,14 +48,17 @@ describe("CanvasResizeControl", () => {
     expect(editorStore.getState().canvasResize).not.toBeNull();
   });
 
-  test("resizing: shows the preview size plus cancel and save actions", () => {
+  function openResizing(size = GridSize.create(30, 5)) {
     openDoc();
-    editorStore.setState({
-      canvasResize: { previewSize: GridSize.create(30, 5), drag: null },
-    });
+    editorStore.setState({ canvasResize: { previewSize: size, drag: null } });
     render(<CanvasResizeControl />);
+  }
 
-    expect(screen.getByTestId("canvas-size-info")).toHaveTextContent("30x5");
+  test("resizing: shows width/height inputs seeded from the preview plus cancel and save", () => {
+    openResizing();
+
+    expect(screen.getByLabelText("Canvas width in columns")).toHaveValue(30);
+    expect(screen.getByLabelText("Canvas height in rows")).toHaveValue(5);
     expect(
       screen.getByRole("button", { name: "Cancel canvas resize" }),
     ).toBeInTheDocument();
@@ -58,12 +67,79 @@ describe("CanvasResizeControl", () => {
     ).toBeInTheDocument();
   });
 
-  test("cancel discards the preview without touching the grid", () => {
-    openDoc();
-    editorStore.setState({
-      canvasResize: { previewSize: GridSize.create(30, 5), drag: null },
+  test("editing the width input previews the new size, keeping the height", () => {
+    openResizing();
+
+    fireEvent.change(screen.getByLabelText("Canvas width in columns"), {
+      target: { value: "42" },
     });
-    render(<CanvasResizeControl />);
+
+    expect(
+      editorStore
+        .getState()
+        .canvasResize!.previewSize.equals(GridSize.create(42, 5)),
+    ).toBe(true);
+  });
+
+  test("editing the height input previews the new size, keeping the width", () => {
+    openResizing();
+
+    fireEvent.change(screen.getByLabelText("Canvas height in rows"), {
+      target: { value: "9" },
+    });
+
+    expect(
+      editorStore
+        .getState()
+        .canvasResize!.previewSize.equals(GridSize.create(30, 9)),
+    ).toBe(true);
+  });
+
+  test("an empty or non-positive input is not published to the preview", () => {
+    openResizing();
+    const width = screen.getByLabelText("Canvas width in columns");
+
+    // Field shows the raw text, but neither an empty nor a non-positive value
+    // is published — the store keeps the last valid size.
+    fireEvent.change(width, { target: { value: "" } });
+    expect(width).toHaveValue(null);
+    fireEvent.change(width, { target: { value: "0" } });
+    expect(width).toHaveValue(0);
+
+    expect(
+      editorStore
+        .getState()
+        .canvasResize!.previewSize.equals(GridSize.create(30, 5)),
+    ).toBe(true);
+  });
+
+  test("an empty height input is not published to the preview", () => {
+    openResizing();
+    const height = screen.getByLabelText("Canvas height in rows");
+
+    fireEvent.change(height, { target: { value: "" } });
+
+    expect(height).toHaveValue(null);
+    expect(
+      editorStore
+        .getState()
+        .canvasResize!.previewSize.equals(GridSize.create(30, 5)),
+    ).toBe(true);
+  });
+
+  test("a handle drag updating the preview is mirrored back into the inputs", () => {
+    openResizing();
+
+    act(() => {
+      editorStore.getState().setCanvasResizePreview(GridSize.create(12, 7));
+    });
+
+    expect(screen.getByLabelText("Canvas width in columns")).toHaveValue(12);
+    expect(screen.getByLabelText("Canvas height in rows")).toHaveValue(7);
+  });
+
+  test("cancel discards the preview without touching the grid", () => {
+    openResizing();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Cancel canvas resize" }),
@@ -76,11 +152,7 @@ describe("CanvasResizeControl", () => {
   });
 
   test("save applies the previewed size to the document", () => {
-    openDoc();
-    editorStore.setState({
-      canvasResize: { previewSize: GridSize.create(30, 5), drag: null },
-    });
-    render(<CanvasResizeControl />);
+    openResizing();
 
     fireEvent.click(screen.getByRole("button", { name: "Save canvas size" }));
 

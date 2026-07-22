@@ -2770,6 +2770,33 @@ describe("canvas resize", () => {
     expect(store.getState().canvasResize).toBeNull();
   });
 
+  test("setCanvasResizePreview replaces the previewed size", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+
+    store.getState().setCanvasResizePreview(GridSize.create(42, 9));
+
+    expect(
+      store.getState().canvasResize!.previewSize.equals(GridSize.create(42, 9)),
+    ).toBe(true);
+  });
+
+  test("setCanvasResizePreview keeps the same state object for an equal size", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().beginCanvasResize();
+    const before = store.getState().canvasResize;
+
+    store.getState().setCanvasResizePreview(GridSize.create(20, 10));
+
+    expect(store.getState().canvasResize).toBe(before);
+  });
+
+  test("setCanvasResizePreview is a no-op when the selector is closed", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().setCanvasResizePreview(GridSize.create(42, 9));
+    expect(store.getState().canvasResize).toBeNull();
+  });
+
   test("commitCanvasResize applies the previewed size with one undo snapshot", async () => {
     await openFixtureDoc(makeBox("b1"));
     store.getState().beginCanvasResize();

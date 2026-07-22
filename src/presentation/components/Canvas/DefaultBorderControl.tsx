@@ -23,6 +23,9 @@ const BORDER_ICON: Record<BorderStyleName, LucideIcon> = {
 export function DefaultBorderControl() {
   const { t } = useTranslation();
   const hasDocument = useEditorStore((state) => state.document !== null);
+  const isResizingCanvas = useEditorStore(
+    (state) => state.canvasResize !== null,
+  );
   const defaultBorderStyleName = useEditorStore(
     (state) => state.defaultBorderStyleName,
   );
@@ -30,7 +33,9 @@ export function DefaultBorderControl() {
     (state) => state.setDefaultBorderStyleName,
   );
 
-  if (!hasDocument) {
+  // While the canvas-size editor is open the resize control takes over the
+  // corner; the default-border picker steps aside so they don't crowd it.
+  if (!hasDocument || isResizingCanvas) {
     return null;
   }
 

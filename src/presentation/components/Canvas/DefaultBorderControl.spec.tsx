@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { DefaultBorderControl } from "./DefaultBorderControl";
 import { editorStore } from "../../state/app-store/appStore";
 import { makeBox, makeDoc } from "../../../tests/fixtures";
+import { GridSize } from "../../../domain/entities/grid-size/GridSize";
 
 afterEach(() => {
   cleanup();
@@ -10,6 +11,7 @@ afterEach(() => {
     document: null,
     documentStatus: "idle",
     defaultBorderStyleName: "square",
+    canvasResize: null,
   });
 });
 
@@ -24,6 +26,17 @@ function openDoc() {
 describe("DefaultBorderControl", () => {
   test("renders nothing when no document is open", () => {
     const { container } = render(<DefaultBorderControl />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test("is omitted while the canvas-size editor is open", () => {
+    openDoc();
+    editorStore.setState({
+      canvasResize: { previewSize: GridSize.create(30, 5), drag: null },
+    });
+
+    const { container } = render(<DefaultBorderControl />);
+
     expect(container).toBeEmptyDOMElement();
   });
 

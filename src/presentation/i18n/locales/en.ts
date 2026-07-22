@@ -118,6 +118,8 @@ export const en = {
     resizeCanvas: "Resize canvas",
     saveSize: "Save canvas size",
     cancelResize: "Cancel canvas resize",
+    width: "Canvas width in columns",
+    height: "Canvas height in rows",
     defaultBorder: "Default border",
     editElement: "Edit element",
     deleteElement: "Delete element",

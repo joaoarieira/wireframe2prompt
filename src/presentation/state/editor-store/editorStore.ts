@@ -335,6 +335,7 @@ export interface EditorActions {
   beginCanvasResizeDrag(ref: CanvasResizeDragRef): void;
   updateCanvasResizeDrag(point: { clientX: number; clientY: number }): void;
   endCanvasResizeDrag(): void;
+  setCanvasResizePreview(size: GridSize): void;
   commitCanvasResize(): void;
   cancelCanvasResize(): void;
   pointerDownOnCell(cell: Position, point?: SurfacePoint): void;
@@ -1353,6 +1354,16 @@ export function createEditorStore(
           return;
         }
         set({ canvasResize: { ...canvasResize, drag: null } });
+      },
+
+      // Sets the previewed size directly from the numeric inputs in the resize
+      // control. Same-size writes are dropped so we don't recompose the paper.
+      setCanvasResizePreview: (size) => {
+        const { canvasResize } = get();
+        if (canvasResize === null || size.equals(canvasResize.previewSize)) {
+          return;
+        }
+        set({ canvasResize: { ...canvasResize, previewSize: size } });
       },
 
       commitCanvasResize: () => {
