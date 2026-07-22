@@ -282,6 +282,43 @@ describe("editing", () => {
     expect((doc?.getElement("id-2") as TextElement).text).toBe("Hi");
   });
 
+  test("changeSelectionZIndex bumps every selected element in one snapshot, no-ops without a selection", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    const untouched = store.getState().document;
+    store.getState().changeSelectionZIndex(1); // nothing selected yet
+    expect(store.getState().document).toBe(untouched); // no-op keeps the snapshot
+
+    store.getState().placeElement("line", cell(0, 0)); // "id-1"
+    store.getState().selectElement("b1");
+    store.getState().toggleElementSelection("id-1");
+    const z1 = store.getState().document?.getElement("b1")?.zIndex ?? 0;
+    const z2 = store.getState().document?.getElement("id-1")?.zIndex ?? 0;
+
+    store.getState().changeSelectionZIndex(2);
+
+    const doc = store.getState().document;
+    expect(doc?.getElement("b1")?.zIndex).toBe(z1 + 2);
+    expect(doc?.getElement("id-1")?.zIndex).toBe(z2 + 2);
+
+    store.getState().undo(); // a single snapshot restores both
+    const restored = store.getState().document;
+    expect(restored?.getElement("b1")?.zIndex).toBe(z1);
+    expect(restored?.getElement("id-1")?.zIndex).toBe(z2);
+  });
+
+  test("applyKeyAction change-z routes to changeSelectionZIndex", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().selectElement("b1");
+    const z = store.getState().document?.getElement("b1")?.zIndex ?? 0;
+
+    store.getState().applyKeyAction({ type: "change-z", delta: 1 });
+    expect(store.getState().document?.getElement("b1")?.zIndex).toBe(z + 1);
+
+    store.getState().applyKeyAction({ type: "change-z", delta: -1 });
+    expect(store.getState().document?.getElement("b1")?.zIndex).toBe(z);
+  });
+
   test("undo/redo restore snapshots and refresh the flags", async () => {
     await openFixtureDoc(makeBox("b1"));
 
@@ -912,14 +949,17 @@ describe("text editing", () => {
     store.getState().moveElementTo("b1", cell(5, 5));
     store.getState().beginTextEditing("b1");
 
+    const zBefore = store.getState().document?.getElement("b1")?.zIndex;
     store.getState().applyKeyAction({ type: "remove-selected" });
     store
       .getState()
       .applyKeyAction({ type: "nudge", deltaCol: 1, deltaRow: 0 });
+    store.getState().applyKeyAction({ type: "change-z", delta: 1 });
     expect(store.getState().document?.elements).toHaveLength(1);
     expect(
       store.getState().document?.getElement("b1")?.position.equals(cell(5, 5)),
     ).toBe(true);
+    expect(store.getState().document?.getElement("b1")?.zIndex).toBe(zBefore);
 
     store.getState().applyKeyAction({ type: "undo" });
     expect(

@@ -10,6 +10,7 @@ export type EditorKeyAction =
   | { type: "redo" }
   | { type: "remove-selected" }
   | { type: "nudge"; deltaCol: number; deltaRow: number }
+  | { type: "change-z"; delta: number }
   | { type: "copy" }
   | { type: "paste" }
   | { type: "duplicate" }
@@ -64,6 +65,14 @@ export function editorActionForKey(
   }
   if (input.key === "Delete" || input.key === "Backspace") {
     return { type: "remove-selected" };
+  }
+  // PageUp raises the selection one step in the stacking order (higher z wins an
+  // overlapping cell); PageDown lowers it. Mirrors the LayersPanel arrows.
+  if (input.key === "PageUp") {
+    return { type: "change-z", delta: 1 };
+  }
+  if (input.key === "PageDown") {
+    return { type: "change-z", delta: -1 };
   }
   const nudge = nudgeByKey[input.key];
   if (nudge !== undefined) {

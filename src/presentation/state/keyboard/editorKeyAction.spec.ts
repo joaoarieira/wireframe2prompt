@@ -63,6 +63,17 @@ describe("editorActionForKey", () => {
     });
   });
 
+  test("PageUp raises z-index, PageDown lowers it", () => {
+    expect(editorActionForKey(key({ key: "PageUp" }))).toEqual({
+      type: "change-z",
+      delta: 1,
+    });
+    expect(editorActionForKey(key({ key: "PageDown" }))).toEqual({
+      type: "change-z",
+      delta: -1,
+    });
+  });
+
   test("ctrl+c / cmd+c → copy", () => {
     expect(editorActionForKey(key({ key: "c", ctrlKey: true }))).toEqual({
       type: "copy",

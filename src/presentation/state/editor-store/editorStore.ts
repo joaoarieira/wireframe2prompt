@@ -294,6 +294,7 @@ export interface EditorActions {
   nudgeSelection(deltaCol: number, deltaRow: number): void;
   removeSelectedElements(): void;
   changeElementZIndex(elementId: string, zIndex: number): void;
+  changeSelectionZIndex(delta: number): void;
   editElementProps(
     elementId: string,
     props: Readonly<Record<string, unknown>>,
@@ -843,6 +844,19 @@ export function createEditorStore(
         );
       },
 
+      changeSelectionZIndex: (delta) => {
+        const { selectedElementIds } = get();
+        if (selectedElementIds.length === 0) {
+          return;
+        }
+        const document = requireDocument("reorder the selection");
+        const reorders = selectedElementIds.map((id) => {
+          const element = requireElement(document, id);
+          return { elementId: id, zIndex: element.zIndex + delta };
+        });
+        commitDocument(container.reorderLayers.execute({ document, reorders }));
+      },
+
       editElementProps: (elementId, props) => {
         const document = requireDocument("edit element props");
         commitDocument(
@@ -905,6 +919,10 @@ export function createEditorStore(
             return;
           }
           get().removeSelectedElements();
+          return;
+        }
+        if (action.type === "change-z") {
+          get().changeSelectionZIndex(action.delta);
           return;
         }
         get().nudgeSelection(action.deltaCol, action.deltaRow);
@@ -1648,6 +1666,7 @@ function suspendedDuringTextEditing(action: EditorKeyAction): boolean {
   return (
     action.type === "remove-selected" ||
     action.type === "nudge" ||
+    action.type === "change-z" ||
     action.type === "cancel" ||
     action.type === "copy" ||
     action.type === "paste" ||

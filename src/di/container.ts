@@ -13,6 +13,7 @@ import { ResizeElementUseCase } from "../application/usecases/ResizeElementUseCa
 import { ResizeGridUseCase } from "../application/usecases/ResizeGridUseCase";
 import { RemoveElementUseCase } from "../application/usecases/RemoveElementUseCase";
 import { ReorderLayerUseCase } from "../application/usecases/ReorderLayerUseCase";
+import { ReorderLayersUseCase } from "../application/usecases/ReorderLayersUseCase";
 import { EditElementPropsUseCase } from "../application/usecases/EditElementPropsUseCase";
 import { ComposeAsciiUseCase } from "../application/usecases/ComposeAsciiUseCase";
 import { ExportAsciiUseCase } from "../application/usecases/ExportAsciiUseCase";
@@ -38,6 +39,7 @@ export interface AppContainer {
   resizeGrid: ResizeGridUseCase;
   removeElement: RemoveElementUseCase;
   reorderLayer: ReorderLayerUseCase;
+  reorderLayers: ReorderLayersUseCase;
   editElementProps: EditElementPropsUseCase;
   composeAscii: ComposeAsciiUseCase;
   exportAscii: ExportAsciiUseCase;
@@ -86,6 +88,7 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     resizeGrid: new ResizeGridUseCase(history),
     removeElement: new RemoveElementUseCase(history),
     reorderLayer: new ReorderLayerUseCase(history),
+    reorderLayers: new ReorderLayersUseCase(history),
     editElementProps: new EditElementPropsUseCase(history),
     composeAscii: new ComposeAsciiUseCase(composer),
     exportAscii: new ExportAsciiUseCase(composer),
