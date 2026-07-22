@@ -82,6 +82,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
     (state) => state.canvasEditingField,
   );
   const endTextEditing = useEditorStore((state) => state.endTextEditing);
+  const selectElement = useEditorStore((state) => state.selectElement);
   const zoomAtPoint = useEditorStore((state) => state.zoomAtPoint);
   const beginPan = useEditorStore((state) => state.beginPan);
   const updatePan = useEditorStore((state) => state.updatePan);
@@ -239,14 +240,18 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   };
 
   const handlePanStart = (event: PointerEvent<HTMLDivElement>) => {
+    const onBackdrop =
+      event.target === event.currentTarget &&
+      event.button === PRIMARY_MOUSE_BUTTON;
     // A click on the canvas backdrop (outside the paper) while canvas text
     // editing is active should end the editing session.
-    if (
-      canvasEditingElementId !== null &&
-      event.target === event.currentTarget &&
-      event.button === PRIMARY_MOUSE_BUTTON
-    ) {
+    if (canvasEditingElementId !== null && onBackdrop) {
       endTextEditing();
+    }
+    // A click on the backdrop also clears the selection, mirroring a click on a
+    // blank drawable cell — the user's intent is to dismiss what's selected.
+    if (onBackdrop && selectedElementIds.length > 0) {
+      selectElement(null);
     }
     if (!shouldStartPan(event)) {
       return;

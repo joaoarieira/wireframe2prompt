@@ -595,6 +595,20 @@ describe("Canvas", () => {
     expect(editorStore.getState().canvasEditingElementId).toBeNull();
   });
 
+  test("primary-button click on canvas backdrop clears the selection", () => {
+    openDoc();
+    editorStore.setState({ selectedElementIds: ["b1"] });
+    render(<Canvas />);
+    const canvas = screen.getByTestId("canvas");
+
+    fireEvent.pointerDown(canvas, {
+      button: 0,
+      // target === currentTarget when clicking the canvas div itself (backdrop)
+    });
+
+    expect(editorStore.getState().selectedElementIds).toEqual([]);
+  });
+
   test("keydown from an HTMLInputElement does not trigger applyKeyAction", () => {
     openDoc();
     editorStore.setState({ selectedElementIds: ["b1"] });
