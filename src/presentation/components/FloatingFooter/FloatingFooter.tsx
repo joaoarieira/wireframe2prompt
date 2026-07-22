@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronUp, Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
@@ -164,9 +164,9 @@ function ToolGroup({ slot, activeToolId, onSelect }: ToolGroupProps) {
   // instead of resetting the segment to the group's default. Lets the user
   // toggle between, say, line and hand without reopening the menu each time.
   const [lastUsedInGroup, setLastUsedInGroup] = useState(slot.toolIds[0]);
-  useEffect(() => {
-    if (activeInGroup) setLastUsedInGroup(activeToolId);
-  }, [activeInGroup, activeToolId]);
+  if (activeInGroup && activeToolId !== lastUsedInGroup) {
+    setLastUsedInGroup(activeToolId);
+  }
   const shownToolId = activeInGroup ? activeToolId : lastUsedInGroup;
   return (
     <ButtonGroup>
