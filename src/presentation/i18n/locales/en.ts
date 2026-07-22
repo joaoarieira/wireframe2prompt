@@ -110,6 +110,7 @@ export const en = {
     cancelResize: "Cancel canvas resize",
     defaultBorder: "Default border",
     editElement: "Edit element",
+    deleteElement: "Delete element",
   },
   elementKind: {
     box: "box",

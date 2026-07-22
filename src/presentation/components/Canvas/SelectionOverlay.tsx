@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { PointerEvent } from "react";
-import { SquarePen } from "lucide-react";
+import { SquarePen, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Element } from "../../../domain/entities/element/Element";
 import type { PointLike } from "./cellGeometry";
@@ -38,6 +38,9 @@ export function SelectionOverlay({
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const openInspector = useEditorStore((state) => state.openInspector);
+  const removeSelectedElements = useEditorStore(
+    (state) => state.removeSelectedElements,
+  );
   const beginResize = useEditorStore((state) => state.beginResize);
   const updateDrag = useEditorStore((state) => state.updateDrag);
   const commitDrag = useEditorStore((state) => state.commitDrag);
@@ -103,6 +106,19 @@ export function SelectionOverlay({
           onClick={openInspector}
         >
           <SquarePen className="size-2.5 [@media(pointer:coarse)]:size-4" aria-hidden />
+        </button>
+      )}
+      {showEditButton && (
+        <button
+          type="button"
+          aria-label={t("canvas.deleteElement")}
+          // Sits just right of the edit button (see mobile plan); shares its
+          // pointer-events/touch handling. Themed `error` (red) mirrors the
+          // edit button's `primary` (blue) tint.
+          className="pointer-events-auto absolute bottom-full left-4 mb-1 grid size-3.5 touch-none place-items-center rounded text-error hover:bg-base-200 [@media(pointer:coarse)]:left-7 [@media(pointer:coarse)]:size-6"
+          onClick={removeSelectedElements}
+        >
+          <Trash2 className="size-2.5 [@media(pointer:coarse)]:size-4" aria-hidden />
         </button>
       )}
       {showResizeHandle && (

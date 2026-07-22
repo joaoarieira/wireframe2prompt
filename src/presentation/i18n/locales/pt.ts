@@ -109,6 +109,7 @@ export const pt: LocaleDictionary = {
     cancelResize: "Cancelar redimensionamento do canvas",
     defaultBorder: "Borda padrão",
     editElement: "Editar elemento",
+    deleteElement: "Excluir elemento",
   },
   elementKind: {
     box: "retângulo",

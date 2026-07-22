@@ -238,6 +238,51 @@ describe("SelectionOverlay", () => {
     expect(editorStore.getState().inspectorOpen).toBe(true);
   });
 
+  test("delete button is present when showEditButton is true", () => {
+    const el = makeContext();
+    render(
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Delete element" }),
+    ).toBeInTheDocument();
+  });
+
+  test("delete button is absent when showEditButton is false", () => {
+    const el = makeContext();
+    render(
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Delete element" })).toBeNull();
+  });
+
+  test("clicking the delete button removes the selected element", () => {
+    const el = makeContext();
+    render(
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton
+      />,
+    );
+    expect(editorStore.getState().document?.elements).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete element" }));
+
+    expect(editorStore.getState().document?.elements).toHaveLength(0);
+  });
+
   test("full pointer-down → pointer-up sequence commits the drag", () => {
     const el = makeContext();
     render(
