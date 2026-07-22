@@ -41,6 +41,7 @@ export function DefaultBorderControl() {
       trigger={<TriggerIcon className="size-4" aria-hidden />}
       triggerLabel={t("canvas.defaultBorder")}
       menuLabel={t("canvas.defaultBorder")}
+      openDownOnMobile
     >
       {BORDER_ORDER.map((name) => {
         const Icon = BORDER_ICON[name];

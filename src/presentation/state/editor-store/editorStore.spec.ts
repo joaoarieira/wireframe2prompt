@@ -740,6 +740,50 @@ describe("inspector visibility", () => {
   });
 });
 
+describe("auto-open inspector gate (mobile)", () => {
+  test("setAutoOpenInspector toggles the flag (default true)", () => {
+    expect(store.getState().autoOpenInspector).toBe(true);
+
+    store.getState().setAutoOpenInspector(false);
+    expect(store.getState().autoOpenInspector).toBe(false);
+
+    store.getState().setAutoOpenInspector(true);
+    expect(store.getState().autoOpenInspector).toBe(true);
+  });
+
+  test("with auto-open off, releasing over an element selects but keeps it closed", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().setAutoOpenInspector(false);
+
+    store.getState().pointerDownOnCell(cell(1, 1));
+    store.getState().pointerUpOnCell(cell(1, 1));
+
+    expect(store.getState().selectedElementIds).toEqual(["b1"]);
+    expect(store.getState().inspectorOpen).toBe(false);
+  });
+
+  test("with auto-open off, placing an element keeps the inspector closed", async () => {
+    await openFixtureDoc();
+    store.getState().setAutoOpenInspector(false);
+
+    store.getState().placeElement("box", cell(10, 5));
+
+    expect(store.getState().inspectorOpen).toBe(false);
+  });
+
+  test("with auto-open off, moving an element does not close an open inspector", async () => {
+    await openFixtureDoc(makeBox("b1"));
+    store.getState().setAutoOpenInspector(false);
+    store.getState().selectElement("b1");
+    store.getState().openInspector();
+
+    store.getState().pointerDownOnCell(cell(1, 1));
+    store.getState().pointerUpOnCell(cell(3, 3)); // dragged to a new cell
+
+    expect(store.getState().inspectorOpen).toBe(true);
+  });
+});
+
 describe("text editing", () => {
   test("placing a non-text element ends any text-editing session", async () => {
     await openFixtureDoc(makeBox("b1"));

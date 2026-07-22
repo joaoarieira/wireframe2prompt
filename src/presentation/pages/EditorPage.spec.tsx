@@ -46,6 +46,7 @@ afterEach(() => {
     documentStatus: "idle",
     selectedElementIds: [],
     inspectorOpen: false,
+    autoOpenInspector: true,
     layersPanelOpen: false,
     canvasEditingElementId: null,
   });
@@ -183,6 +184,22 @@ describe("EditorPage", () => {
       .find((button) => button.className.includes("inset-y-0"));
     fireEvent.click(backdrop!);
     expect(editorStore.getState().layersPanelOpen).toBe(false);
+  });
+
+  test("desktop enables auto-open of the inspector; phone/tablet disable it", () => {
+    openReadyDocument();
+    const view = render(<EditorPage />);
+    expect(editorStore.getState().autoOpenInspector).toBe(true);
+    view.unmount();
+
+    breakpoint = "phone";
+    const phone = render(<EditorPage />);
+    expect(editorStore.getState().autoOpenInspector).toBe(false);
+    phone.unmount();
+
+    breakpoint = "tablet";
+    render(<EditorPage />);
+    expect(editorStore.getState().autoOpenInspector).toBe(false);
   });
 
   test("tablet layout overlays the inspector on the right when one element is selected", () => {

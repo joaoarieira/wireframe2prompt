@@ -16,6 +16,8 @@ export function EditorContextMenu() {
   const contextMenu = useEditorStore((s) => s.contextMenu);
   const clipboard = useEditorStore((s) => s.clipboard);
   const selectedElementIds = useEditorStore((s) => s.selectedElementIds);
+  const autoOpenInspector = useEditorStore((s) => s.autoOpenInspector);
+  const openInspector = useEditorStore((s) => s.openInspector);
   const copySelection = useEditorStore((s) => s.copySelection);
   const beginPastePreview = useEditorStore((s) => s.beginPastePreview);
   const duplicateSelection = useEditorStore((s) => s.duplicateSelection);
@@ -46,6 +48,16 @@ export function EditorContextMenu() {
       y={contextMenu.clientY}
       onClose={closeContextMenu}
     >
+      {/* Edit only where the inspector isn't always available (phone/tablet):
+          on desktop it opens on select, so the item would be redundant. */}
+      {elementOnly && !autoOpenInspector && (
+        <ContextMenuItem
+          disabled={noSelection}
+          onClick={handle(openInspector)}
+        >
+          {t("contextMenu.edit")}
+        </ContextMenuItem>
+      )}
       {elementOnly && (
         <ContextMenuItem
           disabled={noSelection}

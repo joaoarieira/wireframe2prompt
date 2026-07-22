@@ -224,6 +224,14 @@ export interface EditorState {
    */
   inspectorOpen: boolean;
   /**
+   * Whether selecting or creating an element should open the inspector
+   * automatically. True on desktop, where the inspector is a side panel that
+   * doesn't obscure the canvas; false on phone/tablet, where it's an overlay —
+   * there the user opens it explicitly (pencil button / context-menu Edit).
+   * Synced from the viewport breakpoint by the editor page.
+   */
+  autoOpenInspector: boolean;
+  /**
    * Whether the Layers panel is shown as an overlay: a bottom-sheet on phones,
    * a left overlay on tablets. Desktop shows the sidebar permanently and ignores
    * this. Presentation state, like {@link inspectorOpen}.
@@ -255,6 +263,7 @@ export interface EditorActions {
   selectAllElements(): void;
   openInspector(): void;
   closeInspector(): void;
+  setAutoOpenInspector(enabled: boolean): void;
   openLayersPanel(): void;
   closeLayersPanel(): void;
   toggleLayersPanel(): void;
@@ -360,6 +369,7 @@ const initialState: EditorState = {
   canvasEditingElementId: null,
   canvasEditingField: null,
   inspectorOpen: false,
+  autoOpenInspector: true,
   layersPanelOpen: false,
   clipboard: [],
   pastePreview: null,
@@ -463,7 +473,7 @@ export function createEditorStore(
         textEditingElementId: drag.kind === "text" ? element.id : null,
         canvasEditingElementId: drag.kind === "text" ? element.id : null,
         canvasEditingField: null,
-        inspectorOpen: true,
+        inspectorOpen: get().autoOpenInspector,
       });
     };
 
@@ -613,6 +623,10 @@ export function createEditorStore(
         set({ inspectorOpen: false });
       },
 
+      setAutoOpenInspector: (enabled) => {
+        set({ autoOpenInspector: enabled });
+      },
+
       openLayersPanel: () => {
         set({ layersPanelOpen: true });
       },
@@ -693,7 +707,7 @@ export function createEditorStore(
           textEditingElementId: kind === "text" ? element.id : null,
           canvasEditingElementId: kind === "text" ? element.id : null,
           canvasEditingField: null,
-          inspectorOpen: true,
+          inspectorOpen: get().autoOpenInspector,
         });
       },
 
@@ -924,8 +938,15 @@ export function createEditorStore(
           return;
         }
         // Open the inspector only for a single-element selection; multi-move
-        // leaves the inspector closed so it doesn't pop open unexpectedly.
-        set({ drag: null, inspectorOpen: selectedElementIds.length === 1 });
+        // leaves the inspector closed so it doesn't pop open unexpectedly. When
+        // auto-open is off (phone/tablet), don't touch it here — leave whatever
+        // the user chose so a move doesn't close an inspector they just opened.
+        set({
+          drag: null,
+          inspectorOpen: get().autoOpenInspector
+            ? selectedElementIds.length === 1
+            : get().inspectorOpen,
+        });
         if (drag.lastCell.equals(drag.startCell)) {
           return;
         }
@@ -1062,7 +1083,10 @@ export function createEditorStore(
             commitDocument(
               container.addElement.execute({ document, element: el }),
             );
-            set({ selectedElementIds: [el.id], inspectorOpen: true });
+            set({
+              selectedElementIds: [el.id],
+              inspectorOpen: get().autoOpenInspector,
+            });
           } else {
             const cells = [...stroke.cells.entries()].map(([key, char]) => ({
               position: parseCellKeyToPosition(key),

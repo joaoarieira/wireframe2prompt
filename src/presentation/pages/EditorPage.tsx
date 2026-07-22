@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../state/app-store/appStore";
 import { usePageMetadata, useNoIndex } from "../seo/usePageMetadata";
@@ -24,6 +25,15 @@ export function EditorPage() {
   const inspectorVisible = useEditorStore(
     (state) => state.inspectorOpen && state.selectedElementIds.length === 1,
   );
+  const setAutoOpenInspector = useEditorStore(
+    (state) => state.setAutoOpenInspector,
+  );
+  // On desktop the inspector is a side panel that can pop open on select; on
+  // phone/tablet it's an overlay, so selecting/creating must not auto-open it —
+  // the user opens it via the selection's pencil button or context-menu Edit.
+  useEffect(() => {
+    setAutoOpenInspector(breakpoint === "desktop");
+  }, [breakpoint, setAutoOpenInspector]);
   usePageMetadata({
     titleKey: "seo.editorTitle",
     descriptionKey: "seo.editorDescription",

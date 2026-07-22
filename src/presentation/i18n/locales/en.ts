@@ -108,6 +108,7 @@ export const en = {
     saveSize: "Save canvas size",
     cancelResize: "Cancel canvas resize",
     defaultBorder: "Default border",
+    editElement: "Edit element",
   },
   elementKind: {
     box: "box",
@@ -132,6 +133,7 @@ export const en = {
     layers: "Layers",
   },
   contextMenu: {
+    edit: "Edit",
     copy: "Copy",
     paste: "Paste",
     duplicate: "Duplicate",

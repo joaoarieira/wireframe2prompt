@@ -15,11 +15,17 @@ afterEach(() => {
     clipboard: [],
     selectedElementIds: [],
     pastePreview: null,
+    autoOpenInspector: true,
+    inspectorOpen: false,
   });
 });
 
 function openWithMenu(
-  opts: { selectedIds?: string[]; hasClipboard?: boolean } = {},
+  opts: {
+    selectedIds?: string[];
+    hasClipboard?: boolean;
+    autoOpenInspector?: boolean;
+  } = {},
 ) {
   const box = makeBox("b1");
   editorStore.setState({
@@ -27,6 +33,7 @@ function openWithMenu(
     contextMenu: { clientX: 100, clientY: 200, cell, target: "element" },
     selectedElementIds: opts.selectedIds ?? ["b1"],
     clipboard: opts.hasClipboard ? [box] : [],
+    autoOpenInspector: opts.autoOpenInspector ?? true,
   });
   render(<EditorContextMenu />);
 }
@@ -167,6 +174,39 @@ describe("EditorContextMenu", () => {
   test("menu closes after Duplicate action", () => {
     openWithMenu({ selectedIds: ["b1"] });
     fireEvent.click(screen.getByRole("button", { name: "Duplicate" }));
+    expect(editorStore.getState().contextMenu).toBeNull();
+  });
+
+  test("Edit is hidden when the inspector auto-opens (desktop)", () => {
+    openWithMenu({ autoOpenInspector: true });
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+  });
+
+  test("Edit is shown when the inspector doesn't auto-open (phone/tablet)", () => {
+    openWithMenu({ autoOpenInspector: false });
+    expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+  });
+
+  test("Edit is hidden on an empty-area menu even without auto-open", () => {
+    editorStore.setState({
+      document: makeDoc(makeBox("b1")),
+      contextMenu: { clientX: 100, clientY: 200, cell, target: "empty" },
+      selectedElementIds: ["b1"],
+      autoOpenInspector: false,
+    });
+    render(<EditorContextMenu />);
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+  });
+
+  test("Edit is disabled when the selection is empty", () => {
+    openWithMenu({ selectedIds: [], autoOpenInspector: false });
+    expect(screen.getByRole("button", { name: "Edit" })).toBeDisabled();
+  });
+
+  test("Edit opens the inspector and closes the menu", () => {
+    openWithMenu({ selectedIds: ["b1"], autoOpenInspector: false });
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(editorStore.getState().inspectorOpen).toBe(true);
     expect(editorStore.getState().contextMenu).toBeNull();
   });
 });

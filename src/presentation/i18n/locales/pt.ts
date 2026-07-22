@@ -107,6 +107,7 @@ export const pt: LocaleDictionary = {
     saveSize: "Salvar tamanho do canvas",
     cancelResize: "Cancelar redimensionamento do canvas",
     defaultBorder: "Borda padrão",
+    editElement: "Editar elemento",
   },
   elementKind: {
     box: "retângulo",
@@ -131,6 +132,7 @@ export const pt: LocaleDictionary = {
     layers: "Camadas",
   },
   contextMenu: {
+    edit: "Editar",
     copy: "Copiar",
     paste: "Colar",
     duplicate: "Duplicar",

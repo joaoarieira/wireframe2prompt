@@ -68,6 +68,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   const panDrag = useEditorStore((state) => state.panDrag);
   const viewport = useEditorStore((state) => state.viewport);
   const canvasResize = useEditorStore((state) => state.canvasResize);
+  const autoOpenInspector = useEditorStore((state) => state.autoOpenInspector);
   const composeBuffer = useEditorStore((state) => state.composeBuffer);
   const pointerDownOnCell = useEditorStore((state) => state.pointerDownOnCell);
   const pointerMoveOnCell = useEditorStore((state) => state.pointerMoveOnCell);
@@ -334,6 +335,11 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
               element={el}
               getCell={cellFromPoint}
               showResizeHandle={selectedElements.length === 1}
+              // Only where the inspector doesn't auto-open (phone/tablet): the
+              // pencil is the user's way to open it after selecting.
+              showEditButton={
+                !autoOpenInspector && selectedElements.length === 1
+              }
             />
           ))}
           {canvasResize !== null && (
