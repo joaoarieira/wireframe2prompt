@@ -109,9 +109,15 @@ describe("editorActionForKey", () => {
     });
   });
 
+  test("Enter → confirm-placement", () => {
+    expect(editorActionForKey(key({ key: "Enter" }))).toEqual({
+      type: "confirm-placement",
+    });
+  });
+
   test("non-shortcut keys → null", () => {
     expect(editorActionForKey(key({ key: "z" }))).toBeNull();
     expect(editorActionForKey(key({ key: "x", ctrlKey: true }))).toBeNull();
-    expect(editorActionForKey(key({ key: "Enter" }))).toBeNull();
+    expect(editorActionForKey(key({ key: "Tab" }))).toBeNull();
   });
 });

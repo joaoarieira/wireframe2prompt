@@ -2339,6 +2339,45 @@ describe("copy / paste / duplicate", () => {
     expect(store.getState().marquee).toBeNull();
     expect(store.getState().stroke).toBeNull();
   });
+
+  test("Escape while positioning a new element returns to the select tool", async () => {
+    await openFixtureDoc();
+    store.getState().setActiveTool("box");
+    store.getState().previewPlacementHover("box", cell(3, 2));
+    expect(store.getState().placementHover).not.toBeNull();
+
+    store.getState().applyKeyAction({ type: "cancel" });
+
+    expect(store.getState().activeToolId).toBe("select");
+    // setActiveTool clears the ghost, so the positioning is fully aborted.
+    expect(store.getState().placementHover).toBeNull();
+    expect(store.getState().document?.elements).toHaveLength(0);
+  });
+
+  test("Enter confirms placement, dropping the element at the ghost cell", async () => {
+    await openFixtureDoc();
+    store.getState().setActiveTool("box");
+    store.getState().previewPlacementHover("box", cell(4, 3));
+
+    store.getState().applyKeyAction({ type: "confirm-placement" });
+
+    const elements = store.getState().document?.elements ?? [];
+    expect(elements).toHaveLength(1);
+    expect(elements[0].position).toEqual(cell(4, 3));
+    expect(store.getState().selectedElementIds).toEqual([elements[0].id]);
+    // Ghost cleared so it doesn't linger over the freshly placed element.
+    expect(store.getState().placementHover).toBeNull();
+    // Tool stays active so several elements can be placed in a row.
+    expect(store.getState().activeToolId).toBe("box");
+  });
+
+  test("Enter with no placement ghost is a no-op", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().applyKeyAction({ type: "confirm-placement" });
+
+    expect(store.getState().document?.elements).toHaveLength(1);
+  });
 });
 
 describe("same-cell pointer moves publish no new state", () => {

@@ -17,7 +17,10 @@ import { BorderStyle } from "../../../domain/value-objects/border-style/BorderSt
 import type { BorderStyleName } from "../../../domain/value-objects/border-style/BorderStyle";
 import type { DocumentSummary } from "../../../domain/ports/IDocumentRepository";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
-import { buildElement } from "../element-factory/elementFactory";
+import {
+  buildElement,
+  isPlaceableKind,
+} from "../element-factory/elementFactory";
 import type { PlaceableKind } from "../element-factory/elementFactory";
 import {
   elementAtCell,
@@ -853,6 +856,10 @@ export function createEditorStore(
           cancelActiveInteraction(get);
           return;
         }
+        if (action.type === "confirm-placement") {
+          confirmPlacementHover(get);
+          return;
+        }
         if (action.type === "copy") {
           get().copySelection();
           return;
@@ -1547,7 +1554,7 @@ function suspendedDuringTextEditing(action: EditorKeyAction): boolean {
   );
 }
 
-/** Cancels the highest-priority active interaction (contextMenu → pastePreview → drag → marquee → stroke). */
+/** Cancels the highest-priority active interaction (contextMenu → pastePreview → drag → marquee → stroke → placement). */
 function cancelActiveInteraction(get: () => EditorStoreState): void {
   if (get().contextMenu !== null) {
     get().closeContextMenu();
@@ -1567,7 +1574,27 @@ function cancelActiveInteraction(get: () => EditorStoreState): void {
   }
   if (get().stroke !== null) {
     get().cancelStroke();
+    return;
   }
+  // Positioning a new element (placement tool active, ghost following the
+  // cursor): Esc aborts it by returning to the select tool, which clears the
+  // hover ghost. Lowest priority so it never pre-empts an in-progress gesture.
+  if (isPlaceableKind(get().activeToolId)) {
+    get().setActiveTool("select");
+  }
+}
+
+/**
+ * Confirms the placement-hover ghost, dropping the element at the cursor cell —
+ * the keyboard twin of clicking to place. A no-op when no ghost is showing.
+ */
+function confirmPlacementHover(get: () => EditorStoreState): void {
+  const { placementHover } = get();
+  if (placementHover === null) {
+    return;
+  }
+  get().placeElement(placementHover.kind, placementHover.cell);
+  get().clearPlacementHover();
 }
 
 /** Normalizes clones: subtracts the top-left of the bounding box and assigns fresh ids. */

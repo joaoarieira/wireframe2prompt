@@ -14,7 +14,8 @@ export type EditorKeyAction =
   | { type: "paste" }
   | { type: "duplicate" }
   | { type: "select-all" }
-  | { type: "cancel" };
+  | { type: "cancel" }
+  | { type: "confirm-placement" };
 
 const nudgeByKey: Record<string, { deltaCol: number; deltaRow: number }> = {
   ArrowLeft: { deltaCol: -1, deltaRow: 0 },
@@ -55,6 +56,11 @@ export function editorActionForKey(
   }
   if (input.key === "Escape") {
     return { type: "cancel" };
+  }
+  // Enter confirms the placement of a new element at the ghost's position; Esc
+  // (via "cancel" above) aborts it. Only the placement-hover flow acts on this.
+  if (input.key === "Enter") {
+    return { type: "confirm-placement" };
   }
   if (input.key === "Delete" || input.key === "Backspace") {
     return { type: "remove-selected" };
