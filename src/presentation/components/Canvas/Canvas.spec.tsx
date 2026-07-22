@@ -172,6 +172,15 @@ describe("Canvas", () => {
     expect(editorStore.getState().viewport.zoom).toBeCloseTo(1.1);
   });
 
+  test("the canvas backdrop disables native touch gestures so pinch-zoom isn't hijacked by the browser", () => {
+    openDoc();
+    render(<Canvas />);
+
+    // Without touch-action: none the browser handles a backdrop pinch as page
+    // zoom instead of routing it to usePinchZoomPan (regression).
+    expect(screen.getByTestId("canvas").className).toContain("touch-none");
+  });
+
   test("a drag stays instant even right after a smooth wheel scroll", () => {
     openDoc();
     render(<Canvas />);

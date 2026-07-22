@@ -304,7 +304,7 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   return (
     <div
       ref={outerRef}
-      className="relative grid h-full place-items-center overflow-hidden bg-base-300 p-2 outline-none lg:p-8"
+      className="relative grid h-full touch-none place-items-center overflow-hidden bg-base-300 p-2 outline-none lg:p-8"
       style={{ cursor }}
       tabIndex={0}
       data-testid="canvas"
