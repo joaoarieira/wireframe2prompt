@@ -18,7 +18,7 @@ import type {
 import { createContainer } from "../../../di/container";
 import type { AppContainer } from "../../../di/container";
 import { InMemoryWebStorage } from "../../../tests/doubles/InMemoryWebStorage";
-import { makeBox, makeDoc } from "../../../tests/fixtures";
+import { makeBox, makeDoc, makeText } from "../../../tests/fixtures";
 import { ElementNotFoundError } from "../../../domain/entities/errors/ElementNotFoundError";
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
@@ -2677,6 +2677,25 @@ describe("placement hover ghost", () => {
     store.getState().beginPastePreview(cell(0, 0));
 
     store.getState().previewPlacementHover("box", cell(2, 2));
+
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("previewPlacementHover yields while a text is edited inline", async () => {
+    await openFixtureDoc(makeText("t1", "Hi"));
+    store.getState().beginCanvasInlineEditing("t1");
+
+    store.getState().previewPlacementHover("text", cell(2, 2));
+
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("beginCanvasInlineEditing clears a placement ghost already on screen", async () => {
+    await openFixtureDoc(makeText("t1", "Hi"));
+    store.getState().previewPlacementHover("text", cell(2, 2));
+    expect(store.getState().placementHover).not.toBeNull();
+
+    store.getState().beginCanvasInlineEditing("t1");
 
     expect(store.getState().placementHover).toBeNull();
   });

@@ -11,6 +11,10 @@ import type { PlaceableKind } from "../element-factory/elementFactory";
  * `labelKey` is an i18n key (e.g. `"tools.box"`), not display text — this
  * state layer stays free of i18next; the FloatingFooter translates it.
  *
+ * The `text` tool is special: pressing on an existing text element opens it for
+ * inline editing instead of stacking a new text on top — a plain click on the
+ * word you want to change edits it, matching how design tools behave.
+ *
  * @example
  * registry.register(createPlacementTool("box", "tools.box"));
  */
@@ -22,6 +26,14 @@ export function createPlacementTool(
     id: kind,
     labelKey,
     onCellPointerDown(context, cell) {
+      if (kind === "text") {
+        const hit = context.elementAt(cell);
+        if (hit !== null && hit.kind === "text") {
+          context.select(hit.id);
+          context.beginCanvasInlineEditing(hit.id);
+          return;
+        }
+      }
       context.beginPlacement(kind, cell);
     },
     onCellPointerMove(context, cell) {

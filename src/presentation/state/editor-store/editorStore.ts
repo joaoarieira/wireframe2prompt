@@ -656,6 +656,9 @@ export function createEditorStore(
           textEditingElementId: elementId,
           canvasEditingElementId: elementId,
           canvasEditingField: null,
+          // Clear the placement ghost that was trailing the cursor before the
+          // click; previewPlacementHover then keeps it hidden until editing ends.
+          placementHover: null,
         });
       },
 
@@ -742,7 +745,13 @@ export function createEditorStore(
       // merely hovering. A live drag or paste already renders its own preview,
       // so it yields to them. Same-cell moves are skipped to avoid re-renders.
       previewPlacementHover: (kind, cell) => {
-        if (get().drag !== null || get().pastePreview !== null) {
+        // While a text is being edited inline (e.g. the text tool just opened
+        // an existing element), don't trail a placement ghost under the cursor.
+        if (
+          get().drag !== null ||
+          get().pastePreview !== null ||
+          get().canvasEditingElementId !== null
+        ) {
           return;
         }
         const { placementHover } = get();
