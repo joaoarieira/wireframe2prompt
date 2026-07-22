@@ -3,6 +3,8 @@ import type { WireframeDocument } from "../aggregates/wireframe-document/Wirefra
 export interface DocumentSummary {
   id: string;
   name: string;
+  /** Epoch milliseconds of the last edit; 0 for legacy docs never re-saved. */
+  lastEdit: number;
 }
 
 /**
@@ -12,6 +14,7 @@ export interface DocumentSummary {
 export interface IDocumentRepository {
   save(doc: WireframeDocument): Promise<void>;
   load(id: string): Promise<WireframeDocument | null>;
+  /** Summaries ordered most-recently-edited first (descending `lastEdit`). */
   list(): Promise<DocumentSummary[]>;
   delete(id: string): Promise<void>;
 }

@@ -106,6 +106,18 @@ describe("documentSerialization", () => {
     expect(restored.gridSize.equals(GridSize.create(30, 12))).toBe(true);
   });
 
+  test("serializes and round-trips lastEdit", () => {
+    const doc = richDocument().withLastEdit(1_700_000_000_000);
+    expect(serializeDocument(doc).lastEdit).toBe(1_700_000_000_000);
+    expect(roundTrip(doc).lastEdit).toBe(1_700_000_000_000);
+  });
+
+  test("defaults lastEdit to 0 when absent from the payload", () => {
+    const payload = serializeDocument(richDocument());
+    delete payload.lastEdit;
+    expect(deserializeDocument(payload).lastEdit).toBe(0);
+  });
+
   test("round-trips every element's base props and kind", () => {
     const restored = roundTrip(richDocument());
     const box = restored.getElement("box");

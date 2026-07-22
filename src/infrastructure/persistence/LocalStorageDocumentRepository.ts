@@ -41,7 +41,11 @@ export class LocalStorageDocumentRepository implements IDocumentRepository {
   }
 
   async list(): Promise<DocumentSummary[]> {
-    return this.storedKeys().map((key) => this.summaryAt(key));
+    // Most-recently-edited first, so the home listing reads top-to-bottom in
+    // recency order (see IDocumentRepository.list contract).
+    return this.storedKeys()
+      .map((key) => this.summaryAt(key))
+      .sort((a, b) => b.lastEdit - a.lastEdit);
   }
 
   async delete(id: string): Promise<void> {
@@ -68,6 +72,6 @@ export class LocalStorageDocumentRepository implements IDocumentRepository {
     const parsed = JSON.parse(
       this.storage.getItem(key) as string,
     ) as SerializedDocument;
-    return { id: parsed.id, name: parsed.name };
+    return { id: parsed.id, name: parsed.name, lastEdit: parsed.lastEdit ?? 0 };
   }
 }

@@ -31,9 +31,11 @@ const refreshDocuments = vi.fn(async () => {});
 const createDocument = vi.fn(async () => "new-id");
 const deleteDocument = vi.fn(async () => {});
 
-function setSummaries(summaries: { id: string; name: string }[]) {
+function setSummaries(
+  summaries: { id: string; name: string; lastEdit?: number }[],
+) {
   editorStore.setState({
-    summaries,
+    summaries: summaries.map((s) => ({ lastEdit: 0, ...s })),
     refreshDocuments,
     createDocument,
     deleteDocument,
@@ -79,6 +81,15 @@ describe("DocumentListPage", () => {
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Alpha/ }));
     expect(deleteDocument).toHaveBeenCalledWith("a");
+  });
+
+  test("shows how long ago each document was edited", () => {
+    setSummaries([
+      { id: "a", name: "Alpha", lastEdit: Date.now() - 5 * 60_000 },
+    ]);
+    render(<DocumentListPage />);
+
+    expect(screen.getByText("Edited 5m ago")).toBeInTheDocument();
   });
 
   test("a blank name neither creates nor navigates", async () => {

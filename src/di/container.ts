@@ -1,7 +1,9 @@
 import type { IComposer } from "../domain/ports/IComposer";
 import type { IDocumentRepository } from "../domain/ports/IDocumentRepository";
 import type { IHistory } from "../domain/ports/IHistory";
+import type { IClock } from "../domain/ports/IClock";
 import type { WebStorage } from "../infrastructure/persistence/WebStorage";
+import { SystemClock } from "../infrastructure/time/SystemClock";
 import type { GlyphMapperRegistry } from "../infrastructure/composer/GlyphMapperRegistry";
 import { createDefaultGlyphMapperRegistry } from "../infrastructure/composer/defaultRegistry";
 import { ZIndexComposer } from "../infrastructure/composer/ZIndexComposer";
@@ -62,6 +64,8 @@ export interface ContainerOptions {
   storage?: WebStorage;
   /** Glyph mapper registry; defaults to all implemented mappers. */
   registry?: GlyphMapperRegistry;
+  /** Time source for save timestamps; defaults to the platform wall clock. */
+  clock?: IClock;
 }
 
 /**
@@ -80,6 +84,7 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     options.storage ?? browserLocalStorage(),
   );
   const history = new InMemoryHistory();
+  const clock = options.clock ?? new SystemClock();
 
   return {
     addElement: new AddElementUseCase(history),
@@ -92,7 +97,7 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     editElementProps: new EditElementPropsUseCase(history),
     composeAscii: new ComposeAsciiUseCase(composer),
     exportAscii: new ExportAsciiUseCase(composer),
-    saveDocument: new SaveDocumentUseCase(repository),
+    saveDocument: new SaveDocumentUseCase(repository, clock),
     loadDocument: new LoadDocumentUseCase(repository),
     undo: new UndoUseCase(history),
     redo: new RedoUseCase(history),

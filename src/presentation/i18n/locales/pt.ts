@@ -13,6 +13,16 @@ export const pt: LocaleDictionary = {
     tagline:
       "Esboce sua tela numa grade ASCII e copie como prompt para qualquer IA — sem ferramentas de design.",
     taglineLink: "Saiba como funciona",
+    editedJustNow: "Editado agora mesmo",
+    editedSecondsAgo: "Editado {{count}}s atrás",
+    editedMinutesAgo: "Editado {{count}}m atrás",
+    editedHoursAgo: "Editado {{count}}h atrás",
+    editedDayAgo: "Editado {{count}} dia atrás",
+    editedDaysAgo: "Editado {{count}} dias atrás",
+    editedMonthAgo: "Editado {{count}} mês atrás",
+    editedMonthsAgo: "Editado {{count}} meses atrás",
+    editedYearAgo: "Editado {{count}} ano atrás",
+    editedYearsAgo: "Editado {{count}} anos atrás",
   },
   editor: {
     notFound: "Wireframe não encontrado.",

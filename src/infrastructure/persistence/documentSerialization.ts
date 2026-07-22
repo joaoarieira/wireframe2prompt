@@ -148,6 +148,8 @@ export interface SerializedDocument {
   gridSize: SerializedGridSize;
   elements: SerializedElement[];
   layers: SerializedLayer[];
+  /** Epoch ms of the last edit. Optional: absent in pre-lastEdit payloads. */
+  lastEdit?: number;
 }
 
 function serializeBase(element: Element): SerializedElementBase {
@@ -248,6 +250,7 @@ export function serializeDocument(doc: WireframeDocument): SerializedDocument {
     gridSize: { cols: doc.gridSize.cols, rows: doc.gridSize.rows },
     elements: doc.elements.map(serializeElement),
     layers: doc.layers.map(serializeLayer),
+    lastEdit: doc.lastEdit,
   };
 }
 
@@ -363,5 +366,7 @@ export function deserializeDocument(
     gridSize: GridSize.create(data.gridSize.cols, data.gridSize.rows),
     elements: data.elements.map(deserializeElement),
     layers: data.layers.map((layer) => Layer.create(layer)),
+    // ?? 0 keeps payloads written before `lastEdit` existed loadable.
+    lastEdit: data.lastEdit ?? 0,
   });
 }

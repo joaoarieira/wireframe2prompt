@@ -3,8 +3,13 @@ import { SpyDocumentRepository } from "./SpyDocumentRepository";
 import { WireframeDocument } from "../../domain/aggregates/wireframe-document/WireframeDocument";
 import { GridSize } from "../../domain/entities/grid-size/GridSize";
 
-const doc = (id: string, name: string) =>
-  WireframeDocument.create({ id, name, gridSize: GridSize.create(10, 10) });
+const doc = (id: string, name: string, lastEdit = 0) =>
+  WireframeDocument.create({
+    id,
+    name,
+    gridSize: GridSize.create(10, 10),
+    lastEdit,
+  });
 
 describe("SpyDocumentRepository", () => {
   test("save then load returns the stored document and records the calls", async () => {
@@ -21,13 +26,13 @@ describe("SpyDocumentRepository", () => {
     expect(await repo.load("missing")).toBeNull();
   });
 
-  test("list returns an id/name summary for every stored document", async () => {
+  test("list summarizes every stored document, most-recently-edited first", async () => {
     const repo = new SpyDocumentRepository();
-    await repo.save(doc("a", "Alpha"));
-    await repo.save(doc("b", "Beta"));
+    await repo.save(doc("a", "Alpha", 100));
+    await repo.save(doc("b", "Beta", 300));
     expect(await repo.list()).toEqual([
-      { id: "a", name: "Alpha" },
-      { id: "b", name: "Beta" },
+      { id: "b", name: "Beta", lastEdit: 300 },
+      { id: "a", name: "Alpha", lastEdit: 100 },
     ]);
   });
 

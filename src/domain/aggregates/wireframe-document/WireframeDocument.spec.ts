@@ -28,6 +28,33 @@ describe("WireframeDocument", () => {
     expect(emptyDoc().elements).toHaveLength(0);
   });
 
+  test("lastEdit defaults to 0 and is settable via create", () => {
+    expect(emptyDoc().lastEdit).toBe(0);
+    expect(
+      WireframeDocument.create({
+        id: "d",
+        name: "N",
+        gridSize: GridSize.create(4, 4),
+        lastEdit: 1234,
+      }).lastEdit,
+    ).toBe(1234);
+  });
+
+  test("withLastEdit returns a stamped copy, leaving the original untouched", () => {
+    const doc = emptyDoc().addElement(box("a"));
+    const stamped = doc.withLastEdit(999);
+    expect(stamped).not.toBe(doc);
+    expect(stamped.lastEdit).toBe(999);
+    expect(doc.lastEdit).toBe(0);
+    expect(stamped.getElement("a")).toBeDefined();
+  });
+
+  test("mutators carry lastEdit forward", () => {
+    const doc = emptyDoc().withLastEdit(777);
+    expect(doc.addElement(box("a")).lastEdit).toBe(777);
+    expect(doc.resizeGrid(GridSize.create(5, 5)).lastEdit).toBe(777);
+  });
+
   test("addElement must return a new document without mutating the original", () => {
     const doc = emptyDoc();
     const next = doc.addElement(box("a"));
@@ -83,9 +110,9 @@ describe("WireframeDocument", () => {
     expect(next).not.toBe(doc);
     expect(next.gridSize.equals(GridSize.create(4, 3))).toBe(true);
     // The element sitting outside the shrunk grid is preserved, not dropped.
-    expect(next.getElement("far")!.position.equals(Position.create(50, 50))).toBe(
-      true,
-    );
+    expect(
+      next.getElement("far")!.position.equals(Position.create(50, 50)),
+    ).toBe(true);
     expect(doc.gridSize.equals(GridSize.create(10, 10))).toBe(true);
   });
 

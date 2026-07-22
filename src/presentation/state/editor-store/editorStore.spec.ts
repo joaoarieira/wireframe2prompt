@@ -67,7 +67,7 @@ describe("documents", () => {
 
     expect(id).toBe("id-1");
     expect(store.getState().summaries).toEqual([
-      { id: "id-1", name: "landing page" },
+      { id: "id-1", name: "landing page", lastEdit: expect.any(Number) },
     ]);
     const saved = await container.repository.load("id-1");
     expect(saved?.gridSize.cols).toBe(80);

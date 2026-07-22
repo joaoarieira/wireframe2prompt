@@ -15,6 +15,16 @@ export const en = {
     tagline:
       "Sketch your screen on an ASCII grid and copy it as a prompt for any AI — no design tools required.",
     taglineLink: "Learn how it works",
+    editedJustNow: "Edited just now",
+    editedSecondsAgo: "Edited {{count}}s ago",
+    editedMinutesAgo: "Edited {{count}}m ago",
+    editedHoursAgo: "Edited {{count}}h ago",
+    editedDayAgo: "Edited {{count}} day ago",
+    editedDaysAgo: "Edited {{count}} days ago",
+    editedMonthAgo: "Edited {{count}} month ago",
+    editedMonthsAgo: "Edited {{count}} months ago",
+    editedYearAgo: "Edited {{count}} year ago",
+    editedYearsAgo: "Edited {{count}} years ago",
   },
   editor: {
     notFound: "Wireframe not found.",

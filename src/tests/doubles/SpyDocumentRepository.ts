@@ -22,10 +22,9 @@ export class SpyDocumentRepository implements IDocumentRepository {
   }
 
   async list(): Promise<DocumentSummary[]> {
-    return [...this.store.values()].map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-    }));
+    return [...this.store.values()]
+      .map((doc) => ({ id: doc.id, name: doc.name, lastEdit: doc.lastEdit }))
+      .sort((a, b) => b.lastEdit - a.lastEdit);
   }
 
   async delete(id: string): Promise<void> {

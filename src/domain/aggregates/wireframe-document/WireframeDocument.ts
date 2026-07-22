@@ -12,6 +12,8 @@ export interface WireframeDocumentProps {
   gridSize: GridSize;
   elements: readonly Element[];
   layers: readonly Layer[];
+  /** Epoch milliseconds of the last edit; stamped by the caller on save. */
+  lastEdit: number;
 }
 
 /**
@@ -25,6 +27,8 @@ export class WireframeDocument {
   public readonly gridSize: GridSize;
   public readonly elements: readonly Element[];
   public readonly layers: readonly Layer[];
+  /** Epoch milliseconds of the last edit; 0 until first stamped on save. */
+  public readonly lastEdit: number;
 
   private constructor(props: WireframeDocumentProps) {
     this.id = props.id;
@@ -32,6 +36,7 @@ export class WireframeDocument {
     this.gridSize = props.gridSize;
     this.elements = props.elements;
     this.layers = props.layers;
+    this.lastEdit = props.lastEdit;
   }
 
   static create(props: {
@@ -40,6 +45,8 @@ export class WireframeDocument {
     gridSize: GridSize;
     elements?: readonly Element[];
     layers?: readonly Layer[];
+    /** Epoch ms; defaults to 0 (unstamped) — SaveDocument stamps it on persist. */
+    lastEdit?: number;
   }): WireframeDocument {
     return new WireframeDocument({
       id: props.id,
@@ -47,6 +54,7 @@ export class WireframeDocument {
       gridSize: props.gridSize,
       elements: props.elements ?? [],
       layers: props.layers ?? [],
+      lastEdit: props.lastEdit ?? 0,
     });
   }
 
@@ -57,6 +65,19 @@ export class WireframeDocument {
       gridSize: this.gridSize,
       elements,
       layers: this.layers,
+      lastEdit: this.lastEdit,
+    });
+  }
+
+  /** Returns a copy stamped with a new last-edit time; all else unchanged. */
+  withLastEdit(lastEdit: number): WireframeDocument {
+    return new WireframeDocument({
+      id: this.id,
+      name: this.name,
+      gridSize: this.gridSize,
+      elements: this.elements,
+      layers: this.layers,
+      lastEdit,
     });
   }
 
@@ -131,6 +152,7 @@ export class WireframeDocument {
       gridSize,
       elements: this.elements,
       layers: this.layers,
+      lastEdit: this.lastEdit,
     });
   }
 }
