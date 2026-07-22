@@ -9,6 +9,12 @@ describe("TextInput", () => {
     expect(input).toHaveClass("input", "input-sm", "w-16");
   });
 
+  test("meets the 44px tap-target floor on coarse (touch) pointers", () => {
+    render(<TextInput aria-label="name" />);
+    const input = screen.getByLabelText("name");
+    expect(input).toHaveClass("[@media(pointer:coarse)]:min-h-11");
+  });
+
   test("forwards native props and change events", () => {
     const onChange = vi.fn();
     render(<TextInput aria-label="qty" type="number" onChange={onChange} />);

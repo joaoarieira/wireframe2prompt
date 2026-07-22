@@ -34,14 +34,13 @@ export function FloatingFooter() {
     <FloatingBar className="absolute bottom-4 left-1/2 z-10 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-3 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:gap-10">
       {/* `overflow-x-auto` lets the tools scroll, but it also clips the Y axis
           (CSS forces overflow-y to auto), which would cut off a grouped tool's
-          upward menu. While a group's dropdown is open its trigger (or menu)
-          holds focus, so `has-[[data-ui-dropdown]:focus-within]` lifts the clip
-          for that moment and the menu shows in full. It must NOT be a bare
-          `has-[:focus]`: a tapped tool button keeps focus after the tap, which
-          left the strip un-clipped for good — tools spilling over the canvas
-          and no more horizontal scroll (mobile bug). `scroll-shadow-x` fades an
-          inset shadow onto whichever edge still has hidden tools. */}
-      <div className="scroll-shadow-x flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto has-[[data-ui-dropdown]:focus-within]:overflow-visible">
+          upward menu. Rather than lift the clip while a menu is open — which
+          resets scrollLeft to 0 and un-hides the off-edge tools — the grouped
+          ToolGroups render their menu in the top layer (Dropdown `overlay`), so
+          it escapes the clip while the strip keeps its scroll position and its
+          hidden tools. `scroll-shadow-x` fades an inset shadow onto whichever
+          edge still has hidden tools. */}
+      <div className="scroll-shadow-x flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto">
         {FOOTER_LAYOUT.map((slot) => (
           <ToolSlot
             key={slotKey(slot)}
@@ -168,6 +167,7 @@ function ToolGroup({ slot, activeToolId, onSelect }: ToolGroupProps) {
         className="pe-1"
       />
       <Dropdown
+        overlay
         trigger={<ChevronUp className="size-3" aria-hidden />}
         triggerLabel={t("footer.moreTools", { name: t(slot.labelKey) })}
         triggerActive={activeInGroup}

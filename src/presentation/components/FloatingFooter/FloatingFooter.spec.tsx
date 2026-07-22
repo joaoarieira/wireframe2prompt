@@ -11,14 +11,27 @@ function setTool(toolId: string): void {
   });
 }
 
-/** The `.dropdown` wrapper for a group, to scope queries to its menu options. */
+/**
+ * The group's top-layer popover menu, to scope queries to its options. Groups
+ * render via Dropdown `overlay`, so the menu is a `[popover]` list anchored to
+ * the trigger by id (its `popovertarget`), not an ancestor `.dropdown` wrapper.
+ */
 function dropdownOf(triggerName: string): HTMLElement {
   const trigger = screen.getByRole("button", { name: triggerName });
-  const wrapper = trigger.closest(".dropdown");
-  if (!(wrapper instanceof HTMLElement)) {
-    throw new Error(`no .dropdown wraps the trigger "${triggerName}"`);
+  const menuId = trigger.getAttribute("popovertarget");
+  const menu = menuId && document.getElementById(menuId);
+  if (!(menu instanceof HTMLElement)) {
+    throw new Error(`no popover menu targets the trigger "${triggerName}"`);
   }
-  return wrapper;
+  return menu;
+}
+
+/** Reads a menu option button; the [popover] menu is hidden to role queries. */
+function menuOption(triggerName: string, name: string): HTMLElement {
+  return within(dropdownOf(triggerName)).getByRole("button", {
+    name,
+    hidden: true,
+  });
 }
 
 /** The group's quick-select segment — the same-named button outside the menu. */
@@ -105,11 +118,7 @@ describe("FloatingFooter tool palette", () => {
       screen.getByRole("button", { name: "More Shapes tools" }),
     ).toHaveClass("btn-ghost");
 
-    fireEvent.click(
-      within(dropdownOf("More Shapes tools")).getByRole("button", {
-        name: "Line",
-      }),
-    );
+    fireEvent.click(menuOption("More Shapes tools", "Line"));
 
     expect(editorStore.getState().activeToolId).toBe("line");
     expect(
@@ -134,11 +143,7 @@ describe("FloatingFooter tool palette", () => {
     render(<FloatingFooter />);
     expect(screen.queryByLabelText("Pencil character")).toBeNull();
 
-    fireEvent.click(
-      within(dropdownOf("More Draw tools")).getByRole("button", {
-        name: "Pencil",
-      }),
-    );
+    fireEvent.click(menuOption("More Draw tools", "Pencil"));
 
     expect(editorStore.getState().activeToolId).toBe("pencil");
     const input = screen.getByLabelText("Pencil character");
@@ -151,22 +156,27 @@ describe("FloatingFooter tool palette", () => {
     expect(editorStore.getState().pencilChar.value).toBe("b");
   });
 
-  test("the scrolling tool strip lifts its clip only while a dropdown is open", () => {
+  test("the scrolling tool strip keeps a stable clip; groups escape via overlay", () => {
     render(<FloatingFooter />);
-    // The strip scrolls horizontally, which clips the Y axis and would cut off a
-    // group's upward menu; an open dropdown (focus inside it) restores visible
-    // overflow.
+    // The strip scrolls horizontally and stays clipped even while a group menu
+    // is open — the menu escapes in the top layer (Dropdown `overlay`), so the
+    // strip never drops its overflow.
     const strip = screen.getByRole("button", { name: "Select" }).parentElement;
     expect(strip).toHaveClass(
       "overflow-x-auto",
-      "has-[[data-ui-dropdown]:focus-within]:overflow-visible",
       // the inset scroll-shadow that hints at more tools off-edge
       "scroll-shadow-x",
     );
-    // Regression (mobile): a bare `has-[:focus]` matched any tapped tool button
-    // — which keeps focus after the tap — leaving the strip permanently
-    // un-clipped: tools spilled over the canvas and horizontal scroll died.
+    // Regression: lifting the clip while a menu is open reset scrollLeft to 0 and
+    // un-hid the off-edge tools, so the strip must NOT toggle its overflow.
+    expect(strip).not.toHaveClass(
+      "has-[[data-ui-dropdown]:focus-within]:overflow-visible",
+    );
     expect(strip).not.toHaveClass("has-[:focus]:overflow-visible");
+    // The group trigger opens a top-layer popover instead.
+    expect(
+      screen.getByRole("button", { name: "More Shapes tools" }),
+    ).toHaveAttribute("popovertarget");
   });
 
   test("palette buttons are compact: no tap-floor inflation below lg", () => {
@@ -202,9 +212,7 @@ describe("FloatingFooter tool palette", () => {
       screen.getByRole("button", { name: "Mais ferramentas de Formas" }),
     ).toBeInTheDocument();
     expect(
-      within(dropdownOf("Mais ferramentas de Formas")).getByRole("button", {
-        name: "Linha",
-      }),
+      menuOption("Mais ferramentas de Formas", "Linha"),
     ).toBeInTheDocument();
   });
 });

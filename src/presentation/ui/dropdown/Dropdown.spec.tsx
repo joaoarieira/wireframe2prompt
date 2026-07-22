@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Dropdown, DropdownItem } from "./Dropdown";
 
 describe("Dropdown", () => {
@@ -94,6 +94,46 @@ describe("Dropdown", () => {
       "join-item",
     );
   });
+
+  test("overlay renders a popover menu anchored to the trigger button", () => {
+    const { container } = render(
+      <Dropdown
+        trigger="▲"
+        triggerLabel="More tools"
+        overlay
+        menuLabel="Shapes"
+      >
+        <DropdownItem>Box</DropdownItem>
+      </Dropdown>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "More tools" });
+    const menuId = trigger.getAttribute("popovertarget");
+    expect(menuId).toBeTruthy();
+
+    // The menu is a top-layer popover whose id matches the trigger's target, so
+    // it escapes a clipping/scrolling ancestor without lifting its overflow.
+    const menu = container.querySelector<HTMLElement>("[popover]");
+    expect(menu).not.toBeNull();
+    expect(menu).toHaveAttribute("id", menuId!);
+    expect(menu).toHaveClass("dropdown", "dropdown-top", "mb-1", "menu");
+    // anchored: the trigger names an anchor the menu positions against.
+    expect(trigger.style.anchorName).toBe(menu!.style.positionAnchor);
+    expect(trigger.style.anchorName).toMatch(/^--dd-/);
+    expect(screen.getByText("Shapes")).toHaveClass("menu-title");
+  });
+
+  test("overlay honours openDownOnMobile on the popover menu", () => {
+    const { container } = render(
+      <Dropdown trigger="▲" triggerLabel="Border" overlay openDownOnMobile>
+        <DropdownItem>Square</DropdownItem>
+      </Dropdown>,
+    );
+
+    const menu = container.querySelector<HTMLElement>("[popover]");
+    expect(menu).toHaveClass("dropdown-bottom", "lg:dropdown-top", "mt-1");
+    expect(menu).not.toHaveClass("dropdown-top", "mb-1");
+  });
 });
 
 describe("DropdownItem", () => {
@@ -123,5 +163,29 @@ describe("DropdownItem", () => {
 
     expect(() => fireEvent.click(item)).not.toThrow();
     expect(item).not.toHaveFocus();
+  });
+
+  test("inside a popover, click hides the popover instead of blurring", () => {
+    const { container } = render(
+      <div popover="auto">
+        <DropdownItem>Line</DropdownItem>
+      </div>,
+    );
+    const popover = container.querySelector<HTMLElement>("[popover]")!;
+    const hidePopover = vi.fn();
+    // jsdom may not implement the Popover API, so stub the method we call.
+    Object.defineProperty(popover, "hidePopover", { value: hidePopover });
+    // a [popover] is hidden to role queries, so reach the button directly.
+    const item = within(popover).getByRole("button", {
+      name: "Line",
+      hidden: true,
+    });
+    item.focus();
+
+    fireEvent.click(item);
+
+    expect(hidePopover).toHaveBeenCalledTimes(1);
+    // it dismisses the menu via the popover, so it does not also blur itself.
+    expect(item).toHaveFocus();
   });
 });
