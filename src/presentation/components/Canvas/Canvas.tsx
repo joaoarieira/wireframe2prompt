@@ -123,13 +123,18 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
   // `deltaY || deltaX` reads the scroll amount on either axis, since browsers
   // report Shift+wheel as horizontal delta on some platforms.
   useEffect(() => {
-    const el = rootRef.current;
-    if (el === null) return;
+    // Listen on the outer canvas (backdrop included), not just the paper, so
+    // wheel zoom/pan works anywhere in the canvas area. The zoom anchor is still
+    // measured against the paper (`paper`) to keep the cursor-pinned zoom exact;
+    // both refs mount together, so guarding them once here is enough.
+    const el = outerRef.current;
+    const paper = rootRef.current;
+    if (el === null || paper === null) return;
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       if (event.ctrlKey) {
         setSmoothScroll(false);
-        const rect = el.getBoundingClientRect();
+        const rect = paper.getBoundingClientRect();
         const anchorX = (event.clientX - rect.left) / currentZoom;
         const anchorY = (event.clientY - rect.top) / currentZoom;
         const step = event.deltaY > 0 ? -0.1 : 0.1;

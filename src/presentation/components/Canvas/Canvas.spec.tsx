@@ -158,6 +158,20 @@ describe("Canvas", () => {
     );
   });
 
+  test("ctrl+wheel zooms even when fired on the canvas backdrop, not the paper", () => {
+    openDoc();
+    render(<Canvas />);
+
+    fireEvent.wheel(screen.getByTestId("canvas"), {
+      ctrlKey: true,
+      deltaY: -1,
+      clientX: 100,
+      clientY: 50,
+    });
+
+    expect(editorStore.getState().viewport.zoom).toBeCloseTo(1.1);
+  });
+
   test("a drag stays instant even right after a smooth wheel scroll", () => {
     openDoc();
     render(<Canvas />);
