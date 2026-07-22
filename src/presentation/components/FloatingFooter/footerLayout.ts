@@ -7,7 +7,15 @@
  * `select · hand · text · shapes · containers · draw · [copy]`.
  */
 export type FooterSlot =
-  | { readonly kind: "single"; readonly toolId: string }
+  | {
+      readonly kind: "single";
+      readonly toolId: string;
+      /**
+       * Shown only from `lg` up (desktop). Used for tools that are redundant on
+       * touch: the hand/pan tool duplicates a phone/tablet's native touch pan.
+       */
+      readonly desktopOnly?: boolean;
+    }
   | {
       readonly kind: "group";
       /** i18n key for the group's name (used in the trigger's aria-label). */
@@ -18,7 +26,7 @@ export type FooterSlot =
 
 export const FOOTER_LAYOUT: readonly FooterSlot[] = [
   { kind: "single", toolId: "select" },
-  { kind: "single", toolId: "hand" },
+  { kind: "single", toolId: "hand", desktopOnly: true },
   { kind: "single", toolId: "text" },
   {
     kind: "group",

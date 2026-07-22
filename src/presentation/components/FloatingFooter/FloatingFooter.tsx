@@ -32,15 +32,16 @@ export function FloatingFooter() {
     // strip scrolls horizontally while ☰ (Layers) and Copy stay pinned at the
     // end. gap tightens on small screens, widening back out on desktop.
     <FloatingBar className="absolute bottom-4 left-1/2 z-10 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-3 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:gap-10">
-      {/* `overflow-x-auto` lets the tools scroll, but it also clips the Y axis
+      {/* Below lg, `overflow-x-auto` lets the tools scroll on a narrow phone/
+          tablet; from lg up the whole palette fits, so `lg:overflow-visible`
+          drops the scroll (no scrollbar on desktop). Scrolling clips the Y axis
           (CSS forces overflow-y to auto), which would cut off a grouped tool's
-          upward menu. Rather than lift the clip while a menu is open — which
-          resets scrollLeft to 0 and un-hides the off-edge tools — the grouped
-          ToolGroups render their menu in the top layer (Dropdown `overlay`), so
-          it escapes the clip while the strip keeps its scroll position and its
-          hidden tools. `scroll-shadow-x` fades an inset shadow onto whichever
-          edge still has hidden tools. */}
-      <div className="scroll-shadow-x flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto">
+          upward menu — so the grouped ToolGroups render their menu in the top
+          layer (Dropdown `overlay`), escaping the clip while the strip keeps its
+          scroll position and its hidden tools. `scroll-shadow-x` fades an inset
+          shadow onto whichever edge still has hidden tools (and is inert once
+          the strip no longer scrolls). */}
+      <div className="scroll-shadow-x flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto lg:overflow-visible">
         {FOOTER_LAYOUT.map((slot) => (
           <ToolSlot
             key={slotKey(slot)}
@@ -97,6 +98,9 @@ function ToolSlot({ slot, activeToolId, onSelect }: SlotProps) {
         toolId={slot.toolId}
         active={activeToolId === slot.toolId}
         onSelect={onSelect}
+        // btn is inline-flex, so this hides the segment on tablet/phone and
+        // restores it from lg up (desktop) without touching its layout.
+        className={slot.desktopOnly ? "hidden lg:inline-flex" : undefined}
       />
     );
   }

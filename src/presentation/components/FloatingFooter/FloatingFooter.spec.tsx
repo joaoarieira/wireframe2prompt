@@ -70,6 +70,18 @@ describe("FloatingFooter tool palette", () => {
     expect(screen.getByRole("button", { name: "Text" })).toBeInTheDocument();
   });
 
+  test("the hand tool is desktop-only; other standalone tools are always shown", () => {
+    render(<FloatingFooter />);
+    // Hand duplicates a touch device's native pan, so it only appears from lg up.
+    expect(screen.getByRole("button", { name: "Hand" })).toHaveClass(
+      "hidden",
+      "lg:inline-flex",
+    );
+    expect(screen.getByRole("button", { name: "Select" })).not.toHaveClass(
+      "hidden",
+    );
+  });
+
   test("a tool with a shortcut appends it to the tooltip only", () => {
     render(<FloatingFooter />);
     const text = screen.getByRole("button", { name: "Text" });
@@ -163,7 +175,9 @@ describe("FloatingFooter tool palette", () => {
     // strip never drops its overflow.
     const strip = screen.getByRole("button", { name: "Select" }).parentElement;
     expect(strip).toHaveClass(
+      // scrolls on phone/tablet; from lg up the palette fits so there is no bar
       "overflow-x-auto",
+      "lg:overflow-visible",
       // the inset scroll-shadow that hints at more tools off-edge
       "scroll-shadow-x",
     );
