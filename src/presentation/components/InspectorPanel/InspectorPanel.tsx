@@ -1,6 +1,11 @@
 import { useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { MoveRight, MoveDown, MoveHorizontal, MoveVertical } from "lucide-react";
+import {
+  MoveRight,
+  MoveDown,
+  MoveHorizontal,
+  MoveVertical,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
 import { selectedElementOf } from "../../state/editor-store/editorStore";

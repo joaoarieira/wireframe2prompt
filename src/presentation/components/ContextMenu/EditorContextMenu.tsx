@@ -51,10 +51,7 @@ export function EditorContextMenu() {
       {/* Edit only where the inspector isn't always available (phone/tablet):
           on desktop it opens on select, so the item would be redundant. */}
       {elementOnly && !autoOpenInspector && (
-        <ContextMenuItem
-          disabled={noSelection}
-          onClick={handle(openInspector)}
-        >
+        <ContextMenuItem disabled={noSelection} onClick={handle(openInspector)}>
           {t("contextMenu.edit")}
         </ContextMenuItem>
       )}

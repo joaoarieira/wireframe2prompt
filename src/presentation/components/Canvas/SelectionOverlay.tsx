@@ -105,7 +105,10 @@ export function SelectionOverlay({
           className="pointer-events-auto absolute bottom-full left-0 mb-1 grid size-3.5 touch-none place-items-center rounded text-primary hover:bg-base-200 [@media(pointer:coarse)]:size-6"
           onClick={openInspector}
         >
-          <SquarePen className="size-2.5 [@media(pointer:coarse)]:size-4" aria-hidden />
+          <SquarePen
+            className="size-2.5 [@media(pointer:coarse)]:size-4"
+            aria-hidden
+          />
         </button>
       )}
       {showEditButton && (
@@ -118,7 +121,10 @@ export function SelectionOverlay({
           className="pointer-events-auto absolute bottom-full left-4 mb-1 grid size-3.5 touch-none place-items-center rounded text-error hover:bg-base-200 [@media(pointer:coarse)]:left-7 [@media(pointer:coarse)]:size-6"
           onClick={removeSelectedElements}
         >
-          <Trash2 className="size-2.5 [@media(pointer:coarse)]:size-4" aria-hidden />
+          <Trash2
+            className="size-2.5 [@media(pointer:coarse)]:size-4"
+            aria-hidden
+          />
         </button>
       )}
       {showResizeHandle && (

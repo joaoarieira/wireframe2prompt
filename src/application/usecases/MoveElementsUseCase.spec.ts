@@ -57,7 +57,10 @@ describe("MoveElementsUseCase", () => {
     const doc = makeDoc(makeBox("b1"));
 
     expect(() =>
-      uc.execute({ document: doc, moves: [{ elementId: "ghost", position: pos(0, 0) }] }),
+      uc.execute({
+        document: doc,
+        moves: [{ elementId: "ghost", position: pos(0, 0) }],
+      }),
     ).toThrow(ElementNotFoundError);
   });
 

@@ -27,7 +27,12 @@ describe("handTool", () => {
   test("pointer up ends the pan", () => {
     const context = new FakeToolContext();
 
-    handTool.onCellPointerUp(context, cell, { clientX: 0, clientY: 0, button: 0, shiftKey: false });
+    handTool.onCellPointerUp(context, cell, {
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+      shiftKey: false,
+    });
 
     expect(context.endPanCalls).toBe(1);
   });

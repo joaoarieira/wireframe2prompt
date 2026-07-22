@@ -31,7 +31,12 @@ describe("SelectionOverlay", () => {
   test("renders the selection border with the testid", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     expect(screen.getByTestId("selection-overlay")).toBeInTheDocument();
   });
@@ -39,7 +44,12 @@ describe("SelectionOverlay", () => {
   test("resize handle is present when showResizeHandle is true", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     expect(
       screen.getByRole("button", { name: "Resize element" }),
@@ -49,7 +59,12 @@ describe("SelectionOverlay", () => {
   test("resize handle shows the themed move-diagonal-2 cursor", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     expect(handle.style.cursor).toContain('url("data:image/svg+xml,');
@@ -72,7 +87,12 @@ describe("SelectionOverlay", () => {
   test("pointer-down on the handle starts a resize drag", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();
@@ -85,7 +105,12 @@ describe("SelectionOverlay", () => {
   test("pointer-down when getCell returns null is a no-op (no drag started)", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={() => null} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={() => null}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();
@@ -98,7 +123,12 @@ describe("SelectionOverlay", () => {
   test("pointer-move without an active drag is a no-op", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();
@@ -114,7 +144,12 @@ describe("SelectionOverlay", () => {
     let returnNull = false;
     const getCellMaybe = () => (returnNull ? null : Position.create(0, 0));
     render(
-      <SelectionOverlay element={el} getCell={getCellMaybe} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCellMaybe}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();
@@ -130,7 +165,12 @@ describe("SelectionOverlay", () => {
   test("pointer-up without an active drag is a no-op", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
 
@@ -144,7 +184,12 @@ describe("SelectionOverlay", () => {
   test("pointer-move during active resize calls updateDrag", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();
@@ -160,7 +205,12 @@ describe("SelectionOverlay", () => {
   test("handle opts out of touch scrolling with touch-none", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     expect(handle.className).toContain("touch-none");
@@ -169,7 +219,12 @@ describe("SelectionOverlay", () => {
   test("pointer-cancel during an active resize discards the drag", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();
@@ -183,7 +238,12 @@ describe("SelectionOverlay", () => {
   test("pointer-cancel without an active resize is a no-op", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
 
@@ -286,7 +346,12 @@ describe("SelectionOverlay", () => {
   test("full pointer-down → pointer-up sequence commits the drag", () => {
     const el = makeContext();
     render(
-      <SelectionOverlay element={el} getCell={getCell} showResizeHandle showEditButton={false} />,
+      <SelectionOverlay
+        element={el}
+        getCell={getCell}
+        showResizeHandle
+        showEditButton={false}
+      />,
     );
     const handle = screen.getByRole("button", { name: "Resize element" });
     handle.setPointerCapture = vi.fn();

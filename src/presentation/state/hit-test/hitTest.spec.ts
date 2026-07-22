@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { elementAtCell, elementIntersectsRect, zIndexForPlacement } from "./hitTest";
+import {
+  elementAtCell,
+  elementIntersectsRect,
+  zIndexForPlacement,
+} from "./hitTest";
 import { makeDoc } from "../../../tests/fixtures";
 import { BoxElement } from "../../../domain/entities/element/BoxElement";
 import { Position } from "../../../domain/entities/position/Position";

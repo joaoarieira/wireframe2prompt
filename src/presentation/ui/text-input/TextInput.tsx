@@ -18,6 +18,9 @@ const COARSE_TOUCH_TARGET = "[@media(pointer:coarse)]:min-h-11";
  */
 export function TextInput({ className, ...rest }: ComponentProps<"input">) {
   return (
-    <input className={cx("input input-sm", COARSE_TOUCH_TARGET, className)} {...rest} />
+    <input
+      className={cx("input input-sm", COARSE_TOUCH_TARGET, className)}
+      {...rest}
+    />
   );
 }

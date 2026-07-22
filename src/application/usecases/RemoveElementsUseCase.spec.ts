@@ -43,9 +43,9 @@ describe("RemoveElementsUseCase", () => {
     const uc = new RemoveElementsUseCase(history);
     const doc = makeDoc(makeBox("b1"));
 
-    expect(() =>
-      uc.execute({ document: doc, elementIds: ["ghost"] }),
-    ).toThrow(ElementNotFoundError);
+    expect(() => uc.execute({ document: doc, elementIds: ["ghost"] })).toThrow(
+      ElementNotFoundError,
+    );
   });
 
   test("one undo restores both elements after removing two", () => {

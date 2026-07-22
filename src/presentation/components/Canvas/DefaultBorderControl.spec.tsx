@@ -49,9 +49,7 @@ describe("DefaultBorderControl", () => {
       name: "Default border",
     });
     expect(trigger.querySelector(".lucide-square")).not.toBeNull();
-    expect(screen.getByText("Default border")).toHaveClass(
-      "menu-title",
-    );
+    expect(screen.getByText("Default border")).toHaveClass("menu-title");
     expect(screen.getByRole("button", { name: "Square" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Rounded" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cross" })).toBeInTheDocument();

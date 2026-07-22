@@ -40,7 +40,10 @@ describe("ReorderLayersUseCase", () => {
     const doc = makeDoc(makeBox("b1"));
 
     expect(() =>
-      uc.execute({ document: doc, reorders: [{ elementId: "ghost", zIndex: 1 }] }),
+      uc.execute({
+        document: doc,
+        reorders: [{ elementId: "ghost", zIndex: 1 }],
+      }),
     ).toThrow(ElementNotFoundError);
   });
 

@@ -13,13 +13,13 @@ import { Size } from "../../../domain/entities/size/Size";
 const at = (col: number, row: number) => Position.create(col, row);
 
 describe("cellSpanRect", () => {
-  test("no drag keeps a 1×1 rect on the anchor cell", () => {
+  test("no drag keeps a 1x1 rect on the anchor cell", () => {
     const rect = cellSpanRect(at(2, 3), at(2, 3));
     expect(rect.position.equals(at(2, 3))).toBe(true);
     expect(rect.size.equals(Size.create(1, 1))).toBe(true);
   });
 
-  test("dragging 5 cells each way yields an inclusive 5×5 rect", () => {
+  test("dragging 5 cells each way yields an inclusive 5x5 rect", () => {
     const rect = cellSpanRect(at(0, 0), at(4, 4));
     expect(rect.position.equals(at(0, 0))).toBe(true);
     expect(rect.size.equals(Size.create(5, 5))).toBe(true);
