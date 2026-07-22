@@ -11,7 +11,7 @@ describe("router", () => {
     });
 
     expect(
-      await screen.findByRole("heading", { name: "About wireframe2prompt" }),
+      await screen.findByRole("heading", { name: "About" }),
     ).toBeInTheDocument();
   });
 
