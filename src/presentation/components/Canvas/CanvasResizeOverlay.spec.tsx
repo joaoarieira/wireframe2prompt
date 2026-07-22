@@ -166,4 +166,34 @@ describe("CanvasResizeOverlay", () => {
 
     expect(editorStore.getState().canvasResize!.drag).toBeNull();
   });
+
+  // Regression: on touch the browser cancels the pointer once the finger leaves
+  // the first cell; a cancel must end the drag just like a pointer-up so the
+  // preview isn't left stuck with a dangling drag ref.
+  test("pointer-cancel ends the handle drag", () => {
+    openResizeSession();
+    render(
+      <CanvasResizeOverlay previewSize={previewSize} canvasRef={paperRef()} />,
+    );
+    const handle = screen.getByRole("button", { name: "Resize canvas" });
+    handle.setPointerCapture = vi.fn();
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 5, clientY: 5 });
+    expect(editorStore.getState().canvasResize!.drag).not.toBeNull();
+
+    fireEvent.pointerCancel(handle, { pointerId: 1 });
+
+    expect(editorStore.getState().canvasResize!.drag).toBeNull();
+  });
+
+  // touch-action: none is what actually keeps a touch drag from being stolen as
+  // a scroll/pan gesture (which cancels the resize the moment the finger moves).
+  test("the handle opts out of touch scrolling", () => {
+    openResizeSession();
+    render(
+      <CanvasResizeOverlay previewSize={previewSize} canvasRef={paperRef()} />,
+    );
+    const handle = screen.getByRole("button", { name: "Resize canvas" });
+
+    expect(handle).toHaveClass("touch-none");
+  });
 });

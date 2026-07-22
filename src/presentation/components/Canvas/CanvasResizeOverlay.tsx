@@ -76,11 +76,17 @@ export function CanvasResizeOverlay({
         role="button"
         data-resize-handle
         aria-label={t("canvas.resizeCanvas")}
-        className="pointer-events-auto absolute -right-1 -bottom-1 size-3 bg-primary"
+        // `touch-none` (touch-action: none) stops the browser from stealing a
+        // touch drag as a scroll/pan — without it the resize pointer is
+        // cancelled the moment the finger leaves the first cell and the canvas
+        // resize never happens (mirrors the element-handle fix in
+        // SelectionOverlay).
+        className="pointer-events-auto absolute -right-1 -bottom-1 size-3 touch-none bg-primary"
         style={{ cursor: resizeCursor(scheme) }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       />
     </div>
   );
