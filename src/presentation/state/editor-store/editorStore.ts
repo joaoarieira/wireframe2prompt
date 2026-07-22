@@ -8,6 +8,7 @@ import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
 import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
+import { MultilineElement } from "../../../domain/entities/element/MultilineElement";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import type { LineOrientation } from "../../../domain/entities/element/LineElement";
 import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
@@ -33,6 +34,7 @@ import type {
   ToolContext,
 } from "../tools/CanvasTool";
 import { ToolRegistry, createDefaultToolRegistry } from "../tools/ToolRegistry";
+import { extendMultilinePath } from "../tools/multilinePath";
 import type { EditorKeyAction } from "../keyboard/editorKeyAction";
 import { drawCellsOnDocument } from "../../../application/usecases/DrawFreeCharUseCase";
 import { eraseCellsOnDocument } from "../../../application/usecases/EraseCellUseCase";
@@ -115,7 +117,13 @@ export type StrokeState =
       startCell: Position;
       cells: Map<string, CellChar>;
     }
-  | { mode: "erase"; cells: Set<string> };
+  | { mode: "erase"; cells: Set<string> }
+  | {
+      mode: "multiline";
+      points: readonly Position[];
+      /** Default border captured when the gesture began; undefined → square. */
+      borderStyle?: BorderStyle;
+    };
 
 export interface PanDragState {
   lastClientX: number;
@@ -307,6 +315,9 @@ export interface EditorActions {
   extendStroke(cell: Position): void;
   commitStroke(): void;
   cancelStroke(): void;
+  beginMultiline(cell: Position): void;
+  extendMultiline(cell: Position): void;
+  commitMultiline(): void;
   setPencilChar(char: string): void;
   beginPan(point: SurfacePoint): void;
   updatePan(point: SurfacePoint): void;
@@ -496,6 +507,9 @@ export function createEditorStore(
       beginEraseStroke: (cell) => get().beginEraseStroke(cell),
       extendStroke: (cell) => get().extendStroke(cell),
       commitStroke: () => get().commitStroke(),
+      beginMultiline: (cell) => get().beginMultiline(cell),
+      extendMultiline: (cell) => get().extendMultiline(cell),
+      commitMultiline: () => get().commitMultiline(),
       beginPan: (point) => get().beginPan(point),
       updatePan: (point) => get().updatePan(point),
       endPan: () => get().endPan(),
@@ -1052,7 +1066,7 @@ export function createEditorStore(
 
       extendStroke: (cell) => {
         const { stroke, pencilChar } = get();
-        if (stroke === null) return;
+        if (stroke === null || stroke.mode === "multiline") return;
         const key = `${cell.col},${cell.row}`;
         if (stroke.mode === "draw") {
           // Re-stamping the same char on the same cell changes nothing;
@@ -1075,7 +1089,7 @@ export function createEditorStore(
 
       commitStroke: () => {
         const { stroke } = get();
-        if (stroke === null) return;
+        if (stroke === null || stroke.mode === "multiline") return;
         set({ stroke: null });
         if (stroke.mode === "draw") {
           if (stroke.cells.size === 0) return;
@@ -1126,6 +1140,55 @@ export function createEditorStore(
 
       cancelStroke: () => {
         set({ stroke: null });
+      },
+
+      // Anchors a multiline path on the pressed cell. The whole polyline lives in
+      // `stroke` (mode "multiline") as a transient preview and is committed once
+      // on pointer up, so a multi-corner drag still costs one undo snapshot.
+      beginMultiline: (cell) => {
+        requireDocument("begin multiline");
+        set({
+          stroke: {
+            mode: "multiline",
+            points: [cell],
+            borderStyle: BorderStyle.named(get().defaultBorderStyleName),
+          },
+          placementHover: null,
+        });
+      },
+
+      extendMultiline: (cell) => {
+        const { stroke } = get();
+        if (stroke === null || stroke.mode !== "multiline") return;
+        const points = extendMultilinePath(stroke.points, cell);
+        // extendMultilinePath returns the same array when the cell adds nothing,
+        // so an unchanged path never publishes new state (and recomposes).
+        if (points === stroke.points) return;
+        set({ stroke: { ...stroke, points } });
+      },
+
+      commitMultiline: () => {
+        const { stroke } = get();
+        if (stroke === null || stroke.mode !== "multiline") return;
+        set({ stroke: null });
+        // A single click (no drag) never forms a connected line: discard it.
+        if (stroke.points.length < 2) return;
+        const document = requireDocument("commit multiline");
+        const built = MultilineElement.create({
+          id: generateId(),
+          zIndex: 0,
+          layerId: null,
+          borderStyle: stroke.borderStyle,
+          points: stroke.points,
+        });
+        const element = built.withZIndex(
+          zIndexForPlacement(document, built.position, built.size),
+        );
+        commitDocument(container.addElement.execute({ document, element }));
+        set({
+          selectedElementIds: [element.id],
+          inspectorOpen: get().autoOpenInspector,
+        });
       },
 
       setPencilChar: (char) => {
@@ -1501,7 +1564,11 @@ function applyStrokePreview(
   document: WireframeDocument,
   stroke: StrokeState | null,
 ): WireframeDocument {
-  if (stroke === null || stroke.cells.size === 0) return document;
+  if (stroke === null) return document;
+  if (stroke.mode === "multiline") {
+    return applyMultilinePreview(document, stroke.points, stroke.borderStyle);
+  }
+  if (stroke.cells.size === 0) return document;
   if (stroke.mode === "draw") {
     const cells = [...stroke.cells.entries()].map(([key, char]) => ({
       position: parseCellKeyToPosition(key),
@@ -1533,6 +1600,32 @@ function applyStrokePreview(
   }
   const cells = [...stroke.cells].map(parseCellKeyToPosition);
   return eraseCellsOnDocument(document, cells);
+}
+
+/**
+ * Renders the in-progress multiline as a temporary element while the pointer is
+ * still dragging. Fewer than two points isn't a line yet, and an out-of-bounds
+ * path is silently dropped — same tolerance as the freedraw stroke preview.
+ */
+function applyMultilinePreview(
+  document: WireframeDocument,
+  points: readonly Position[],
+  borderStyle?: BorderStyle,
+): WireframeDocument {
+  if (points.length < 2) return document;
+  try {
+    return document.addElement(
+      MultilineElement.create({
+        id: "__preview__",
+        zIndex: topZIndex(document) + 1,
+        layerId: null,
+        borderStyle,
+        points,
+      }),
+    );
+  } catch {
+    return document;
+  }
 }
 
 function activeTool(registry: ToolRegistry, state: EditorState): CanvasTool {

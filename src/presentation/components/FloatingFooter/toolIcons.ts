@@ -13,6 +13,7 @@ import {
   Table,
   TextCursorInput,
   Type,
+  Waypoints,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export const TOOL_ICONS: Record<string, LucideIcon> = {
   text: Type,
   box: Square,
   line: Slash,
+  multiline: Waypoints,
   arrow: MoveUpRight,
   input: TextCursorInput,
   dropdown: ChevronDownSquare,

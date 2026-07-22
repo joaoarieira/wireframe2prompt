@@ -17,6 +17,8 @@ import { TabsElement } from "../../domain/entities/element/TabsElement";
 import { InputElement } from "../../domain/entities/element/InputElement";
 import { DropdownElement } from "../../domain/entities/element/DropdownElement";
 import { FreeDrawElement } from "../../domain/entities/element/FreeDrawElement";
+import { MultilineElement } from "../../domain/entities/element/MultilineElement";
+import type { MultilinePoint } from "../../domain/entities/element/MultilineElement";
 import type {
   Element,
   ElementBaseProps,
@@ -120,6 +122,12 @@ interface SerializedFreeDrawElement extends SerializedElementBase {
   cells: Record<string, string>;
 }
 
+interface SerializedMultilineElement extends SerializedElementBase {
+  kind: "multiline";
+  /** Vertices relative to `position` (the polyline's bounding-box top-left). */
+  points: MultilinePoint[];
+}
+
 type SerializedElement =
   | SerializedBoxElement
   | SerializedLineElement
@@ -130,7 +138,8 @@ type SerializedElement =
   | SerializedTableElement
   | SerializedTabsElement
   | SerializedFieldElement
-  | SerializedFreeDrawElement;
+  | SerializedFreeDrawElement
+  | SerializedMultilineElement;
 
 export interface SerializedDocument {
   version: number;
@@ -210,8 +219,15 @@ function serializeElement(element: Element): SerializedElement {
     }
     return { ...base, kind: "freedraw", cells };
   }
+  if (element instanceof MultilineElement) {
+    return {
+      ...base,
+      kind: "multiline",
+      points: element.points.map((p) => ({ ...p })),
+    };
+  }
   throw new Error(
-    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw`,
+    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw | multiline`,
   );
 }
 
@@ -309,9 +325,26 @@ function deserializeElement(data: SerializedElement): Element {
         cells,
       });
     }
+    case "multiline": {
+      // Points are stored relative to position; rebuild absolute coordinates so
+      // create can recompute the origin/size (base.position/size are ignored).
+      const origin = base.position;
+      const points = data.points.map((point) => ({
+        col: origin.col + point.col,
+        row: origin.row + point.row,
+      }));
+      return MultilineElement.create({
+        id: base.id,
+        zIndex: base.zIndex,
+        layerId: base.layerId,
+        name: base.name,
+        borderStyle: base.borderStyle,
+        points,
+      });
+    }
     default:
       throw new Error(
-        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw`,
+        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw | multiline`,
       );
   }
 }

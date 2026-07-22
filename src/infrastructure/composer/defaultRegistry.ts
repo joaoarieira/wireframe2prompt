@@ -10,6 +10,7 @@ import { TabsGlyphMapper } from "./mappers/TabsGlyphMapper";
 import { InputGlyphMapper } from "./mappers/InputGlyphMapper";
 import { DropdownGlyphMapper } from "./mappers/DropdownGlyphMapper";
 import { FreeDrawGlyphMapper } from "./mappers/FreeDrawGlyphMapper";
+import { MultilineGlyphMapper } from "./mappers/MultilineGlyphMapper";
 
 /** Registry wired with all implemented mappers. */
 export function createDefaultGlyphMapperRegistry(): GlyphMapperRegistry {
@@ -24,5 +25,6 @@ export function createDefaultGlyphMapperRegistry(): GlyphMapperRegistry {
     .register(new TabsGlyphMapper())
     .register(new InputGlyphMapper())
     .register(new DropdownGlyphMapper())
-    .register(new FreeDrawGlyphMapper());
+    .register(new FreeDrawGlyphMapper())
+    .register(new MultilineGlyphMapper());
 }

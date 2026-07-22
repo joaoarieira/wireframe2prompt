@@ -31,7 +31,7 @@ export const FOOTER_LAYOUT: readonly FooterSlot[] = [
   {
     kind: "group",
     labelKey: "footer.shapes",
-    toolIds: ["box", "line", "arrow"],
+    toolIds: ["box", "line", "multiline", "arrow"],
   },
   {
     kind: "group",

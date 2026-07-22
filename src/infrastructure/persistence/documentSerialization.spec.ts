@@ -26,6 +26,7 @@ import {
   FreeDrawElement,
   freeDrawCellKey,
 } from "../../domain/entities/element/FreeDrawElement";
+import { MultilineElement } from "../../domain/entities/element/MultilineElement";
 import { Element } from "../../domain/entities/element/Element";
 import type { ElementBaseProps } from "../../domain/entities/element/Element";
 
@@ -384,6 +385,35 @@ describe("documentSerialization", () => {
     expect(restored.kind).toBe("freedraw");
     expect(restored.charAt(Position.create(2, 3))?.value).toBe("a");
     expect(restored.charAt(Position.create(3, 4))?.value).toBe("b");
+  });
+
+  test("round-trips MultilineElement geometry", () => {
+    const ml = MultilineElement.create({
+      id: "ml",
+      zIndex: 0,
+      layerId: null,
+      borderStyle: BorderStyle.rounded(),
+      points: [
+        { col: 2, row: 1 },
+        { col: 6, row: 1 },
+        { col: 6, row: 4 },
+      ],
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(10, 8),
+      elements: [ml],
+    });
+    const restored = roundTrip(doc).getElement("ml") as MultilineElement;
+    expect(restored.kind).toBe("multiline");
+    expect(restored.position.equals(Position.create(2, 1))).toBe(true);
+    expect(BorderStyle.nameOf(restored.borderStyle)).toBe("rounded");
+    expect(restored.absolutePoints().map((p) => [p.col, p.row])).toEqual([
+      [2, 1],
+      [6, 1],
+      [6, 4],
+    ]);
   });
 
   test("serializeDocument rejects an element with no registered serializer", () => {

@@ -46,6 +46,7 @@ describe("ToolRegistry", () => {
       "line",
       "text",
       "arrow",
+      "multiline",
       "card",
       "modal",
       "input",

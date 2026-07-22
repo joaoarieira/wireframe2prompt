@@ -32,6 +32,9 @@ export interface ToolContext {
   beginEraseStroke(cell: Position): void;
   extendStroke(cell: Position): void;
   commitStroke(): void;
+  beginMultiline(cell: Position): void;
+  extendMultiline(cell: Position): void;
+  commitMultiline(): void;
   beginPan(point: SurfacePoint): void;
   updatePan(point: SurfacePoint): void;
   endPan(): void;

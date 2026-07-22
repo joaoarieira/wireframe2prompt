@@ -31,6 +31,7 @@ import {
   FreeDrawElement,
   freeDrawCellKey,
 } from "../../../domain/entities/element/FreeDrawElement";
+import { MultilineElement } from "../../../domain/entities/element/MultilineElement";
 import { CellChar } from "../../../domain/entities/cell-char/CellChar";
 
 const cell = (col: number, row: number) => Position.create(col, row);
@@ -1426,6 +1427,7 @@ describe("pointer routing and tools", () => {
       "line",
       "text",
       "arrow",
+      "multiline",
       "card",
       "modal",
       "input",
@@ -1718,6 +1720,169 @@ describe("pencil/eraser stroke", () => {
     expect(store.getState().viewport.offsetX).toBe(10);
     expect(store.getState().viewport.offsetY).toBe(10);
     expect(store.getState().panDrag).toBeNull();
+  });
+});
+
+describe("multiline", () => {
+  /** [col, row] pairs of the active multiline stroke's points. */
+  function strokePoints(): Array<[number, number]> {
+    const stroke = store.getState().stroke;
+    if (stroke === null || stroke.mode !== "multiline") {
+      throw new Error("no active multiline stroke");
+    }
+    return stroke.points.map((point) => [point.col, point.row]);
+  }
+
+  test("beginMultiline seeds a single-point path and drops the hover ghost", async () => {
+    await openFixtureDoc();
+    store.setState({ placementHover: { kind: "box", cell: cell(0, 0) } });
+
+    store.getState().beginMultiline(cell(2, 3));
+
+    expect(strokePoints()).toEqual([[2, 3]]);
+    expect(store.getState().placementHover).toBeNull();
+  });
+
+  test("extendMultiline grows the path toward the cell", async () => {
+    await openFixtureDoc();
+    store.getState().beginMultiline(cell(0, 0));
+
+    store.getState().extendMultiline(cell(4, 0));
+    store.getState().extendMultiline(cell(4, 3));
+
+    expect(strokePoints()).toEqual([
+      [0, 0],
+      [4, 0],
+      [4, 3],
+    ]);
+  });
+
+  test("extendMultiline is a no-op when the cell adds nothing", async () => {
+    await openFixtureDoc();
+    store.getState().beginMultiline(cell(0, 0));
+    const before = store.getState().stroke;
+
+    store.getState().extendMultiline(cell(0, 0)); // same as the tip
+
+    expect(store.getState().stroke).toBe(before);
+  });
+
+  test("extendMultiline without an active stroke is a no-op", async () => {
+    await openFixtureDoc();
+    store.getState().extendMultiline(cell(1, 1));
+    expect(store.getState().stroke).toBeNull();
+  });
+
+  test("extendMultiline ignores a non-multiline stroke", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+
+    store.getState().extendMultiline(cell(5, 5));
+
+    expect(store.getState().stroke?.mode).toBe("draw");
+  });
+
+  test("commitMultiline adds the polyline, selects it and opens the inspector", async () => {
+    await openFixtureDoc();
+    store.getState().beginMultiline(cell(0, 0));
+    store.getState().extendMultiline(cell(4, 0));
+    store.getState().extendMultiline(cell(4, 3));
+
+    store.getState().commitMultiline();
+
+    expect(store.getState().stroke).toBeNull();
+    const elements = store.getState().document!.elements;
+    expect(elements).toHaveLength(1);
+    expect(elements[0]).toBeInstanceOf(MultilineElement);
+    expect(store.getState().selectedElementIds).toEqual([elements[0].id]);
+    expect(store.getState().inspectorOpen).toBe(true);
+    expect(store.getState().canUndo).toBe(true);
+  });
+
+  test("commitMultiline adopts the editor's default border style", async () => {
+    await openFixtureDoc();
+    store.getState().setDefaultBorderStyleName("rounded");
+    store.getState().beginMultiline(cell(0, 0));
+    store.getState().extendMultiline(cell(4, 0));
+    store.getState().extendMultiline(cell(4, 3));
+
+    store.getState().commitMultiline();
+
+    const element = store.getState().document!.elements[0] as MultilineElement;
+    expect(BorderStyle.nameOf(element.borderStyle)).toBe("rounded");
+  });
+
+  test("commitMultiline discards a single click that never formed a line", async () => {
+    await openFixtureDoc();
+    store.getState().beginMultiline(cell(2, 3));
+
+    store.getState().commitMultiline();
+
+    expect(store.getState().stroke).toBeNull();
+    expect(store.getState().document!.elements).toHaveLength(0);
+    expect(store.getState().canUndo).toBe(false);
+  });
+
+  test("commitMultiline without an active stroke is a no-op", async () => {
+    await openFixtureDoc();
+    store.getState().commitMultiline();
+    expect(store.getState().document!.elements).toHaveLength(0);
+  });
+
+  test("commitMultiline ignores a non-multiline stroke", async () => {
+    await openFixtureDoc();
+    store.getState().beginDrawStroke(cell(1, 1));
+
+    store.getState().commitMultiline();
+
+    expect(store.getState().stroke?.mode).toBe("draw");
+    expect(store.getState().document!.elements).toHaveLength(0);
+  });
+
+  test("the multiline tool routes pointer events into one committed element", async () => {
+    await openFixtureDoc();
+    store.getState().setActiveTool("multiline");
+
+    store.getState().pointerDownOnCell(cell(1, 1));
+    store.getState().pointerMoveOnCell(cell(5, 1));
+    store.getState().pointerMoveOnCell(cell(5, 4));
+    store.getState().pointerUpOnCell(cell(5, 4));
+
+    const elements = store.getState().document!.elements;
+    expect(elements).toHaveLength(1);
+    expect(elements[0]).toBeInstanceOf(MultilineElement);
+  });
+
+  test("previewedDocument renders the in-progress multiline as a ghost", async () => {
+    await openFixtureDoc();
+    store.getState().beginMultiline(cell(0, 0));
+    store.getState().extendMultiline(cell(4, 0));
+    const state = store.getState();
+
+    const preview = previewedDocument(state.document!, null, state.stroke);
+
+    expect(preview.getElement("__preview__")).toBeInstanceOf(MultilineElement);
+  });
+
+  test("previewedDocument shows nothing for a not-yet-drawn multiline", async () => {
+    await openFixtureDoc();
+    store.getState().beginMultiline(cell(0, 0)); // single point only
+    const state = store.getState();
+
+    const preview = previewedDocument(state.document!, null, state.stroke);
+
+    expect(preview.getElement("__preview__")).toBeUndefined();
+  });
+
+  test("previewedDocument drops the multiline ghost when its id collides", async () => {
+    await openFixtureDoc(makeBox("__preview__"));
+    store.getState().beginMultiline(cell(0, 0));
+    store.getState().extendMultiline(cell(4, 0));
+    const state = store.getState();
+
+    const preview = previewedDocument(state.document!, null, state.stroke);
+
+    expect(preview).toBe(state.document);
   });
 });
 

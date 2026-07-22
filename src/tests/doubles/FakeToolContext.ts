@@ -27,6 +27,9 @@ export class FakeToolContext implements ToolContext {
   beginEraseStrokeCalls: Position[] = [];
   extendStrokeCalls: Position[] = [];
   commitStrokeCalls = 0;
+  beginMultilineCalls: Position[] = [];
+  extendMultilineCalls: Position[] = [];
+  commitMultilineCalls = 0;
   beginPanCalls: SurfacePoint[] = [];
   updatePanCalls: SurfacePoint[] = [];
   endPanCalls = 0;
@@ -87,6 +90,18 @@ export class FakeToolContext implements ToolContext {
 
   commitStroke(): void {
     this.commitStrokeCalls += 1;
+  }
+
+  beginMultiline(cell: Position): void {
+    this.beginMultilineCalls.push(cell);
+  }
+
+  extendMultiline(cell: Position): void {
+    this.extendMultilineCalls.push(cell);
+  }
+
+  commitMultiline(): void {
+    this.commitMultilineCalls += 1;
   }
 
   beginPan(point: SurfacePoint): void {

@@ -29,6 +29,7 @@ export const pt: LocaleDictionary = {
     select: "Selecionar",
     box: "Retângulo",
     line: "Linha",
+    multiline: "Multilinha",
     text: "Texto",
     arrow: "Seta",
     card: "Card",
@@ -112,6 +113,7 @@ export const pt: LocaleDictionary = {
   elementKind: {
     box: "retângulo",
     line: "linha",
+    multiline: "multilinha",
     text: "texto",
     arrow: "seta",
     card: "card",

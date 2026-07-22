@@ -31,6 +31,7 @@ export const en = {
     select: "Select",
     box: "Box",
     line: "Line",
+    multiline: "Multiline",
     text: "Text",
     arrow: "Arrow",
     card: "Card",
@@ -113,6 +114,7 @@ export const en = {
   elementKind: {
     box: "box",
     line: "line",
+    multiline: "multiline",
     text: "text",
     arrow: "arrow",
     card: "card",

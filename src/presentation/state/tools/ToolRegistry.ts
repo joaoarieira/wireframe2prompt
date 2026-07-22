@@ -1,6 +1,7 @@
 import type { CanvasTool } from "./CanvasTool";
 import { selectTool } from "./selectTool";
 import { createPlacementTool } from "./placementTool";
+import { multilineTool } from "./multilineTool";
 import { pencilTool } from "./pencilTool";
 import { eraserTool } from "./eraserTool";
 import { handTool } from "./handTool";
@@ -44,6 +45,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
   registry.register(createPlacementTool("line", "tools.line"));
   registry.register(createPlacementTool("text", "tools.text"));
   registry.register(createPlacementTool("arrow", "tools.arrow"));
+  registry.register(multilineTool);
   registry.register(createPlacementTool("card", "tools.card"));
   registry.register(createPlacementTool("modal", "tools.modal"));
   registry.register(createPlacementTool("input", "tools.input"));
