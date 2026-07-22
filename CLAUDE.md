@@ -1,13 +1,13 @@
 # wireframe2prompt
 
 Web editor for **ASCII wireframes**. The user drags ready-made components
-(Button, Input, Card, …) onto a character grid, adjusts position/size, and
-exports a **raw ASCII string** to feed as a prompt to an LLM. Output is the
-plain string — no markdown, no description.
+(Box, Input, Card, Table, Modal, …) onto a character grid, adjusts
+position/size, and exports a **raw ASCII string** to feed as a prompt to an
+LLM. Output is the plain string — no markdown, no description.
 
-**Stack:** React 19 + TypeScript + Vite. Tests: Vitest. See
-`wireframe2prompt-plan.md` for the full design and the closed business
-decisions; this file is the working contract for how to change the code.
+**Stack:** React 19 + TypeScript + Vite. Tests: Vitest. See `README.md` for the
+project overview and onboarding; this file is the working contract for how to
+change the code.
 
 ---
 
@@ -30,25 +30,39 @@ Layer map (`src/`):
 
 ```
 domain/
-  entities/        GridSize, Position, Size, CellChar, Layer, Element(+subtypes)
+  entities/        GridSize, Position, Size, CellChar, Layer, and
+                   element/ (Box, Line, Text, Card, Table, Modal, Tabs, Arrow,
+                             Input, Dropdown, Field, Multiline, FreeDraw)
   value-objects/   BorderStyle, CharBuffer
   aggregates/      WireframeDocument   (aggregate root, immutable)
   entities/errors/ domain error types (InvalidPositionError, …)
   ports/           IRenderer, IComposer, IDocumentRepository, IHistory,
-                   ICommand, IGlyphMapper
+                   ICommand, IGlyphMapper, IClock
 application/
-  usecases/        AddElement, MoveElement, ResizeElement, RemoveElement,
-                   ReorderLayer, EditElementProps, ComposeAscii, ExportAscii,
-                   SaveDocument, LoadDocument, Undo, Redo
+  usecases/        AddElement(s), MoveElement(s), ResizeElement, ResizeGrid,
+                   RemoveElement(s), ReorderLayer(s), EditElementProps,
+                   ComposeAscii, ExportAscii, SaveDocument, LoadDocument,
+                   Undo, Redo, DrawFreeChar, EraseCell
 infrastructure/
-  composer/        ZIndexComposer, GlyphMapperRegistry, mappers/*GlyphMapper
+  composer/        ZIndexComposer, GlyphMapperRegistry, defaultRegistry,
+                   mappers/*GlyphMapper
   rendering/       StringRenderer
+  persistence/     WebStorage (port shim), LocalStorageDocumentRepository,
+                   documentSerialization
+  history/         InMemoryHistory
+  time/            SystemClock
+di/                container.ts   (composition root — wires adapters to use cases)
 tests/
-  doubles/         SpyComposer, SpyHistory, SpyDocumentRepository
+  doubles/         SpyComposer, SpyHistory, SpyDocumentRepository,
+                   InMemoryWebStorage, FixedClock, FakeToolContext
   fixtures.ts      makeBox / makeText / makeDoc builders
 ```
 
-### Core design rules (from the plan — do not violate)
+The whole Presentation/React layer lives under `presentation/` (pages, router,
+Zustand editor store, canvas tools, UI primitives, i18n, theme) — see
+`README.md` for that map.
+
+### Core design rules (do not violate)
 
 - **Central compositor rasterizes; elements never self-render.** `IComposer`
   walks elements ordered by ascending z-index and writes each one's cells into
@@ -72,10 +86,16 @@ tests/
 
 ### Current status
 
-Domain, ports, compositor (Box/Line/Text mappers), and the mutation/query use
-cases are implemented with tests. **Not started:** LocalStorage repository,
-InMemoryHistory, DI container, the whole Presentation/React layer, and the
-remaining mappers (Card, Table, Modal, Tabs, Arrow, FreeDraw/pencil).
+All layers are implemented and under active development. Domain, every use
+case, the compositor with all element mappers (Box, Line, Text, Card, Table,
+Modal, Tabs, Arrow, Input, Dropdown, Field, Multiline, FreeDraw), the
+`StringRenderer`, LocalStorage persistence + serialization, `InMemoryHistory`,
+`SystemClock`, and the DI container are in place with tests. The Presentation
+layer is a working React app — document list / editor / about pages, a Zustand
+editor store, the canvas (place/select/move/resize, free-draw, pan-zoom, inline
+editing), layers sidebar, inspector, undo/redo, copy-to-clipboard export, i18n
+(en/pt), and light/dark themes. When you finish a slice, update this section so
+it keeps describing what actually exists.
 
 ---
 
@@ -179,8 +199,9 @@ The design system is quarantined so it can be swapped without touching features.
 
 ## Tests
 
-- Tests run with a single command: `npm test` (Vitest watch mode; use
-  `npx vitest run` for a single non-watch run). Type-check with `npx tsc -b`.
+- Tests run with a single command: `pnpm test` (Vitest watch mode; use
+  `pnpm exec vitest run` for a single non-watch run). Type-check with
+  `pnpm exec tsc -b`. (This repo uses **pnpm**; `npm install` breaks it.)
 - Every new function gets a test. Bug fixes get a regression test.
 - Mock external I/O (API, DB, filesystem) with named fake classes,
   not inline stubs. Reuse the `Spy*` doubles in `src/tests/doubles/`.
@@ -225,8 +246,8 @@ why in the commit.
 
 ## Formatting
 
-- Use the language default formatter (Prettier — `npx prettier`). ESLint via
-  `npm run lint`. Don't discuss style beyond that.
+- Use the language default formatter (Prettier — `pnpm exec prettier`). ESLint
+  via `pnpm lint`. Don't discuss style beyond that.
 
 ## Logging
 
