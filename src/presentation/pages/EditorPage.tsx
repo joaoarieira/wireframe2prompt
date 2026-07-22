@@ -90,7 +90,7 @@ function PhoneEditor({ inspectorVisible }: EditorLayoutProps) {
   const closeInspector = useEditorStore((state) => state.closeInspector);
 
   return (
-    <div className="flex h-screen flex-col overscroll-none">
+    <div className="flex h-svh flex-col overscroll-none">
       <EditorTopBar />
       <main className="relative min-h-0 flex-1">
         <Canvas />
@@ -126,7 +126,7 @@ function TabletEditor({ inspectorVisible }: EditorLayoutProps) {
   const closeLayersPanel = useEditorStore((state) => state.closeLayersPanel);
 
   return (
-    <div className="relative flex h-screen overscroll-none">
+    <div className="relative flex h-svh overscroll-none">
       <EditorIconRail />
       <main className="relative min-w-0 flex-1">
         <Canvas />
@@ -166,7 +166,7 @@ function DesktopEditor({ inspectorVisible }: EditorLayoutProps) {
   return (
     // min-w-0 lets the canvas column shrink and scroll internally instead
     // of forcing a page-wide horizontal scrollbar on small screens
-    <div className="relative flex h-screen overscroll-none">
+    <div className="relative flex h-svh overscroll-none">
       <aside className="w-56 shrink-0 border-r border-base-300 bg-base-200">
         <LayersSidebar />
       </aside>
