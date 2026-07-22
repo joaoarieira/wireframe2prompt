@@ -16,6 +16,12 @@ interface DropdownProps {
   triggerCompact?: boolean;
   /** Optional header shown above the options (daisyUI `menu-title`). */
   menuLabel?: string;
+  /**
+   * Opens the menu downward on small (below `lg`) touch screens while keeping
+   * the default upward opening on desktop. Use where the trigger sits near the
+   * top of a mobile viewport and an upward menu would be clipped off-screen.
+   */
+  openDownOnMobile?: boolean;
   /** Menu options — compose {@link DropdownItem}. */
   children: ReactNode;
   /**
@@ -42,6 +48,7 @@ export function Dropdown({
   triggerActive = false,
   triggerCompact = false,
   menuLabel,
+  openDownOnMobile = false,
   children,
   className,
 }: DropdownProps) {
@@ -49,7 +56,15 @@ export function Dropdown({
     // data-ui-dropdown lets scroll containers detect "a dropdown menu is open"
     // via `has-[[data-ui-dropdown]:focus-within]` without referencing the
     // daisyUI `dropdown` class outside ui/ (see FloatingFooter's tool strip).
-    <div data-ui-dropdown className="dropdown dropdown-top dropdown-end">
+    <div
+      data-ui-dropdown
+      className={cx(
+        "dropdown dropdown-end",
+        // Below lg, opt-in dropdowns open downward so a top-of-viewport trigger
+        // isn't clipped; desktop keeps the default upward opening.
+        openDownOnMobile ? "dropdown-bottom lg:dropdown-top" : "dropdown-top",
+      )}
+    >
       <div
         tabIndex={0}
         role="button"
@@ -66,7 +81,12 @@ export function Dropdown({
       </div>
       <ul
         tabIndex={0}
-        className="dropdown-content menu z-10 mb-1 w-max rounded-box border border-base-300 bg-base-100 p-1 shadow-lg"
+        className={cx(
+          "dropdown-content menu z-10 w-max rounded-box border border-base-300 bg-base-100 p-1 shadow-lg",
+          // Gap sits on the side the menu opens from: below when opening down on
+          // mobile, above (the default) when opening up.
+          openDownOnMobile ? "mt-1 lg:mt-0 lg:mb-1" : "mb-1",
+        )}
       >
         {menuLabel !== undefined && <li className="menu-title">{menuLabel}</li>}
         {children}

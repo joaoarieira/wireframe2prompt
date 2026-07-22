@@ -53,6 +53,36 @@ describe("Dropdown", () => {
     expect(trigger).not.toHaveClass("[@media(pointer:coarse)]:min-h-11");
   });
 
+  test("defaults to opening upward", () => {
+    const { container } = render(
+      <Dropdown trigger="▲" triggerLabel="More tools">
+        <DropdownItem>Box</DropdownItem>
+      </Dropdown>,
+    );
+
+    const root = container.querySelector("[data-ui-dropdown]");
+    expect(root).toHaveClass("dropdown-top");
+    expect(root).not.toHaveClass("dropdown-bottom");
+    expect(container.querySelector(".dropdown-content")).toHaveClass("mb-1");
+  });
+
+  test("openDownOnMobile opens downward below lg but upward on desktop", () => {
+    const { container } = render(
+      <Dropdown trigger="▲" triggerLabel="Border" openDownOnMobile>
+        <DropdownItem>Square</DropdownItem>
+      </Dropdown>,
+    );
+
+    const root = container.querySelector("[data-ui-dropdown]");
+    expect(root).toHaveClass("dropdown-bottom", "lg:dropdown-top");
+    expect(root).not.toHaveClass("dropdown-top");
+    expect(container.querySelector(".dropdown-content")).toHaveClass(
+      "mt-1",
+      "lg:mt-0",
+      "lg:mb-1",
+    );
+  });
+
   test("merges className onto the trigger so it can join a group", () => {
     render(
       <Dropdown trigger="▲" triggerLabel="More tools" className="join-item">
