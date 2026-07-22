@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { ChevronUp, Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../state/app-store/appStore";
@@ -158,7 +159,15 @@ interface ToolGroupProps {
 function ToolGroup({ slot, activeToolId, onSelect }: ToolGroupProps) {
   const { t } = useTranslation();
   const activeInGroup = slot.toolIds.includes(activeToolId);
-  const shownToolId = activeInGroup ? activeToolId : slot.toolIds[0];
+  // Remember the group's most recently used tool so switching to an outside
+  // tool (e.g. hand) keeps that member one click away on the quick button,
+  // instead of resetting the segment to the group's default. Lets the user
+  // toggle between, say, line and hand without reopening the menu each time.
+  const [lastUsedInGroup, setLastUsedInGroup] = useState(slot.toolIds[0]);
+  useEffect(() => {
+    if (activeInGroup) setLastUsedInGroup(activeToolId);
+  }, [activeInGroup, activeToolId]);
+  const shownToolId = activeInGroup ? activeToolId : lastUsedInGroup;
   return (
     <ButtonGroup>
       {/* Split-button spacing: trim the tool button's trailing padding and the

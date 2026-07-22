@@ -147,8 +147,30 @@ describe("FloatingFooter tool palette", () => {
     expect(quick).toHaveAttribute("aria-pressed", "true");
 
     setTool("select"); // switch away, then re-pick via the quick button
-    fireEvent.click(quickButton("Box")); // default member when none is active
-    expect(editorStore.getState().activeToolId).toBe("box");
+    fireEvent.click(quickButton("Arrow")); // stays on the group's last-used tool
+    expect(editorStore.getState().activeToolId).toBe("arrow");
+  });
+
+  test("the group's quick button starts on its default member", () => {
+    render(<FloatingFooter />);
+    // Before any member is used, the segment shows the first group tool.
+    expect(quickButton("Box")).toBeInTheDocument();
+    expect(quickButton("Box")).toHaveClass("btn-ghost");
+  });
+
+  test("a group remembers its last-used tool when another tool takes over", () => {
+    render(<FloatingFooter />);
+    // Pick line from the Shapes menu, then switch to an outside tool: the quick
+    // button must keep offering line (not reset to box) so the user can toggle
+    // between line and hand without reopening the menu.
+    fireEvent.click(menuOption("More Shapes tools", "Line"));
+    expect(editorStore.getState().activeToolId).toBe("line");
+
+    setTool("hand");
+    const quick = quickButton("Line");
+    expect(quick).toHaveClass("btn-ghost"); // inactive but still the shown member
+    fireEvent.click(quick);
+    expect(editorStore.getState().activeToolId).toBe("line");
   });
 
   test("picking pencil reveals the pencil-character input", () => {
