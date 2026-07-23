@@ -51,6 +51,7 @@ describe("ToolRegistry", () => {
       "modal",
       "input",
       "dropdown",
+      "button",
       "table",
       "tabs",
       "pencil",

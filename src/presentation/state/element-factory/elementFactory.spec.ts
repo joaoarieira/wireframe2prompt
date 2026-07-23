@@ -10,6 +10,7 @@ import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { InputElement } from "../../../domain/entities/element/InputElement";
 import { DropdownElement } from "../../../domain/entities/element/DropdownElement";
+import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 import { Position } from "../../../domain/entities/position/Position";
 
 const spec = { id: "el-1", position: Position.create(3, 2), zIndex: 5 };
@@ -110,6 +111,15 @@ describe("buildElement", () => {
     expect((element as DropdownElement).showsArrow).toBe(true);
     expect(element.size.width).toBe(22);
     expect(element.size.height).toBe(4);
+  });
+
+  test("button: 8×3 with default 'Text' label", () => {
+    const element = buildElement("button", spec);
+
+    expect(element).toBeInstanceOf(ButtonElement);
+    expect((element as ButtonElement).text).toBe("Text");
+    expect(element.size.width).toBe(8);
+    expect(element.size.height).toBe(3);
   });
 });
 

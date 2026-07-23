@@ -16,6 +16,7 @@ import { TableElement } from "../../domain/entities/element/TableElement";
 import { TabsElement } from "../../domain/entities/element/TabsElement";
 import { InputElement } from "../../domain/entities/element/InputElement";
 import { DropdownElement } from "../../domain/entities/element/DropdownElement";
+import { ButtonElement } from "../../domain/entities/element/ButtonElement";
 import { FreeDrawElement } from "../../domain/entities/element/FreeDrawElement";
 import { MultilineElement } from "../../domain/entities/element/MultilineElement";
 import type { MultilinePoint } from "../../domain/entities/element/MultilineElement";
@@ -116,6 +117,11 @@ interface SerializedFieldElement extends SerializedElementBase {
   hint: string | null;
 }
 
+interface SerializedButtonElement extends SerializedElementBase {
+  kind: "button";
+  text: string;
+}
+
 interface SerializedFreeDrawElement extends SerializedElementBase {
   kind: "freedraw";
   /** JSON cannot represent Map; cells are stored as a plain object. */
@@ -138,6 +144,7 @@ type SerializedElement =
   | SerializedTableElement
   | SerializedTabsElement
   | SerializedFieldElement
+  | SerializedButtonElement
   | SerializedFreeDrawElement
   | SerializedMultilineElement;
 
@@ -214,6 +221,9 @@ function serializeElement(element: Element): SerializedElement {
       hint: element.hint,
     };
   }
+  if (element instanceof ButtonElement) {
+    return { ...base, kind: "button", text: element.text };
+  }
   if (element instanceof FreeDrawElement) {
     const cells: Record<string, string> = {};
     for (const [key, char] of element.cells) {
@@ -229,7 +239,7 @@ function serializeElement(element: Element): SerializedElement {
     };
   }
   throw new Error(
-    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw | multiline`,
+    `Cannot serialize element of unknown kind "${element.kind}" (id "${element.id}"); expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | button | freedraw | multiline`,
   );
 }
 
@@ -313,6 +323,8 @@ function deserializeElement(data: SerializedElement): Element {
         placeholder: data.placeholder,
         hint: data.hint,
       });
+    case "button":
+      return ButtonElement.create({ ...base, text: data.text });
     case "freedraw": {
       const cells = new Map<string, CellChar>();
       for (const [key, value] of Object.entries(data.cells)) {
@@ -347,7 +359,7 @@ function deserializeElement(data: SerializedElement): Element {
     }
     default:
       throw new Error(
-        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | freedraw | multiline`,
+        `Cannot deserialize element of unknown kind "${(data as SerializedElementBase).kind}"; expected box | line | text | arrow | card | modal | table | tabs | input | dropdown | button | freedraw | multiline`,
       );
   }
 }

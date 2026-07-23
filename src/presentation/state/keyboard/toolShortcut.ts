@@ -15,6 +15,7 @@ const TOOL_BY_KEY: Readonly<Record<string, string>> = {
   p: "pencil",
   l: "line",
   i: "input",
+  b: "button",
 };
 
 /**
@@ -49,4 +50,5 @@ export const SHORTCUT_LABEL_BY_TOOL: Readonly<Record<string, string>> = {
   line: "L",
   arrow: "Shift+L",
   input: "I",
+  button: "B",
 };

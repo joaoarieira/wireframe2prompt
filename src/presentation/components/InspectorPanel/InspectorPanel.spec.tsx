@@ -12,6 +12,7 @@ import type { ModalElement } from "../../../domain/entities/element/ModalElement
 import type { TableElement } from "../../../domain/entities/element/TableElement";
 import type { TabsElement } from "../../../domain/entities/element/TabsElement";
 import type { FieldElement } from "../../../domain/entities/element/FieldElement";
+import type { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 import type { BoxElement } from "../../../domain/entities/element/BoxElement";
 import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import type { PlaceableKind } from "../../state/element-factory/elementFactory";
@@ -45,6 +46,31 @@ function numberFieldIn(legend: string): HTMLElement {
     "spinbutton",
   );
 }
+
+describe("InspectorPanel button editing", () => {
+  test("shows the label editor and updates the button text", async () => {
+    const elementId = await openFreshDocumentWith("button");
+    render(<InspectorPanel />);
+
+    const input = screen.getByLabelText("Text content");
+    expect(input).toHaveValue("Text");
+
+    fireEvent.change(input, { target: { value: "Save" } });
+    expect(selectedElement<ButtonElement>(elementId).text).toBe("Save");
+  });
+
+  test("focusing the label editor starts the text-editing session", async () => {
+    await openFreshDocumentWith("button");
+    render(<InspectorPanel />);
+    const input = screen.getByLabelText("Text content");
+
+    fireEvent.focus(input);
+    expect(editorStore.getState().textEditingElementId).not.toBeNull();
+
+    fireEvent.blur(input);
+    expect(editorStore.getState().textEditingElementId).toBeNull();
+  });
+});
 
 describe("InspectorPanel text editing", () => {
   test("no field steals the focus when the panel opens", async () => {

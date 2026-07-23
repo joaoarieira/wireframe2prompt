@@ -11,6 +11,7 @@ import { InputGlyphMapper } from "./mappers/InputGlyphMapper";
 import { DropdownGlyphMapper } from "./mappers/DropdownGlyphMapper";
 import { FreeDrawGlyphMapper } from "./mappers/FreeDrawGlyphMapper";
 import { MultilineGlyphMapper } from "./mappers/MultilineGlyphMapper";
+import { ButtonGlyphMapper } from "./mappers/ButtonGlyphMapper";
 
 /** Registry wired with all implemented mappers. */
 export function createDefaultGlyphMapperRegistry(): GlyphMapperRegistry {
@@ -26,5 +27,6 @@ export function createDefaultGlyphMapperRegistry(): GlyphMapperRegistry {
     .register(new InputGlyphMapper())
     .register(new DropdownGlyphMapper())
     .register(new FreeDrawGlyphMapper())
-    .register(new MultilineGlyphMapper());
+    .register(new MultilineGlyphMapper())
+    .register(new ButtonGlyphMapper());
 }

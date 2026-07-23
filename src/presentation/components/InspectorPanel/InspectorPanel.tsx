@@ -21,6 +21,7 @@ import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
 import type { FieldName } from "../../../domain/entities/element/FieldElement";
+import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 import { FreeDrawElement } from "../../../domain/entities/element/FreeDrawElement";
 import { BorderStyle } from "../../../domain/value-objects/border-style/BorderStyle";
 import type { BorderStyleName } from "../../../domain/value-objects/border-style/BorderStyle";
@@ -157,6 +158,9 @@ function SelectedElementFields({ element }: { element: Element }) {
       )}
       {element instanceof FieldElement && (
         <FieldSlotsFields element={element} />
+      )}
+      {element instanceof ButtonElement && (
+        <ButtonTextField element={element} />
       )}
       {element.hasBorder && <BorderStyleField element={element} />}
       <Field legend={t("inspector.position")}>
@@ -379,6 +383,36 @@ function TextContentField({ element }: { element: TextElement }) {
         onFocus={() => beginTextEditing(element.id)}
         onBlur={endTextEditing}
         onKeyDown={handleKeyDown}
+      />
+      <p className="text-xs opacity-70">{t("inspector.textEditHint")}</p>
+    </Field>
+  );
+}
+
+/**
+ * Multi-line label editor for ButtonElements. Reuses the text-editing session
+ * (single-key shortcuts suspended while focused); the label stays centered and
+ * the button grows to fit as it is typed. The on-canvas double-click editor is
+ * the primary path, so a short hint points there too.
+ */
+function ButtonTextField({ element }: { element: ButtonElement }) {
+  const { t } = useTranslation();
+  const editElementProps = useEditorStore((state) => state.editElementProps);
+  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
+  const endTextEditing = useEditorStore((state) => state.endTextEditing);
+
+  return (
+    <Field legend={t("inspector.text")}>
+      <TextArea
+        aria-label={t("inspector.textContent")}
+        className="w-full"
+        rows={2}
+        value={element.text}
+        onChange={(event) =>
+          editElementProps(element.id, { text: event.target.value })
+        }
+        onFocus={() => beginTextEditing(element.id)}
+        onBlur={endTextEditing}
       />
       <p className="text-xs opacity-70">{t("inspector.textEditHint")}</p>
     </Field>

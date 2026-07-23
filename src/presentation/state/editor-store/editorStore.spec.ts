@@ -845,6 +845,19 @@ describe("text editing", () => {
     );
   });
 
+  test("placing a button opens canvas inline editing for that element", async () => {
+    await openFixtureDoc(makeBox("b1"));
+
+    store.getState().placeElement("button", cell(1, 1));
+
+    expect(store.getState().canvasEditingElementId).toBe(
+      store.getState().selectedElementIds[0],
+    );
+    expect(store.getState().textEditingElementId).toBe(
+      store.getState().selectedElementIds[0],
+    );
+  });
+
   test("beginTextEditing/endTextEditing toggle the session without canvas overlay", async () => {
     await openFixtureDoc(makeBox("b1"));
 
@@ -1472,6 +1485,7 @@ describe("pointer routing and tools", () => {
       "modal",
       "input",
       "dropdown",
+      "button",
       "table",
       "tabs",
       "pencil",

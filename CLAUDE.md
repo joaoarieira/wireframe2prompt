@@ -32,7 +32,7 @@ Layer map (`src/`):
 domain/
   entities/        GridSize, Position, Size, CellChar, Layer, and
                    element/ (Box, Line, Text, Card, Table, Modal, Tabs, Arrow,
-                             Input, Dropdown, Field, Multiline, FreeDraw)
+                             Input, Dropdown, Field, Button, Multiline, FreeDraw)
   value-objects/   BorderStyle, CharBuffer
   aggregates/      WireframeDocument   (aggregate root, immutable)
   entities/errors/ domain error types (InvalidPositionError, …)
@@ -88,7 +88,7 @@ Zustand editor store, canvas tools, UI primitives, i18n, theme) — see
 
 All layers are implemented and under active development. Domain, every use
 case, the compositor with all element mappers (Box, Line, Text, Card, Table,
-Modal, Tabs, Arrow, Input, Dropdown, Field, Multiline, FreeDraw), the
+Modal, Tabs, Arrow, Input, Dropdown, Field, Button, Multiline, FreeDraw), the
 `StringRenderer`, LocalStorage persistence + serialization, `InMemoryHistory`,
 `SystemClock`, and the DI container are in place with tests. The Presentation
 layer is a working React app — document list / editor / about pages, a Zustand

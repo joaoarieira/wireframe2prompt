@@ -48,6 +48,7 @@ export const pt: LocaleDictionary = {
     tabs: "Abas",
     input: "Input",
     dropdown: "Dropdown",
+    button: "Botão",
     pencil: "Lápis",
     eraser: "Borracha",
     hand: "Mão",
@@ -135,6 +136,7 @@ export const pt: LocaleDictionary = {
     tabs: "abas",
     input: "input",
     dropdown: "dropdown",
+    button: "botão",
     freedraw: "desenho",
   },
   footer: {

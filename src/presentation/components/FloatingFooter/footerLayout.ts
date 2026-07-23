@@ -36,7 +36,7 @@ export const FOOTER_LAYOUT: readonly FooterSlot[] = [
   {
     kind: "group",
     labelKey: "footer.containers",
-    toolIds: ["input", "dropdown", "table", "modal", "card", "tabs"],
+    toolIds: ["button", "input", "dropdown", "table", "modal", "card", "tabs"],
   },
   {
     kind: "group",

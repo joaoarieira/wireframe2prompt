@@ -11,9 +11,21 @@ import { editorStore } from "../../state/app-store/appStore";
 import { selectedElementOf } from "../../state/editor-store/editorStore";
 import { makeBox, makeDoc, makeText } from "../../../tests/fixtures";
 import { InputElement } from "../../../domain/entities/element/InputElement";
+import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { GridSize } from "../../../domain/entities/grid-size/GridSize";
+
+function makeButtonElement(id: string) {
+  return ButtonElement.create({
+    id,
+    position: Position.create(0, 0),
+    size: Size.create(8, 3),
+    zIndex: 0,
+    layerId: null,
+    text: "Text",
+  });
+}
 
 function makeInput(id: string) {
   return InputElement.create({
@@ -536,6 +548,21 @@ describe("Canvas", () => {
     });
     render(<Canvas />);
 
+    expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
+  });
+
+  test("ButtonEditOverlay appears when canvasEditingElementId is set to a ButtonElement", () => {
+    editorStore.setState({
+      document: makeDoc(makeButtonElement("btn1")),
+      documentStatus: "ready",
+      canvasEditingElementId: "btn1",
+      textEditingElementId: "btn1",
+      canvasEditingField: null,
+      selectedElementIds: ["btn1"],
+    });
+    render(<Canvas />);
+
+    expect(screen.getByTestId("button-edit-overlay")).toBeInTheDocument();
     expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
   });
 

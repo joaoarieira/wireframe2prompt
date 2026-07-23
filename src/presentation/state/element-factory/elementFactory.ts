@@ -10,6 +10,7 @@ import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { InputElement } from "../../../domain/entities/element/InputElement";
 import { DropdownElement } from "../../../domain/entities/element/DropdownElement";
+import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 import type { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 
@@ -24,7 +25,8 @@ export type PlaceableKind =
   | "table"
   | "tabs"
   | "input"
-  | "dropdown";
+  | "dropdown"
+  | "button";
 
 export interface BuildElementSpec {
   id: string;
@@ -134,6 +136,15 @@ const buildersByKind: Record<PlaceableKind, ElementBuilder> = {
       label: "Label",
       placeholder: "Placeholder",
       hint: "Hint",
+    }),
+  button: ({ id, position, zIndex }) =>
+    ButtonElement.create({
+      id,
+      position,
+      size: Size.create(8, 3),
+      zIndex,
+      layerId: null,
+      text: "Text",
     }),
 };
 

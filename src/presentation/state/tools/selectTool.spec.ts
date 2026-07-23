@@ -4,6 +4,7 @@ import { FakeToolContext } from "../../../tests/doubles/FakeToolContext";
 import { Position } from "../../../domain/entities/position/Position";
 import { makeBox, makeText } from "../../../tests/fixtures";
 import { InputElement } from "../../../domain/entities/element/InputElement";
+import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 import { Size } from "../../../domain/entities/size/Size";
 
 const inputEl = InputElement.create({
@@ -114,6 +115,23 @@ describe("selectTool — double click", () => {
 
     expect(ctx.selectCalls).toEqual(["t1"]);
     expect(ctx.beginCanvasInlineEditingCalls).toEqual(["t1"]);
+  });
+
+  test("double click on a button selects it and starts canvas editing", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = ButtonElement.create({
+      id: "btn1",
+      position: Position.create(0, 0),
+      size: Size.create(8, 3),
+      zIndex: 0,
+      layerId: null,
+      text: "Text",
+    });
+
+    selectTool.onCellDoubleClick!(ctx, cell);
+
+    expect(ctx.selectCalls).toEqual(["btn1"]);
+    expect(ctx.beginCanvasInlineEditingCalls).toEqual(["btn1"]);
   });
 
   test("double click on a non-text element does nothing", () => {

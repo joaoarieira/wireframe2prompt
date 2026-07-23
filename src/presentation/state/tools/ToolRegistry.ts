@@ -50,6 +50,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
   registry.register(createPlacementTool("modal", "tools.modal"));
   registry.register(createPlacementTool("input", "tools.input"));
   registry.register(createPlacementTool("dropdown", "tools.dropdown"));
+  registry.register(createPlacementTool("button", "tools.button"));
   registry.register(createPlacementTool("table", "tools.table"));
   registry.register(createPlacementTool("tabs", "tools.tabs"));
   registry.register(pencilTool);

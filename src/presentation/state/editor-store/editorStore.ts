@@ -482,12 +482,13 @@ export function createEditorStore(
       const element = built.withZIndex(
         zIndexForPlacement(document, built.position, built.size),
       );
+      const editsInline = startsInlineEditingOnPlace(drag.kind);
       set({ drag: null });
       commitDocument(container.addElement.execute({ document, element }));
       set({
         selectedElementIds: [element.id],
-        textEditingElementId: drag.kind === "text" ? element.id : null,
-        canvasEditingElementId: drag.kind === "text" ? element.id : null,
+        textEditingElementId: editsInline ? element.id : null,
+        canvasEditingElementId: editsInline ? element.id : null,
         canvasEditingField: null,
         inspectorOpen: get().autoOpenInspector,
       });
@@ -724,10 +725,11 @@ export function createEditorStore(
           zIndexForPlacement(document, built.position, built.size),
         );
         commitDocument(container.addElement.execute({ document, element }));
+        const editsInline = startsInlineEditingOnPlace(kind);
         set({
           selectedElementIds: [element.id],
-          textEditingElementId: kind === "text" ? element.id : null,
-          canvasEditingElementId: kind === "text" ? element.id : null,
+          textEditingElementId: editsInline ? element.id : null,
+          canvasEditingElementId: editsInline ? element.id : null,
           canvasEditingField: null,
           inspectorOpen: get().autoOpenInspector,
         });
@@ -1670,6 +1672,14 @@ function requireElement(
     throw new ElementNotFoundError(elementId);
   }
   return element;
+}
+
+/**
+ * Kinds whose placement opens inline text editing immediately, mirroring the
+ * text tool: a freshly dropped element lands ready to be typed into.
+ */
+function startsInlineEditingOnPlace(kind: PlaceableKind): boolean {
+  return kind === "text" || kind === "button";
 }
 
 /** Shortcuts suspended while a text field has focus (undo/redo stay live). */

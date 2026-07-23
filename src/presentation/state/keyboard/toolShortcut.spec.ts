@@ -22,6 +22,7 @@ describe("toolForShortcut", () => {
     ["p", "pencil"],
     ["l", "line"],
     ["i", "input"],
+    ["b", "button"],
   ])("%s → %s", (pressed, toolId) => {
     expect(toolForShortcut(key({ key: pressed }))).toBe(toolId);
   });
@@ -68,6 +69,7 @@ describe("SHORTCUT_LABEL_BY_TOOL", () => {
       line: "L",
       arrow: "Shift+L",
       input: "I",
+      button: "B",
     });
   });
 });

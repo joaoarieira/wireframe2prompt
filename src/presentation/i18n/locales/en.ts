@@ -50,6 +50,7 @@ export const en = {
     tabs: "Tabs",
     input: "Input",
     dropdown: "Dropdown",
+    button: "Button",
     pencil: "Pencil",
     eraser: "Eraser",
     hand: "Hand",
@@ -136,6 +137,7 @@ export const en = {
     tabs: "tabs",
     input: "input",
     dropdown: "dropdown",
+    button: "button",
     freedraw: "drawing",
   },
   footer: {

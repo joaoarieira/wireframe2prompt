@@ -1,5 +1,6 @@
 import type { CanvasTool } from "./CanvasTool";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
+import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
 
 /**
  * Default tool: Figma-style multi-select with marquee and shift+click.
@@ -55,6 +56,11 @@ export const selectTool: CanvasTool = {
       }
       context.select(hit.id);
       context.beginCanvasFieldEditing(hit.id, field);
+      return;
+    }
+    if (hit instanceof ButtonElement) {
+      context.select(hit.id);
+      context.beginCanvasInlineEditing(hit.id);
       return;
     }
     if (hit.kind !== "text") {

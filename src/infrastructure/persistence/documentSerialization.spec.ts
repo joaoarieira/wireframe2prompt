@@ -22,6 +22,7 @@ import { TableElement } from "../../domain/entities/element/TableElement";
 import { TabsElement } from "../../domain/entities/element/TabsElement";
 import { InputElement } from "../../domain/entities/element/InputElement";
 import { DropdownElement } from "../../domain/entities/element/DropdownElement";
+import { ButtonElement } from "../../domain/entities/element/ButtonElement";
 import {
   FreeDrawElement,
   freeDrawCellKey,
@@ -374,6 +375,28 @@ describe("documentSerialization", () => {
     expect(restored.label).toBeNull();
     expect(restored.placeholder).toBeNull();
     expect(restored.hint).toBeNull();
+  });
+
+  test("round-trips ButtonElement with its label and border style", () => {
+    const button = ButtonElement.create({
+      id: "btn",
+      position: Position.create(1, 2),
+      size: Size.create(8, 3),
+      zIndex: 0,
+      layerId: null,
+      text: "Save",
+      borderStyle: roundedBorder,
+    });
+    const doc = WireframeDocument.create({
+      id: "d",
+      name: "n",
+      gridSize: GridSize.create(20, 10),
+      elements: [button],
+    });
+    const restored = roundTrip(doc).getElement("btn") as ButtonElement;
+    expect(restored.kind).toBe("button");
+    expect(restored.text).toBe("Save");
+    expect(restored.borderStyle.equals(roundedBorder)).toBe(true);
   });
 
   test("round-trips FreeDrawElement", () => {
