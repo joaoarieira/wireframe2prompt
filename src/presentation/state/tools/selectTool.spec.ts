@@ -5,7 +5,24 @@ import { Position } from "../../../domain/entities/position/Position";
 import { makeBox, makeText } from "../../../tests/fixtures";
 import { InputElement } from "../../../domain/entities/element/InputElement";
 import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
+import { CardElement } from "../../../domain/entities/element/CardElement";
+import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { Size } from "../../../domain/entities/size/Size";
+
+const titledBase = {
+  position: Position.create(0, 0),
+  zIndex: 0,
+  layerId: null,
+  title: "Title",
+};
+
+function makeCard(size: Size): CardElement {
+  return CardElement.create({ ...titledBase, id: "c1", size });
+}
+
+function makeModal(size: Size): ModalElement {
+  return ModalElement.create({ ...titledBase, id: "m1", size });
+}
 
 const inputEl = InputElement.create({
   id: "in1",
@@ -171,6 +188,42 @@ describe("selectTool — double click", () => {
       ]);
     },
   );
+
+  test.each([
+    ["card", makeCard(Size.create(12, 6))],
+    ["modal", makeModal(Size.create(12, 6))],
+  ] as const)(
+    "double click on a %s's title row selects it and starts canvas editing",
+    (_kind, element) => {
+      const ctx = new FakeToolContext();
+      ctx.hit = element;
+
+      selectTool.onCellDoubleClick!(ctx, Position.create(4, 1));
+
+      expect(ctx.selectCalls).toEqual([element.id]);
+      expect(ctx.beginCanvasInlineEditingCalls).toEqual([element.id]);
+    },
+  );
+
+  test("double click on a card's body does nothing", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeCard(Size.create(12, 6));
+
+    selectTool.onCellDoubleClick!(ctx, Position.create(4, 3));
+
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginCanvasInlineEditingCalls).toEqual([]);
+  });
+
+  test("double click on a card too short to show a title does nothing", () => {
+    const ctx = new FakeToolContext();
+    ctx.hit = makeCard(Size.create(12, 2));
+
+    selectTool.onCellDoubleClick!(ctx, Position.create(4, 1));
+
+    expect(ctx.selectCalls).toEqual([]);
+    expect(ctx.beginCanvasInlineEditingCalls).toEqual([]);
+  });
 
   test("double click on a field element's borderless gap does nothing", () => {
     const ctx = new FakeToolContext();

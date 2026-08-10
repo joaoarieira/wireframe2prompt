@@ -82,6 +82,7 @@ export const pt: LocaleDictionary = {
     down: "baixo",
     title: "Título",
     titleField: "Texto do título",
+    titleEditHint: "Dê dois cliques no título no canvas para editá-lo.",
     tableColumns: "Colunas",
     tableRows: "Linhas",
     tabs: "Abas",

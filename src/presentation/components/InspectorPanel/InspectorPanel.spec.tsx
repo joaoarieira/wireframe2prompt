@@ -343,6 +343,18 @@ describe("InspectorPanel kind-specific fields", () => {
     expect(editorStore.getState().textEditingElementId).toBeNull();
   });
 
+  test.each(["card", "modal"] as const)(
+    "the %s title field points at the on-canvas editor",
+    async (kind) => {
+      await openFreshDocumentWith(kind);
+      render(<InspectorPanel />);
+
+      expect(
+        screen.getByText("Double-click the title on the canvas to edit it."),
+      ).toBeInTheDocument();
+    },
+  );
+
   test("the modal title field edits the title and empty clears it", async () => {
     const elementId = await openFreshDocumentWith("modal");
     render(<InspectorPanel />);

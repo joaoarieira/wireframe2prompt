@@ -12,6 +12,8 @@ import { selectedElementOf } from "../../state/editor-store/editorStore";
 import { makeBox, makeDoc, makeText } from "../../../tests/fixtures";
 import { InputElement } from "../../../domain/entities/element/InputElement";
 import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
+import { CardElement } from "../../../domain/entities/element/CardElement";
+import { ModalElement } from "../../../domain/entities/element/ModalElement";
 import { Position } from "../../../domain/entities/position/Position";
 import { Size } from "../../../domain/entities/size/Size";
 import { GridSize } from "../../../domain/entities/grid-size/GridSize";
@@ -24,6 +26,28 @@ function makeButtonElement(id: string) {
     zIndex: 0,
     layerId: null,
     text: "Text",
+  });
+}
+
+function makeCardElement(id: string) {
+  return CardElement.create({
+    id,
+    position: Position.create(0, 0),
+    size: Size.create(12, 6),
+    zIndex: 0,
+    layerId: null,
+    title: "Card",
+  });
+}
+
+function makeModalElement(id: string) {
+  return ModalElement.create({
+    id,
+    position: Position.create(0, 0),
+    size: Size.create(12, 6),
+    zIndex: 0,
+    layerId: null,
+    title: "Modal",
   });
 }
 
@@ -564,6 +588,53 @@ describe("Canvas", () => {
 
     expect(screen.getByTestId("button-edit-overlay")).toBeInTheDocument();
     expect(screen.queryByTestId("text-edit-overlay")).toBeNull();
+  });
+
+  test.each([
+    ["card", makeCardElement("c1")],
+    ["modal", makeModalElement("m1")],
+  ] as const)(
+    "TitleEditOverlay appears when canvasEditingElementId is set to a %s",
+    (_kind, element) => {
+      editorStore.setState({
+        document: makeDoc(element),
+        documentStatus: "ready",
+        canvasEditingElementId: element.id,
+        textEditingElementId: element.id,
+        canvasEditingField: null,
+        selectedElementIds: [element.id],
+      });
+      render(<Canvas />);
+
+      expect(screen.getByTestId("title-edit-overlay")).toBeInTheDocument();
+    },
+  );
+
+  test("TitleEditOverlay does not appear for an element without a title", () => {
+    editorStore.setState({
+      document: makeDoc(makeBox("b1")),
+      documentStatus: "ready",
+      canvasEditingElementId: "b1",
+      textEditingElementId: "b1",
+      selectedElementIds: ["b1"],
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("title-edit-overlay")).toBeNull();
+  });
+
+  test("TitleEditOverlay does not appear when only textEditingElementId is set (inspector editing)", () => {
+    const card = makeCardElement("c1");
+    editorStore.setState({
+      document: makeDoc(card),
+      documentStatus: "ready",
+      canvasEditingElementId: null,
+      textEditingElementId: "c1",
+      selectedElementIds: ["c1"],
+    });
+    render(<Canvas />);
+
+    expect(screen.queryByTestId("title-edit-overlay")).toBeNull();
   });
 
   test("no editing overlay is shown when canvasEditingElementId is stale", () => {

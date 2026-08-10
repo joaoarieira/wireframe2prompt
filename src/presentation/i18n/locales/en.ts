@@ -84,6 +84,7 @@ export const en = {
     down: "down",
     title: "Title",
     titleField: "Title text",
+    titleEditHint: "Double-click the title on the canvas to edit it.",
     tableColumns: "Columns",
     tableRows: "Rows",
     tabs: "Tabs",

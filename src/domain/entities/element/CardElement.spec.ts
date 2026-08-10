@@ -58,4 +58,33 @@ describe("CardElement", () => {
     const moved = card.moveTo(Position.create(5, 5)) as CardElement;
     expect(moved.title).toBe("Card");
   });
+
+  // The region has to match what CardGlyphMapper rasterizes, or the inline
+  // editor sits off the glyphs it replaces.
+  test("titleRegion matches the glyphs the mapper draws", () => {
+    const card = CardElement.create({
+      ...base,
+      position: Position.create(3, 4),
+      title: "Card",
+    });
+    const region = card.titleRegion();
+    expect(region.position.equals(Position.create(5, 5))).toBe(true);
+    expect(region.size.equals(Size.create(8, 1))).toBe(true);
+  });
+
+  test("titleRegion is as narrow as the mapper's truncation", () => {
+    // A 6-wide card renders only max(0, 6 - 4) = 2 title characters.
+    const card = CardElement.create({
+      ...base,
+      size: Size.create(6, 5),
+      title: "Longtitle",
+    });
+    expect(card.titleRegion().size.equals(Size.create(2, 1))).toBe(true);
+  });
+
+  test("titleAtCell only accepts the title row", () => {
+    const card = CardElement.create({ ...base, title: "Card" });
+    expect(card.titleAtCell(Position.create(4, 1))).toBe(true);
+    expect(card.titleAtCell(Position.create(4, 3))).toBe(false);
+  });
 });

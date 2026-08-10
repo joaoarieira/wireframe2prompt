@@ -15,8 +15,8 @@ import { Size } from "../../../domain/entities/size/Size";
 import { LineElement } from "../../../domain/entities/element/LineElement";
 import { TextElement } from "../../../domain/entities/element/TextElement";
 import { ArrowElement } from "../../../domain/entities/element/ArrowElement";
-import { CardElement } from "../../../domain/entities/element/CardElement";
-import { ModalElement } from "../../../domain/entities/element/ModalElement";
+import { isTitledElement } from "../../../domain/entities/element/TitledElement";
+import type { TitledElement } from "../../../domain/entities/element/TitledElement";
 import { TableElement } from "../../../domain/entities/element/TableElement";
 import { TabsElement } from "../../../domain/entities/element/TabsElement";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
@@ -148,8 +148,7 @@ function SelectedElementFields({ element }: { element: Element }) {
           </Select>
         </Field>
       )}
-      {element instanceof CardElement && <CardTitleField element={element} />}
-      {element instanceof ModalElement && <ModalTitleField element={element} />}
+      {isTitledElement(element) && <TitleField element={element} />}
       {element instanceof TableElement && (
         <TableShapeFields element={element} />
       )}
@@ -419,7 +418,13 @@ function ButtonTextField({ element }: { element: ButtonElement }) {
   );
 }
 
-function CardTitleField({ element }: { element: CardElement }) {
+/**
+ * Title editor shared by every titled element (card, modal). Reuses the
+ * text-editing session (single-key shortcuts suspended while focused); an empty
+ * box clears the title back to null, dropping it from the ASCII. The on-canvas
+ * double-click editor is the primary path, so a short hint points there too.
+ */
+function TitleField({ element }: { element: TitledElement }) {
   const { t } = useTranslation();
   const editElementProps = useEditorStore((state) => state.editElementProps);
   const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
@@ -440,31 +445,7 @@ function CardTitleField({ element }: { element: CardElement }) {
         onFocus={() => beginTextEditing(element.id)}
         onBlur={endTextEditing}
       />
-    </Field>
-  );
-}
-
-function ModalTitleField({ element }: { element: ModalElement }) {
-  const { t } = useTranslation();
-  const editElementProps = useEditorStore((state) => state.editElementProps);
-  const beginTextEditing = useEditorStore((state) => state.beginTextEditing);
-  const endTextEditing = useEditorStore((state) => state.endTextEditing);
-
-  return (
-    <Field legend={t("inspector.title")}>
-      <TextInput
-        type="text"
-        aria-label={t("inspector.titleField")}
-        className="w-full"
-        value={element.title ?? ""}
-        onChange={(event) =>
-          editElementProps(element.id, {
-            title: event.target.value === "" ? null : event.target.value,
-          })
-        }
-        onFocus={() => beginTextEditing(element.id)}
-        onBlur={endTextEditing}
-      />
+      <p className="text-xs opacity-70">{t("inspector.titleEditHint")}</p>
     </Field>
   );
 }

@@ -11,6 +11,7 @@ import { MarqueeOverlay } from "./MarqueeOverlay";
 import { TextEditOverlay } from "./TextEditOverlay";
 import { FieldEditOverlay } from "./FieldEditOverlay";
 import { ButtonEditOverlay } from "./ButtonEditOverlay";
+import { TitleEditOverlay } from "./TitleEditOverlay";
 import { cellAtPoint } from "./cellGeometry";
 import type { PointLike } from "./cellGeometry";
 import { canvasCursor } from "./cursorGlyphs";
@@ -24,6 +25,7 @@ import { editorActionForKey } from "../../state/keyboard/editorKeyAction";
 import { TextElement } from "../../../domain/entities/element/TextElement";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
 import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
+import { isTitledElement } from "../../../domain/entities/element/TitledElement";
 import { isPlaceableKind } from "../../state/element-factory/elementFactory";
 
 const CELL_SIZE_VARS = { "--cell-w": "10px", "--cell-h": "18px" };
@@ -193,6 +195,10 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
       : null;
   const buttonEditElement =
     editingElement instanceof ButtonElement ? editingElement : null;
+  const titleEditElement =
+    editingElement !== null && isTitledElement(editingElement)
+      ? editingElement
+      : null;
 
   const cellFromPoint = (point: PointLike) => {
     const rect = rootRef.current?.getBoundingClientRect();
@@ -381,6 +387,13 @@ export function Canvas({ surface: Surface = DomGridSurface }: CanvasProps) {
           {buttonEditElement !== null && (
             <ButtonEditOverlay
               element={buttonEditElement}
+              onEnd={endTextEditing}
+              canvasRef={rootRef}
+            />
+          )}
+          {titleEditElement !== null && (
+            <TitleEditOverlay
+              element={titleEditElement}
               onEnd={endTextEditing}
               canvasRef={rootRef}
             />

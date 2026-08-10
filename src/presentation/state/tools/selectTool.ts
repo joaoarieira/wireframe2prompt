@@ -1,6 +1,7 @@
 import type { CanvasTool } from "./CanvasTool";
 import { FieldElement } from "../../../domain/entities/element/FieldElement";
 import { ButtonElement } from "../../../domain/entities/element/ButtonElement";
+import { isTitledElement } from "../../../domain/entities/element/TitledElement";
 
 /**
  * Default tool: Figma-style multi-select with marquee and shift+click.
@@ -59,6 +60,15 @@ export const selectTool: CanvasTool = {
       return;
     }
     if (hit instanceof ButtonElement) {
+      context.select(hit.id);
+      context.beginCanvasInlineEditing(hit.id);
+      return;
+    }
+    if (isTitledElement(hit)) {
+      // Only the title row edits; the body of a card/modal has nothing to type.
+      if (!hit.titleAtCell(cell)) {
+        return;
+      }
       context.select(hit.id);
       context.beginCanvasInlineEditing(hit.id);
       return;

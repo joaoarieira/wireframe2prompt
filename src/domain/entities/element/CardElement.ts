@@ -1,11 +1,18 @@
 import { Element } from "./Element";
 import type { ElementBaseProps } from "./Element";
+import type { Position } from "../position/Position";
+import type { TitledElement } from "./TitledElement";
+import type { TitleRegion } from "./titleGeometry";
+import { isTitleCell, titleRegion } from "./titleGeometry";
 
 export interface CardElementProps extends ElementBaseProps {
   title: string | null;
 }
 
-export class CardElement extends Element {
+/** Border plus one pad column on each side, matching CardGlyphMapper. */
+const TITLE_RESERVED_COLS = 4;
+
+export class CardElement extends Element implements TitledElement {
   readonly kind = "card";
   public readonly title: string | null;
 
@@ -29,6 +36,16 @@ export class CardElement extends Element {
 
   withTitle(title: string | null): CardElement {
     return new CardElement(this.baseProps(), title);
+  }
+
+  /** Editable region of the title (second row), left-anchored. */
+  titleRegion(): TitleRegion {
+    return titleRegion(this.position, this.size, TITLE_RESERVED_COLS);
+  }
+
+  /** Whether a cell sits on the title row, for canvas double-click editing. */
+  titleAtCell(cell: Position): boolean {
+    return isTitleCell(this.position, this.size, cell);
   }
 
   protected withKindProps(

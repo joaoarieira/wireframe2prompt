@@ -1,11 +1,21 @@
 import { Element } from "./Element";
 import type { ElementBaseProps } from "./Element";
+import type { Position } from "../position/Position";
+import type { TitledElement } from "./TitledElement";
+import type { TitleRegion } from "./titleGeometry";
+import { isTitleCell, titleRegion } from "./titleGeometry";
 
 export interface ModalElementProps extends ElementBaseProps {
   title: string | null;
 }
 
-export class ModalElement extends Element {
+/**
+ * Two more columns than a card: ModalGlyphMapper puts the close button at
+ * x+width-3, so the title has to stop before it.
+ */
+const TITLE_RESERVED_COLS = 6;
+
+export class ModalElement extends Element implements TitledElement {
   readonly kind = "modal";
   public readonly title: string | null;
 
@@ -29,6 +39,16 @@ export class ModalElement extends Element {
 
   withTitle(title: string | null): ModalElement {
     return new ModalElement(this.baseProps(), title);
+  }
+
+  /** Editable region of the title (second row), stopping before the close button. */
+  titleRegion(): TitleRegion {
+    return titleRegion(this.position, this.size, TITLE_RESERVED_COLS);
+  }
+
+  /** Whether a cell sits on the title row, for canvas double-click editing. */
+  titleAtCell(cell: Position): boolean {
+    return isTitleCell(this.position, this.size, cell);
   }
 
   protected withKindProps(

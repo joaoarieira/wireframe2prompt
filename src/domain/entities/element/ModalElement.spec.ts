@@ -53,4 +53,19 @@ describe("ModalElement", () => {
       "M",
     );
   });
+
+  // Two columns narrower than a card of the same width: ModalGlyphMapper keeps
+  // x+width-3 for the close button.
+  test("titleRegion stops before the close button", () => {
+    const modal = ModalElement.create({ ...base, title: "Modal" });
+    const region = modal.titleRegion();
+    expect(region.position.equals(Position.create(2, 1))).toBe(true);
+    expect(region.size.equals(Size.create(8, 1))).toBe(true);
+  });
+
+  test("titleAtCell only accepts the title row", () => {
+    const modal = ModalElement.create({ ...base, title: "Modal" });
+    expect(modal.titleAtCell(Position.create(5, 1))).toBe(true);
+    expect(modal.titleAtCell(Position.create(5, 0))).toBe(false);
+  });
 });
