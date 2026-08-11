@@ -40,6 +40,18 @@ describe("WireframeDocument", () => {
     ).toBe(1234);
   });
 
+  test("rename returns a renamed copy, keeping everything else", () => {
+    const doc = emptyDoc().withLastEdit(777).addElement(box("a"));
+    const renamed = doc.rename("Login screen");
+    expect(renamed).not.toBe(doc);
+    expect(renamed.name).toBe("Login screen");
+    expect(doc.name).toBe("Untitled");
+    expect(renamed.id).toBe("doc1");
+    expect(renamed.lastEdit).toBe(777);
+    expect(renamed.gridSize.equals(doc.gridSize)).toBe(true);
+    expect(renamed.getElement("a")).toBeDefined();
+  });
+
   test("withLastEdit returns a stamped copy, leaving the original untouched", () => {
     const doc = emptyDoc().addElement(box("a"));
     const stamped = doc.withLastEdit(999);

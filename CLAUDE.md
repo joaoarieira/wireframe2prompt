@@ -91,7 +91,8 @@ case, the compositor with all element mappers (Box, Line, Text, Card, Table,
 Modal, Tabs, Arrow, Input, Dropdown, Field, Button, Multiline, FreeDraw), the
 `StringRenderer`, LocalStorage persistence + serialization, `InMemoryHistory`,
 `SystemClock`, and the DI container are in place with tests. The Presentation
-layer is a working React app — document list / editor / about pages, a Zustand
+layer is a working React app — document list (rows with a hover-revealed
+actions menu: inline rename / delete) / editor / about pages, a Zustand
 editor store, the canvas (place/select/move/resize, free-draw, pan-zoom, inline
 editing), layers sidebar, inspector, undo/redo, copy-to-clipboard export, i18n
 (en/pt), and light/dark themes. When you finish a slice, update this section so

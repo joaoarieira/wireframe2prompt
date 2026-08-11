@@ -74,13 +74,14 @@ describe("DocumentListPage", () => {
     ).toBeInTheDocument();
   });
 
-  test("lists existing documents with a delete action", () => {
+  test("lists existing documents as rows with an actions menu", () => {
     setSummaries([{ id: "a", name: "Alpha" }]);
     render(<DocumentListPage />);
 
     expect(screen.getByText("Alpha")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Alpha/ }));
-    expect(deleteDocument).toHaveBeenCalledWith("a");
+    expect(
+      screen.getByRole("button", { name: "Actions for Alpha" }),
+    ).toBeInTheDocument();
   });
 
   test("shows how long ago each document was edited", () => {

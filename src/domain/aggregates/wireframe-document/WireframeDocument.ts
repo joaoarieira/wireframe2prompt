@@ -69,6 +69,18 @@ export class WireframeDocument {
     });
   }
 
+  /** Returns a copy under a new name; all else unchanged. */
+  rename(name: string): WireframeDocument {
+    return new WireframeDocument({
+      id: this.id,
+      name,
+      gridSize: this.gridSize,
+      elements: this.elements,
+      layers: this.layers,
+      lastEdit: this.lastEdit,
+    });
+  }
+
   /** Returns a copy stamped with a new last-edit time; all else unchanged. */
   withLastEdit(lastEdit: number): WireframeDocument {
     return new WireframeDocument({

@@ -9,7 +9,11 @@ export const pt: LocaleDictionary = {
     namePlaceholder: "Nome do novo wireframe",
     create: "Criar",
     empty: "Nenhum wireframe ainda. Crie um.",
-    delete: "Excluir {{name}}",
+    actions: "Ações de {{name}}",
+    rename: "Renomear",
+    renameLabel: "Renomear {{name}}",
+    delete: "Excluir",
+    deleteLabel: "Excluir {{name}}",
     tagline:
       "Esboce sua tela numa grade ASCII e copie como prompt para qualquer IA — sem ferramentas de design.",
     taglineLink: "Saiba como funciona",

@@ -11,7 +11,11 @@ export const en = {
     namePlaceholder: "New wireframe name",
     create: "Create",
     empty: "No wireframes yet. Create one.",
-    delete: "Delete {{name}}",
+    actions: "Actions for {{name}}",
+    rename: "Rename",
+    renameLabel: "Rename {{name}}",
+    delete: "Delete",
+    deleteLabel: "Delete {{name}}",
     tagline:
       "Sketch your screen on an ASCII grid and copy it as a prompt for any AI — no design tools required.",
     taglineLink: "Learn how it works",

@@ -24,6 +24,12 @@ interface DropdownProps {
    */
   openDownOnMobile?: boolean;
   /**
+   * Opens the menu downward on every screen size. Use where the trigger sits at
+   * the top of the page (e.g. a row of the document list), so an upward menu
+   * would run off-screen. Takes precedence over {@link openDownOnMobile}.
+   */
+  openDown?: boolean;
+  /**
    * Renders the menu in the top layer via the native Popover API (anchored to
    * the trigger) instead of as an in-flow `dropdown-content`. Use inside a
    * clipped/scrolling container (e.g. the footer's horizontally scrolling tool
@@ -44,6 +50,30 @@ interface DropdownProps {
 /** daisyUI menu box shared by both the in-flow and the top-layer variants. */
 const MENU_BOX =
   "menu z-10 w-max rounded-box border border-base-300 bg-base-100 p-1 shadow-lg";
+
+interface MenuDirection {
+  /** Placement classes for the `dropdown` root (or the popover menu). */
+  placement: string;
+  /** Gap classes, always on the side the menu opens from. */
+  gap: string;
+}
+
+/** Resolves the three placements (always down, down-on-mobile, always up). */
+function menuDirection(
+  openDown: boolean,
+  openDownOnMobile: boolean,
+): MenuDirection {
+  if (openDown) {
+    return { placement: "dropdown-bottom", gap: "mt-1" };
+  }
+  if (openDownOnMobile) {
+    return {
+      placement: "dropdown-bottom lg:dropdown-top",
+      gap: "mt-1 lg:mt-0 lg:mb-1",
+    };
+  }
+  return { placement: "dropdown-top", gap: "mb-1" };
+}
 
 /**
  * daisyUI `dropdown` that opens upward (`dropdown-top`, aligned `dropdown-end`)
@@ -88,21 +118,18 @@ function FocusDropdown({
   triggerCompact = false,
   menuLabel,
   openDownOnMobile = false,
+  openDown = false,
   children,
   className,
 }: DropdownProps) {
+  const direction = menuDirection(openDown, openDownOnMobile);
   return (
     // data-ui-dropdown lets scroll containers detect "a dropdown menu is open"
     // via `has-[[data-ui-dropdown]:focus-within]` without referencing the
     // daisyUI `dropdown` class outside ui/.
     <div
       data-ui-dropdown
-      className={cx(
-        "dropdown dropdown-end",
-        // Below lg, opt-in dropdowns open downward so a top-of-viewport trigger
-        // isn't clipped; desktop keeps the default upward opening.
-        openDownOnMobile ? "dropdown-bottom lg:dropdown-top" : "dropdown-top",
-      )}
+      className={cx("dropdown dropdown-end", direction.placement)}
     >
       <div
         tabIndex={0}
@@ -120,13 +147,8 @@ function FocusDropdown({
       </div>
       <ul
         tabIndex={0}
-        className={cx(
-          "dropdown-content",
-          MENU_BOX,
-          // Gap sits on the side the menu opens from: below when opening down on
-          // mobile, above (the default) when opening up.
-          openDownOnMobile ? "mt-1 lg:mt-0 lg:mb-1" : "mb-1",
-        )}
+        // The gap sits on the side the menu opens from — see menuDirection.
+        className={cx("dropdown-content", MENU_BOX, direction.gap)}
       >
         <MenuContent menuLabel={menuLabel}>{children}</MenuContent>
       </ul>
@@ -147,9 +169,11 @@ function OverlayDropdown({
   triggerCompact = false,
   menuLabel,
   openDownOnMobile = false,
+  openDown = false,
   children,
   className,
 }: DropdownProps) {
+  const direction = menuDirection(openDown, openDownOnMobile);
   const menuId = useId();
   // anchor-name must be a dashed-ident; useId's value carries separators.
   const anchorName = `--dd-${menuId.replace(/[^a-z0-9]/gi, "")}`;
@@ -179,8 +203,8 @@ function OverlayDropdown({
         className={cx(
           "dropdown dropdown-end",
           MENU_BOX,
-          openDownOnMobile ? "dropdown-bottom lg:dropdown-top" : "dropdown-top",
-          openDownOnMobile ? "mt-1 lg:mt-0 lg:mb-1" : "mb-1",
+          direction.placement,
+          direction.gap,
         )}
       >
         <MenuContent menuLabel={menuLabel}>{children}</MenuContent>

@@ -265,6 +265,7 @@ export interface EditorState {
 export interface EditorActions {
   refreshDocuments(): Promise<void>;
   createDocument(name: string): Promise<string>;
+  renameDocument(documentId: string, name: string): Promise<void>;
   deleteDocument(documentId: string): Promise<void>;
   openDocument(documentId: string): Promise<void>;
   saveCurrentDocument(): Promise<void>;
@@ -541,6 +542,21 @@ export function createEditorStore(
         await container.saveDocument.execute({ document });
         await get().refreshDocuments();
         return document.id;
+      },
+
+      // Renaming from the document list touches a document that isn't open, so
+      // it round-trips through the repository instead of the editor's history.
+      renameDocument: async (documentId, name) => {
+        const document = await container.loadDocument.execute({
+          id: documentId,
+        });
+        if (document === null) {
+          return;
+        }
+        await container.saveDocument.execute({
+          document: document.rename(name),
+        });
+        await get().refreshDocuments();
       },
 
       deleteDocument: async (documentId) => {

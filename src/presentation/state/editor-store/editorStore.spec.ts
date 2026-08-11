@@ -74,6 +74,21 @@ describe("documents", () => {
     expect(saved?.gridSize.rows).toBe(24);
   });
 
+  test("renameDocument persists the new name and refreshes the list", async () => {
+    const id = await store.getState().createDocument("landing page");
+    await store.getState().renameDocument(id, "checkout");
+
+    expect((await container.repository.load(id))?.name).toBe("checkout");
+    expect(store.getState().summaries[0].name).toBe("checkout");
+  });
+
+  test("renameDocument ignores an unknown id", async () => {
+    await store.getState().createDocument("landing page");
+    await store.getState().renameDocument("ghost", "checkout");
+
+    expect(store.getState().summaries[0].name).toBe("landing page");
+  });
+
   test("deleteDocument removes it from the repository and the list", async () => {
     const id = await store.getState().createDocument("temp");
     await store.getState().deleteDocument(id);

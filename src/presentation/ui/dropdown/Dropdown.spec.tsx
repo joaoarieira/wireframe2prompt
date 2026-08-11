@@ -83,6 +83,31 @@ describe("Dropdown", () => {
     );
   });
 
+  test("openDown opens downward on every screen size", () => {
+    const { container } = render(
+      <Dropdown trigger="⋮" triggerLabel="Actions" openDown openDownOnMobile>
+        <DropdownItem>Rename</DropdownItem>
+      </Dropdown>,
+    );
+
+    const root = container.querySelector("[data-ui-dropdown]");
+    expect(root).toHaveClass("dropdown-bottom");
+    expect(root).not.toHaveClass("lg:dropdown-top");
+    expect(container.querySelector(".dropdown-content")).toHaveClass("mt-1");
+  });
+
+  test("overlay honours openDown on the popover menu", () => {
+    const { container } = render(
+      <Dropdown trigger="⋮" triggerLabel="Actions" overlay openDown>
+        <DropdownItem>Rename</DropdownItem>
+      </Dropdown>,
+    );
+
+    const menu = container.querySelector<HTMLElement>("[popover]");
+    expect(menu).toHaveClass("dropdown-bottom", "mt-1");
+    expect(menu).not.toHaveClass("dropdown-top", "mb-1");
+  });
+
   test("merges className onto the trigger so it can join a group", () => {
     render(
       <Dropdown trigger="▲" triggerLabel="More tools" className="join-item">

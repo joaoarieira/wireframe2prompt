@@ -7,9 +7,9 @@ import { LayersSidebarFooter } from "../components/LayersSidebar/LayersSidebarFo
 import { ButtonGroup } from "../ui/button-group/ButtonGroup";
 import { Button } from "../ui/button/Button";
 import { TextInput } from "../ui/text-input/TextInput";
-import { List, ListRow } from "../ui/list/List";
+import { List } from "../ui/list/List";
 import { TextLink } from "../ui/text-link/TextLink";
-import { relativeEditLabel } from "./relativeEditLabel";
+import { DocumentRow } from "../components/DocumentList/DocumentRow";
 
 /** Home screen: create a wireframe document or open/delete an existing one. */
 export function DocumentListPage() {
@@ -17,7 +17,6 @@ export function DocumentListPage() {
   const summaries = useEditorStore((state) => state.summaries);
   const refreshDocuments = useEditorStore((state) => state.refreshDocuments);
   const createDocument = useEditorStore((state) => state.createDocument);
-  const deleteDocument = useEditorStore((state) => state.deleteDocument);
   const navigate = useNavigate();
   const [name, setName] = useState("");
   // Snapshot "now" once per mount so the relative-edit labels are computed from
@@ -78,34 +77,13 @@ export function DocumentListPage() {
           <p className="text-sm opacity-60">{t("documentList.empty")}</p>
         ) : (
           <List rounded className="bg-base-200">
-            {summaries.map((summary) => {
-              const edited = relativeEditLabel(summary.lastEdit, renderedAt);
-              return (
-                <ListRow key={summary.id} className="items-center gap-4">
-                  <TextLink
-                    to="/editor/$documentId"
-                    params={{ documentId: summary.id }}
-                    grow
-                    className="truncate"
-                  >
-                    {summary.name}
-                  </TextLink>
-                  <span className="shrink-0 text-sm opacity-60">
-                    {t(edited.key, { count: edited.count })}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label={t("documentList.delete", {
-                      name: summary.name,
-                    })}
-                    onClick={() => void deleteDocument(summary.id)}
-                  >
-                    ✕
-                  </Button>
-                </ListRow>
-              );
-            })}
+            {summaries.map((summary) => (
+              <DocumentRow
+                key={summary.id}
+                summary={summary}
+                nowMs={renderedAt}
+              />
+            ))}
           </List>
         )}
       </div>
